@@ -2,26 +2,60 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { Heart, Sparkles, ShieldAlert, Flower, MessageCircle, Share2 } from "lucide-react";
-import { getShradhanjaliList, saveShradhanjaliList, isAdminAuthenticated } from "@/lib/store";
+import { Heart, Sparkles, ShieldAlert, Flower, LogIn } from "lucide-react";
+import { getShradhanjaliList, saveShradhanjaliList, isAdminAuthenticated, getLoggedInAlumni } from "@/lib/store";
 import { ShradhanjaliRecord } from "@/types";
 
 export default function ShradhanjaliPage() {
   const [records, setRecords] = useState<ShradhanjaliRecord[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
+
+  // Per-user, per-record offered tracking stored in localStorage
   const [offeredIds, setOfferedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    setRecords(getShradhanjaliList());
+    const user = getLoggedInAlumni();
+    setIsLoggedIn(!!user);
+    setCurrentUserId(user?.id || null);
     setIsAdmin(isAdminAuthenticated());
+
+    // Load offered flowers from localStorage (per-user key)
+    if (user) {
+      const storedOffered = localStorage.getItem(`shradhanjali_offered_${user.id}`);
+      if (storedOffered) {
+        try {
+          setOfferedIds(JSON.parse(storedOffered));
+        } catch {
+          setOfferedIds([]);
+        }
+      }
+    }
+
+    setRecords(getShradhanjaliList());
+
     const handleUpdate = () => setRecords(getShradhanjaliList());
     window.addEventListener("shradhanjali_updated", handleUpdate);
     return () => window.removeEventListener("shradhanjali_updated", handleUpdate);
   }, []);
 
   const handleOfferFlower = (id: string) => {
+    if (!isLoggedIn || !currentUserId) {
+      // Redirect to login if not logged in
+      window.location.href = "/login?redirect=/shradhanjali";
+      return;
+    }
+
+    // Already offered — no double counting
     if (offeredIds.includes(id)) return;
-    setOfferedIds([...offeredIds, id]);
+
+    const newOffered = [...offeredIds, id];
+    setOfferedIds(newOffered);
+
+    // Persist per-user offered set in localStorage
+    localStorage.setItem(`shradhanjali_offered_${currentUserId}`, JSON.stringify(newOffered));
+
     const updated = records.map((r) => {
       if (r.id === id) {
         return { ...r, condolencesCount: (r.condolencesCount || 0) + 1 };
@@ -72,6 +106,19 @@ export default function ShradhanjaliPage() {
           </p>
         </div>
 
+        {/* Login prompt for guest visitors */}
+        {!isLoggedIn && (
+          <div className="max-w-xl mx-auto mb-10 p-4 rounded-2xl bg-amber-50 border border-amber-300 flex items-center gap-3">
+            <LogIn className="w-5 h-5 text-[#C5A059] flex-shrink-0" />
+            <p className="text-xs text-amber-900 leading-relaxed flex-1">
+              <strong>श्रद्धांजलि अर्पित करने के लिए लॉगिन करें।</strong> पुष्पांजलि (Offer Flowers) बटन केवल लॉगिन किए हुए पूर्व छात्रों के लिए उपलब्ध है।{" "}
+              <Link href="/login?redirect=/shradhanjali" className="underline font-semibold text-[#2D5A43]">
+                लॉगिन करें →
+              </Link>
+            </p>
+          </div>
+        )}
+
         {/* Shradhanjali Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {records.map((record) => {
@@ -117,7 +164,7 @@ export default function ShradhanjaliPage() {
                     </p>
                   </div>
 
-                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between">
+                  <div className="pt-4 border-t border-slate-100 flex items-center justify-between gap-3">
                     <span className="text-[11px] text-slate-400">
                       Tribute by: {record.postedBy}
                     </span>
@@ -125,14 +172,27 @@ export default function ShradhanjaliPage() {
                     {/* Offer Flowers / Condolence Button */}
                     <button
                       onClick={() => handleOfferFlower(record.id)}
+                      title={!isLoggedIn ? "श्रद्धांजलि अर्पित करने के लिए लॉगिन करें" : hasOffered ? "आपने पुष्पांजलि अर्पित कर दी है" : "पुष्पांजलि अर्पित करें"}
                       className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold transition-all ${
                         hasOffered
                           ? "bg-amber-100 text-amber-900 border border-amber-300"
+                          : !isLoggedIn
+                          ? "bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-70"
                           : "bg-slate-100 text-slate-700 hover:bg-[#FAF7F2] border border-slate-200"
                       }`}
                     >
                       <Flower className={`w-3.5 h-3.5 ${hasOffered ? "text-[#C5A059]" : "text-slate-400"}`} />
-                      <span>{hasOffered ? "पुष्पांजलि अर्पित" : "Offer Flowers"} ({record.condolencesCount})</span>
+                      <span>
+                        {hasOffered
+                          ? "पुष्पांजलि अर्पित"
+                          : !isLoggedIn
+                          ? "Login to Offer"
+                          : "Offer Flowers"}
+                        {" "}
+                        {record.condolencesCount > 0 && (
+                          <span className="font-semibold">({record.condolencesCount})</span>
+                        )}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -140,6 +200,14 @@ export default function ShradhanjaliPage() {
             );
           })}
         </div>
+
+        {/* Empty state */}
+        {records.length === 0 && (
+          <div className="text-center py-20 text-slate-400">
+            <Flower className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+            <p className="text-sm font-medium">कोई श्रद्धांजलि रिकॉर्ड अभी उपलब्ध नहीं है।</p>
+          </div>
+        )}
       </div>
     </div>
   );

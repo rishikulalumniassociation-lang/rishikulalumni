@@ -6,7 +6,7 @@ import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI, MOCK_EVENTS } fro
 const STORAGE_KEYS = {
   ALUMNI: "rishikul_alumni_list_v5",
   ACHIEVERS: "rishikul_lifetime_achievers_v4",
-  SHRADHANJALI: "rishikul_shradhanjali_v5",
+  SHRADHANJALI: "rishikul_shradhanjali_v6",
   ADMIN_AUTH: "rishikul_admin_logged_in_v4",
   RESET_REQUESTS: "rishikul_password_reset_requests_v4",
   LOGGED_IN_USER: "rishikul_logged_in_user_v5",
