@@ -1,10 +1,11 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import EditorialHero from "@/components/Hero/EditorialHero";
 import AlumniCard from "@/components/Directory/AlumniCard";
-import { MOCK_ALUMNI, MOCK_EVENTS, EXECUTIVE_MEMBERS } from "@/lib/mockData";
+import { MOCK_EVENTS, EXECUTIVE_MEMBERS } from "@/lib/mockData";
+import { getAlumniList, getLifetimeAchievers, getShradhanjaliList } from "@/lib/store";
 import {
   Search,
   ArrowRight,
@@ -13,82 +14,130 @@ import {
   Users,
   Calendar,
   Sparkles,
-  BookOpen,
-  MapPin,
+  Cake,
   Heart,
+  Flower,
+  Star,
+  Users2,
   ChevronRight
 } from "lucide-react";
-import { AlumniProfile } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord } from "@/types";
 
 export default function HomePage() {
-  const [selectedAlumni, setSelectedAlumni] = useState<AlumniProfile | null>(null);
+  const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
+  const [achievers, setAchievers] = useState<LifetimeAchiever[]>([]);
+  const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
+
+  useEffect(() => {
+    setAlumniList(getAlumniList());
+    setAchievers(getLifetimeAchievers());
+    setShradhanjali(getShradhanjaliList());
+  }, []);
+
+  // Compute Today's Birthday count
+  const today = new Date();
+  const todayMonthDay = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
+  const todaysBirthdays = alumniList.filter((a) => {
+    if (!a.dateOfBirth) return false;
+    const parts = a.dateOfBirth.split("-");
+    return parts.length >= 3 && `${parts[1]}-${parts[2]}` === todayMonthDay;
+  });
 
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. Immersive Editorial Hero */}
       <EditorialHero />
 
-      {/* 2. Alma Mater Heritage Statement Section */}
-      <section className="py-16 md:py-24 bg-[#FAF7F2] border-b border-[#C5A059]/20">
+      {/* 2. Urgent Community Notification Banner: Birthday Radar & Memorials */}
+      <div className="bg-[#FAF7F2] border-b border-[#C5A059]/20 py-3 px-4">
+        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-ping" />
+            <span className="font-bold text-[#0F172A] flex items-center gap-1">
+              <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
+              Today's Birthday Radar:
+            </span>
+            <span className="text-slate-600">
+              {todaysBirthdays.length > 0
+                ? `${todaysBirthdays.map((b) => b.fullName).join(", ")} celebrating today!`
+                : "Check upcoming alumni birthdays for this week."}
+            </span>
+          </div>
+
+          <div className="flex items-center gap-4">
+            <Link
+              href="/birthdays"
+              className="font-bold text-[#2D5A43] hover:underline flex items-center gap-1"
+            >
+              <span>Wish Batchmates</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </Link>
+            <span className="text-slate-300">|</span>
+            <Link
+              href="/shradhanjali"
+              className="text-slate-600 hover:text-[#0F172A] flex items-center gap-1 font-medium"
+            >
+              <Flower className="w-3 h-3 text-[#C5A059]" />
+              <span>Shradhanjali Memorials</span>
+            </Link>
+          </div>
+        </div>
+      </div>
+
+      {/* 3. Association Fraternity Mission Statement */}
+      <section className="py-14 md:py-20 bg-[#FAF7F2] border-b border-[#C5A059]/20">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
             {/* Left Statement */}
-            <div className="lg:col-span-7 space-y-6">
+            <div className="lg:col-span-7 space-y-5">
               <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wider uppercase text-[#2D5A43] bg-[#2D5A43]/10 px-3 py-1 rounded-full">
-                <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
-                Rooted in Rishitulyata & Ganga Pavitrata
+                <Users2 className="w-3.5 h-3.5 text-[#C5A059]" />
+                Independent Alumni Guild • Estd. by Rishikul Graduates
               </div>
 
               <h2 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] leading-tight">
-                Where Traditional Wisdom Meets Clinical Rigor Since 1919.
+                Uniting Thousands of Rishikul Vaidyas, Surgeons & Scholars Across the Globe.
               </h2>
 
-              <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-light">
-                Established by visionary patriots and sages in the sacred city of Haridwar, 
-                <strong className="font-medium text-[#0F172A]"> Rishikul Government Ayurvedic College</strong> stands as one of India's earliest and most revered bastions of Ayurvedic pedagogy.
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-light">
+                The <strong className="font-medium text-[#0F172A]">Rishikul Snatak Evam Snatkottar Association</strong> is the dedicated alumni brotherhood uniting graduates of Rishikul Government Ayurvedic College, Haridwar. 
               </p>
 
-              <p className="text-sm sm:text-base text-slate-700 leading-relaxed font-light">
-                The <strong className="font-medium text-[#0F172A]">Rishikul Snatak Evam Snatkottar Association</strong> serves as the lifelong guild for every physician, researcher, academician, and surgeon who walked these sacred corridors.
+              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-light">
+                From mutual clinical referrals, emergency doctors welfare funds, and birthday greetings to grand Kumbh reunions and honoring departed mentors, this platform belongs solely to the Rishikul alumni fraternity.
               </p>
 
               <div className="pt-2 flex flex-wrap gap-4">
                 <Link
-                  href="/about"
+                  href="/directory"
                   className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0F172A] hover:text-[#2D5A43] border-b-2 border-[#C5A059] pb-1 transition-colors"
                 >
-                  <span>Explore 100+ Years College History</span>
+                  <span>Search Alumni Directory & Mutual Connections</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
                 <Link
-                  href="/membership"
+                  href="/achievers"
                   className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#2D5A43] hover:text-[#0F172A] border-b-2 border-[#2D5A43] pb-1 transition-colors"
                 >
-                  <span>Membership Privileges & Digital ID</span>
+                  <span>Lifetime Achievers Hall of Fame</span>
                   <ChevronRight className="w-4 h-4" />
                 </Link>
               </div>
             </div>
 
-            {/* Right Heritage Card / Quote */}
+            {/* Right Card: Alumni Fraternity Oath */}
             <div className="lg:col-span-5">
-              <div className="relative p-8 rounded-3xl bg-white border-2 border-[#C5A059]/30 shadow-xl overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-[#FAF7F2] rounded-bl-full -mr-8 -mt-8 border-b border-l border-[#C5A059]/20" />
-                <span className="text-6xl font-serif-heading text-[#C5A059] block -mb-4">“</span>
-                <blockquote className="font-serif-heading text-xl sm:text-2xl text-[#0F172A] italic leading-snug mb-6 relative z-10">
-                  न हि ज्ञानेन सदृशं पवित्रमिह विद्यते।<br />
-                  <span className="text-sm not-italic font-sans text-[#64748B] block mt-2">
-                    "Certainly, there is no purifier in this world like sacred wisdom."
+              <div className="relative p-7 rounded-3xl bg-white border-2 border-[#C5A059]/30 shadow-xl">
+                <span className="text-5xl font-serif-heading text-[#C5A059] block -mb-3">“</span>
+                <blockquote className="font-serif-heading text-lg sm:text-xl text-[#0F172A] italic leading-snug mb-4">
+                  परस्परं भावयन्तः श्रेयः परमवाप्स्यथ।<br />
+                  <span className="text-xs not-italic font-sans text-[#64748B] block mt-2">
+                    "By supporting and uplifting one another with fellowship, we all attain the highest mutual prosperity."
                   </span>
                 </blockquote>
-                <div className="flex items-center gap-3 pt-4 border-t border-slate-100">
-                  <div className="w-10 h-10 rounded-full bg-[#0F172A] text-[#C5A059] flex items-center justify-center font-serif-heading font-bold text-lg">
-                    ऋ
-                  </div>
-                  <div>
-                    <h5 className="font-bold text-xs text-[#0F172A]">Rishikul Tradition</h5>
-                    <p className="text-[11px] text-[#64748B]">Sanctum of Ayurvedic Healing</p>
-                  </div>
+                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-[#0F172A] font-bold">
+                  <span>Alumni Brotherhood & Mutual Welfare</span>
+                  <span className="text-[#C5A059] font-mono">1919 – 2026</span>
                 </div>
               </div>
             </div>
@@ -96,114 +145,189 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 3. Featured Alumni Section */}
-      <section className="py-16 md:py-24 bg-white">
+      {/* 4. LIFETIME ACHIEVERS (Admin Updated Section) */}
+      <section className="py-16 md:py-20 bg-white border-b border-[#C5A059]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div>
-              <span className="text-xs font-bold tracking-wider uppercase text-[#C5A059]">
-                Distinguished Fraternity
+              <span className="text-xs font-bold tracking-wider uppercase text-[#C5A059] flex items-center gap-1">
+                <Award className="w-3.5 h-3.5" />
+                National Laurels & Distinguished Veterans
               </span>
-              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A] mt-1">
-                Featured Alumni Across the Globe
+              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] mt-1">
+                Lifetime Achievers of Rishikul
               </h2>
               <p className="text-xs sm:text-sm text-[#64748B] mt-1 max-w-xl">
-                From pioneering super-specialty hospitals to global pharmacopeia boards, explore the stalwarts shaping contemporary Ayurveda.
+                Honoring our alumni who have received Padma awards, founded major hospital chains, authored pharmacopeias, or shaped global AYUSH healthcare.
               </p>
             </div>
 
             <Link
-              href="/directory"
+              href="/achievers"
               className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0F172A] hover:text-[#2D5A43] transition-colors"
             >
-              <span>Explore All 12,000+ Alumni</span>
+              <span>View All Lifetime Achievers</span>
               <ArrowRight className="w-4 h-4 text-[#C5A059]" />
             </Link>
           </div>
 
-          {/* Grid of Alumni Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {MOCK_ALUMNI.slice(0, 3).map((alumni) => (
-              <AlumniCard
-                key={alumni.id}
-                alumni={alumni}
-                onSelect={(selected) => setSelectedAlumni(selected)}
-              />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {achievers.slice(0, 3).map((achiever) => (
+              <div
+                key={achiever.id}
+                className="bg-[#FAF7F2] rounded-3xl overflow-hidden border border-[#C5A059]/30 shadow-md hover:shadow-xl transition-all group flex flex-col justify-between"
+              >
+                <div>
+                  <div className="relative h-56 w-full bg-slate-900 overflow-hidden">
+                    <img
+                      src={achiever.photoUrl}
+                      alt={achiever.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
+                    <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#C5A059] text-[#0F172A]">
+                      Batch {achiever.batchYear}
+                    </span>
+                    <div className="absolute bottom-3 left-3 right-3 text-white">
+                      <h4 className="font-serif-heading text-xl font-bold text-white leading-tight">
+                        {achiever.name}
+                      </h4>
+                    </div>
+                  </div>
+
+                  <div className="p-5">
+                    <span className="text-xs font-semibold text-[#2D5A43] block mb-2">
+                      {achiever.title}
+                    </span>
+                    <p className="text-xs text-slate-600 line-clamp-3 italic mb-3">
+                      "{achiever.citation}"
+                    </p>
+                  </div>
+                </div>
+
+                <div className="p-5 pt-0 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                  <span className="truncate">{achiever.currentRole}</span>
+                  <span className="font-bold text-[#0F172A] ml-2">{achiever.degree}</span>
+                </div>
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* 4. Upcoming Major Events & Golden Jubilee Banner */}
-      <section className="py-16 md:py-20 bg-[#0F172A] text-white relative overflow-hidden">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      {/* 5. TODAY'S & UPCOMING BIRTHDAYS TEASER SECTION */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-[#0F172A] to-[#1E293B] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
             <div>
-              <span className="text-xs font-bold tracking-wider uppercase text-[#C5A059]">
-                Gatherings & Conferences
+              <span className="text-xs font-bold tracking-wider uppercase text-[#C5A059] flex items-center gap-1.5">
+                <Cake className="w-3.5 h-3.5" />
+                Alumni Birthday Radar
               </span>
-              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold tracking-tight text-white mt-1">
-                Upcoming Association Conclaves
+              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-white mt-1">
+                Celebrating Our Batchmates Today
               </h2>
             </div>
             <Link
-              href="/events"
-              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-[#C5A059] transition-colors"
+              href="/birthdays"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] hover:underline"
             >
-              <span>View All Events & CMEs</span>
+              <span>View All Birthdays & Upcoming Week</span>
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {alumniList.slice(0, 3).map((alumnus) => (
+              <div
+                key={alumnus.id}
+                className="bg-slate-900/80 rounded-2xl p-5 border border-[#C5A059]/30 flex items-center justify-between"
+              >
+                <div className="flex items-center gap-3">
+                  <img
+                    src={alumnus.avatarUrl}
+                    alt={alumnus.fullName}
+                    className="w-14 h-14 rounded-xl object-cover border border-[#C5A059]"
+                  />
+                  <div>
+                    <h4 className="font-serif-heading text-lg font-bold text-white">
+                      {alumnus.fullName}
+                    </h4>
+                    <p className="text-xs text-amber-200">
+                      Batch of {alumnus.batchYear} • {alumnus.city}
+                    </p>
+                    <span className="text-[10px] text-slate-400">
+                      DOB: {alumnus.dateOfBirth || "Recorded"}
+                    </span>
+                  </div>
+                </div>
+
+                <Link
+                  href="/birthdays"
+                  className="p-2 rounded-xl bg-white/10 text-white hover:bg-[#C5A059] hover:text-[#0F172A] transition-colors"
+                  title="Wish Happy Birthday"
+                >
+                  <Cake className="w-4 h-4" />
+                </Link>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* 6. SHRADHANJALI SECTION (Admin Updated Memorial) */}
+      <section className="py-16 md:py-20 bg-[#FAF7F2] border-b border-[#C5A059]/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold tracking-wider uppercase text-slate-500 flex items-center gap-1.5">
+                <Flower className="w-3.5 h-3.5 text-[#C5A059]" />
+                श्रद्धांजलि एवं स्मृति शेष
+              </span>
+              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] mt-1">
+                Shradhanjali: Departed Souls of Rishikul
+              </h2>
+              <p className="text-xs sm:text-sm text-[#64748B] mt-1 max-w-xl">
+                Dedicated memorial page updated by the Association Administration remembering our departed professors, vaidyas, and classmates.
+              </p>
+            </div>
+
+            <Link
+              href="/shradhanjali"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#0F172A] hover:text-[#2D5A43] transition-colors"
+            >
+              <span>Visit Shradhanjali Hall & Offer Flowers</span>
               <ArrowRight className="w-4 h-4 text-[#C5A059]" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            {MOCK_EVENTS.map((event) => (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {shradhanjali.slice(0, 2).map((record) => (
               <div
-                key={event.id}
-                className="bg-slate-900/80 rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 flex flex-col justify-between hover:border-[#C5A059] transition-all group"
+                key={record.id}
+                className="bg-white rounded-3xl p-6 border-2 border-slate-200 shadow-sm flex items-start gap-4 hover:border-[#C5A059] transition-colors"
               >
+                <img
+                  src={record.photoUrl}
+                  alt={record.name}
+                  className="w-20 h-20 rounded-2xl object-cover grayscale border border-slate-300 flex-shrink-0"
+                />
                 <div>
-                  <div className="flex items-center justify-between gap-2 mb-4">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#2D5A43] text-white">
-                      {event.eventType}
-                    </span>
-                    <span className="text-xs font-medium text-[#C5A059]">
-                      {event.attendeesCount}+ Registered
-                    </span>
-                  </div>
-
-                  <h3 className="font-serif-heading text-xl sm:text-2xl font-bold text-white group-hover:text-amber-200 transition-colors mb-2">
-                    {event.title}
-                  </h3>
-                  {event.titleHindi && (
-                    <p className="text-xs text-slate-400 mb-4">{event.titleHindi}</p>
-                  )}
-
-                  <p className="text-xs sm:text-sm text-slate-300 line-clamp-3 leading-relaxed mb-6 font-light">
-                    {event.description}
-                  </p>
-
-                  <div className="space-y-2 text-xs text-slate-300 mb-6">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-4 h-4 text-[#C5A059]" />
-                      <span>{event.date} • {event.time}</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-[#C5A059]" />
-                      <span className="line-clamp-1">{event.venue}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">
-                    Fee: <strong className="text-white">{event.registrationFee}</strong>
+                  <span className="text-[10px] uppercase font-bold text-red-600 block">
+                    Demise Date: {record.dateOfDemise} • Batch {record.batchYear}
                   </span>
+                  <h4 className="font-serif-heading text-xl font-bold text-[#0F172A]">
+                    {record.name}
+                  </h4>
+                  <p className="text-xs text-slate-600 line-clamp-2 mt-1 italic">
+                    "{record.tribute}"
+                  </p>
                   <Link
-                    href={`/events`}
-                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors"
+                    href="/shradhanjali"
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-[#2D5A43] mt-3 hover:underline"
                   >
-                    <span>RSVP / Register</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
+                    <Flower className="w-3 h-3 text-[#C5A059]" />
+                    <span>Offer Flowers & View Condolences ({record.condolencesCount})</span>
                   </Link>
                 </div>
               </div>
@@ -212,45 +336,61 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 5. Association Executive Council Highlights */}
-      <section className="py-16 md:py-24 bg-[#FAF7F2]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <span className="text-xs font-bold tracking-wider uppercase text-[#2D5A43]">
-            Custodians of the Association
-          </span>
-          <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold tracking-tight text-[#0F172A] mt-1 mb-4">
-            Executive Committee & Leadership
-          </h2>
-          <p className="text-xs sm:text-sm text-[#64748B] max-w-2xl mx-auto mb-12">
-            Elected representatives guiding the welfare, legal standing, academic growth, and philanthropic mission of the alumni community.
-          </p>
+      {/* 7. Upcoming Reunions & Conclaves */}
+      <section className="py-16 bg-[#0F172A] text-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold tracking-wider uppercase text-[#C5A059]">
+                Gatherings & Conferences
+              </span>
+              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-white mt-1">
+                Upcoming Alumni Conclaves
+              </h2>
+            </div>
+            <Link
+              href="/events"
+              className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-white hover:text-[#C5A059] transition-colors"
+            >
+              <span>View All Events</span>
+              <ArrowRight className="w-4 h-4 text-[#C5A059]" />
+            </Link>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 text-left">
-            {EXECUTIVE_MEMBERS.map((member) => (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            {MOCK_EVENTS.map((event) => (
               <div
-                key={member.id}
-                className="bg-white rounded-2xl p-5 border border-[#C5A059]/30 shadow-sm hover:shadow-md transition-all flex flex-col justify-between"
+                key={event.id}
+                className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 flex flex-col justify-between"
               >
                 <div>
-                  <div className="w-20 h-20 rounded-2xl overflow-hidden mb-4 border-2 border-[#C5A059]/40 bg-slate-100">
-                    <img
-                      src={member.photo}
-                      alt={member.name}
-                      className="w-full h-full object-cover"
-                    />
+                  <div className="flex items-center justify-between gap-2 mb-3">
+                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#2D5A43] text-white">
+                      {event.eventType}
+                    </span>
+                    <span className="text-xs font-medium text-[#C5A059]">
+                      {event.attendeesCount}+ Registered
+                    </span>
                   </div>
-                  <h4 className="font-serif-heading text-lg font-bold text-[#0F172A]">
-                    {member.name}
-                  </h4>
-                  <p className="text-xs font-semibold text-[#2D5A43] mt-0.5">
-                    {member.role}
+
+                  <h3 className="font-serif-heading text-xl sm:text-2xl font-bold text-white mb-2">
+                    {event.title}
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed mb-4 font-light">
+                    {event.description}
                   </p>
-                  <p className="text-[11px] text-slate-500 mb-3">{member.batch} • {member.location}</p>
-                  {member.message && (
-                    <p className="text-xs text-slate-600 line-clamp-3 italic">
-                      "{member.message}"
-                    </p>
-                  )}
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+                  <span className="text-xs text-slate-400">
+                    Fee: <strong className="text-white">{event.registrationFee}</strong>
+                  </span>
+                  <Link
+                    href="/events"
+                    className="px-4 py-2 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors"
+                  >
+                    RSVP / Register
+                  </Link>
                 </div>
               </div>
             ))}
@@ -258,27 +398,27 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. Call to Action Banner */}
-      <section className="py-16 bg-gradient-to-r from-[#0F172A] to-[#1E293B] text-white border-t border-[#C5A059]/30">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 text-center space-y-6">
-          <h2 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-white">
+      {/* 8. Call to Action */}
+      <section className="py-16 bg-[#FAF7F2] text-[#0F172A] border-t border-[#C5A059]/30 text-center">
+        <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
+          <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A]">
             Are You a Graduate of Rishikul?
           </h2>
-          <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto font-light">
-            Claim your official membership, download your verified Digital Alumni ID card, and participate in shaping the future of Ayurvedic healthcare.
+          <p className="text-xs sm:text-sm text-slate-600 max-w-xl mx-auto font-light leading-relaxed">
+            Submit your membership application to join the official directory. Stay notified of batchmate birthdays, receive your verified digital smart card, and stay connected with your alma mater.
           </p>
-          <div className="pt-2 flex flex-col sm:flex-row items-center justify-center gap-4">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
             <Link
               href="/register"
-              className="w-full sm:w-auto px-8 py-4 rounded-full bg-[#C5A059] text-[#0F172A] font-bold text-xs sm:text-sm uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-lg"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-[#0F172A] text-white font-bold text-xs uppercase tracking-wider hover:bg-[#2D5A43] transition-colors shadow-lg"
             >
-              Apply for Association Membership
+              Join the Alumni Association
             </Link>
             <Link
               href="/directory"
-              className="w-full sm:w-auto px-8 py-4 rounded-full bg-white/10 text-white font-medium text-xs sm:text-sm uppercase tracking-wider hover:bg-white/20 border border-white/20 transition-colors"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-full bg-white border border-slate-300 text-slate-800 font-semibold text-xs uppercase tracking-wider hover:bg-[#FAF7F2] transition-colors"
             >
-              Browse Directory
+              Search Batchmates
             </Link>
           </div>
         </div>

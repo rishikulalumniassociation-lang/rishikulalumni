@@ -2,6 +2,8 @@ export type DegreeType = 'BAMS' | 'MD (Ayurveda)' | 'MS (Ayurveda)' | 'PhD' | 'D
 
 export type MembershipTier = 'Life Member' | 'Patron Member' | 'Annual Member' | 'Student Member' | 'Honorary Fellow';
 
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+
 export type Specialization = 
   | 'Kayachikitsa (Internal Medicine)'
   | 'Panchakarma'
@@ -24,6 +26,7 @@ export interface AlumniProfile {
   fullNameHindi?: string;
   email: string;
   phone?: string;
+  dateOfBirth?: string; // YYYY-MM-DD for birthday tracking
   avatarUrl?: string;
   batchYear: number;
   degree: DegreeType;
@@ -38,12 +41,41 @@ export interface AlumniProfile {
   membershipId: string;
   membershipTier: MembershipTier;
   isVerified: boolean;
+  approvalStatus: ApprovalStatus;
   joinedDate: string;
   achievements?: string[];
   linkedinUrl?: string;
   whatsappNumber?: string;
   websiteUrl?: string;
   bloodGroup?: string;
+  connectedAlumniIds?: string[]; // IDs of batchmates/colleagues connected
+}
+
+export interface LifetimeAchiever {
+  id: string;
+  name: string;
+  nameHindi?: string;
+  batchYear: number;
+  degree: string;
+  photoUrl: string;
+  title: string;
+  citation: string;
+  awards: string[];
+  currentRole: string;
+  orderIndex: number;
+}
+
+export interface ShradhanjaliRecord {
+  id: string;
+  name: string;
+  nameHindi?: string;
+  batchYear: number;
+  degree: string;
+  photoUrl: string;
+  dateOfDemise: string; // YYYY-MM-DD
+  tribute: string;
+  condolencesCount: number;
+  postedBy?: string;
 }
 
 export interface AssociationEvent {

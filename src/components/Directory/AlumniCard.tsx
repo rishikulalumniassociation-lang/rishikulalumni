@@ -1,26 +1,46 @@
 "use client";
 
 import React, { useState } from "react";
-import Image from "next/image";
 import { AlumniProfile } from "@/types";
 import {
   MapPin,
   GraduationCap,
   Briefcase,
-  Award,
   CheckCircle2,
   ExternalLink,
   MessageCircle,
-  Share2
+  Share2,
+  Users2,
+  Cake,
+  UserCheck
 } from "lucide-react";
+import { toggleAlumniConnection } from "@/lib/store";
 
 interface AlumniCardProps {
   alumni: AlumniProfile;
+  allAlumni?: AlumniProfile[];
+  currentAlumniId?: string; // e.g. "alumni-001"
   onSelect?: (alumni: AlumniProfile) => void;
+  onConnectionToggle?: () => void;
 }
 
-export default function AlumniCard({ alumni, onSelect }: AlumniCardProps) {
+export default function AlumniCard({
+  alumni,
+  allAlumni = [],
+  currentAlumniId = "alumni-001", // Active user demo context
+  onSelect,
+  onConnectionToggle
+}: AlumniCardProps) {
   const [copied, setCopied] = useState(false);
+
+  // Check if active user is connected to this alumnus
+  const isConnectedWithMe = (alumni.connectedAlumniIds || []).includes(currentAlumniId);
+  const totalConnectionsCount = (alumni.connectedAlumniIds || []).length;
+
+  // Find names of connected batchmates
+  const connectedPeople = (alumni.connectedAlumniIds || [])
+    .map((id) => allAlumni.find((a) => a.id === id))
+    .filter(Boolean) as AlumniProfile[];
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -31,6 +51,12 @@ export default function AlumniCard({ alumni, onSelect }: AlumniCardProps) {
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     }
+  };
+
+  const handleConnectClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleAlumniConnection(currentAlumniId, alumni.id);
+    if (onConnectionToggle) onConnectionToggle();
   };
 
   return (
@@ -51,7 +77,7 @@ export default function AlumniCard({ alumni, onSelect }: AlumniCardProps) {
             </div>
             {alumni.isVerified && (
               <span
-                title="Verified Alumni Member"
+                title="Verified by Association Admin"
                 className="absolute -bottom-1 -right-1 bg-[#2D5A43] text-white p-1 rounded-full shadow-sm"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
@@ -93,7 +119,7 @@ export default function AlumniCard({ alumni, onSelect }: AlumniCardProps) {
         </div>
 
         {/* Workplace & Designation */}
-        <div className="space-y-1.5 text-xs text-[#64748B] mb-4">
+        <div className="space-y-1.5 text-xs text-[#64748B] mb-3">
           <div className="flex items-start gap-2">
             <Briefcase className="w-3.5 h-3.5 text-[#C5A059] flex-shrink-0 mt-0.5" />
             <span className="line-clamp-1 text-[#0F172A] font-medium">
@@ -108,12 +134,42 @@ export default function AlumniCard({ alumni, onSelect }: AlumniCardProps) {
           </div>
         </div>
 
-        {/* Bio Snippet */}
-        {alumni.bio && (
-          <p className="text-xs text-[#64748B] line-clamp-2 leading-relaxed mb-4 italic">
-            "{alumni.bio}"
-          </p>
-        )}
+        {/* Mutual / Alumni Network Connections indicator */}
+        <div className="pt-2.5 pb-3 border-t border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="flex -space-x-2 overflow-hidden">
+              {connectedPeople.slice(0, 3).map((conn, idx) => (
+                <img
+                  key={idx}
+                  src={conn.avatarUrl}
+                  alt={conn.fullName}
+                  className="inline-block h-6 w-6 rounded-full ring-2 ring-white object-cover"
+                  title={conn.fullName}
+                />
+              ))}
+            </div>
+            <span className="text-[11px] text-slate-500 font-medium">
+              {totalConnectionsCount > 0
+                ? `${totalConnectionsCount} Alumni Connection${totalConnectionsCount > 1 ? "s" : ""}`
+                : "No connections yet"}
+            </span>
+          </div>
+
+          {/* Quick Connect / Connected Button */}
+          {alumni.id !== currentAlumniId && (
+            <button
+              onClick={handleConnectClick}
+              className={`px-2.5 py-1 rounded-lg text-[11px] font-bold transition-colors flex items-center gap-1 ${
+                isConnectedWithMe
+                  ? "bg-emerald-100 text-emerald-800"
+                  : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
+              }`}
+            >
+              <Users2 className="w-3 h-3" />
+              <span>{isConnectedWithMe ? "Connected" : "Connect"}</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {/* Card Action Footer */}

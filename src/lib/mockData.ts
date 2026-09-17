@@ -1,4 +1,4 @@
-import { AlumniProfile, AssociationEvent, ExecutiveMember } from "@/types";
+import { AlumniProfile, AssociationEvent, ExecutiveMember, LifetimeAchiever, ShradhanjaliRecord } from "@/types";
 
 export const MOCK_ALUMNI: AlumniProfile[] = [
   {
@@ -7,6 +7,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     fullNameHindi: "वैद्य डॉ. रमेश चंद्र जोशी",
     email: "rc.joshi@ayurmed.org",
     phone: "+91 98971 23456",
+    dateOfBirth: "1960-09-17", // Today's Birthday!
     avatarUrl: "https://images.unsplash.com/photo-1622253692010-333f2da6031d?q=80&w=400&auto=format&fit=crop",
     batchYear: 1984,
     degree: "MD (Ayurveda)",
@@ -21,6 +22,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     membershipId: "RISHI-PAT-0012",
     membershipTier: "Patron Member",
     isVerified: true,
+    approvalStatus: "approved",
     joinedDate: "2018-04-12",
     achievements: [
       "National Dhanwantari Ratna Award (2019)",
@@ -30,7 +32,8 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     linkedinUrl: "https://linkedin.com",
     whatsappNumber: "919897123456",
     websiteUrl: "https://charakayur.org",
-    bloodGroup: "O+"
+    bloodGroup: "O+",
+    connectedAlumniIds: ["alumni-002", "alumni-003", "alumni-005"]
   },
   {
     id: "alumni-002",
@@ -38,6 +41,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     fullNameHindi: "डॉ. अनन्या शर्मा (भारद्वाज)",
     email: "dr.ananya@panchakarmawellness.in",
     phone: "+91 98110 54321",
+    dateOfBirth: "1975-09-19", // Upcoming Birthday (in 2 days)
     avatarUrl: "https://images.unsplash.com/photo-1594824813593-18151624c96a?q=80&w=400&auto=format&fit=crop",
     batchYear: 1998,
     degree: "BAMS",
@@ -52,6 +56,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     membershipId: "RISHI-LM-0145",
     membershipTier: "Life Member",
     isVerified: true,
+    approvalStatus: "approved",
     joinedDate: "2020-01-15",
     achievements: [
       "Best Panchakarma Center in Northern India (AYUSH Conclave 2022)",
@@ -60,7 +65,8 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     linkedinUrl: "https://linkedin.com",
     whatsappNumber: "919811054321",
     websiteUrl: "https://gangotriayur.com",
-    bloodGroup: "B+"
+    bloodGroup: "B+",
+    connectedAlumniIds: ["alumni-001", "alumni-004", "alumni-006"]
   },
   {
     id: "alumni-003",
@@ -68,20 +74,22 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     fullNameHindi: "डॉ. महेंद्र प्रताप सिंह",
     email: "dr.mpsingh@shalyasurgical.com",
     phone: "+91 94120 78901",
+    dateOfBirth: "1968-09-22", // Upcoming Birthday (in 5 days)
     avatarUrl: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?q=80&w=400&auto=format&fit=crop",
     batchYear: 1991,
     degree: "MS (Ayurveda)",
     specialization: "Shalya Tantra (Surgery)",
     pgSpecialization: "Ksharasutra Therapy & Ano-Rectal Surgery",
-    designation: "Professor & Head of Department, Shalya Tantra",
-    workplace: "Rishikul Govt Ayurvedic College & Hospital",
+    designation: "Senior Consultant Surgeon & Executive Body Member",
+    workplace: "Sushruta Ano-Rectal Surgical Hospital",
     city: "Haridwar",
     state: "Uttarakhand",
     country: "India",
-    bio: "Dedicated 30+ years to the academic and clinical development of Shalya Tantra at Rishikul. Over 15,000 successful Ksharasutra procedures.",
+    bio: "Dedicated 30+ years to the academic and clinical development of Shalya Tantra. Over 15,000 successful Ksharasutra procedures.",
     membershipId: "RISHI-LM-0089",
     membershipTier: "Life Member",
     isVerified: true,
+    approvalStatus: "approved",
     joinedDate: "2015-08-20",
     achievements: [
       "Sushruta Gold Medal for Excellence in Surgery",
@@ -89,7 +97,8 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     ],
     linkedinUrl: "https://linkedin.com",
     whatsappNumber: "919412078901",
-    bloodGroup: "A+"
+    bloodGroup: "A+",
+    connectedAlumniIds: ["alumni-001", "alumni-005"]
   },
   {
     id: "alumni-004",
@@ -97,6 +106,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     fullNameHindi: "डॉ. प्रिया नौटियाल",
     email: "priya.nautiyal@delhiayush.gov.in",
     phone: "+91 98730 65432",
+    dateOfBirth: "1985-09-17", // Today's Birthday!
     avatarUrl: "https://images.unsplash.com/photo-1559839734-2b71ea197ec2?q=80&w=400&auto=format&fit=crop",
     batchYear: 2008,
     degree: "MD (Ayurveda)",
@@ -110,6 +120,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     membershipId: "RISHI-LM-0412",
     membershipTier: "Life Member",
     isVerified: true,
+    approvalStatus: "approved",
     joinedDate: "2021-06-10",
     achievements: [
       "AYUSH Woman Leadership Award 2023",
@@ -117,7 +128,8 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     ],
     linkedinUrl: "https://linkedin.com",
     whatsappNumber: "919873065432",
-    bloodGroup: "AB+"
+    bloodGroup: "AB+",
+    connectedAlumniIds: ["alumni-002", "alumni-006"]
   },
   {
     id: "alumni-005",
@@ -125,6 +137,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     fullNameHindi: "डॉ. विक्रमादित्य रावत",
     email: "v.rawat@ayurvedicbotanicals.co.uk",
     phone: "+44 7700 900123",
+    dateOfBirth: "1978-09-24", // Upcoming Birthday (in 7 days)
     avatarUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
     batchYear: 2002,
     degree: "MD (Ayurveda)",
@@ -139,6 +152,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     membershipId: "RISHI-PAT-0044",
     membershipTier: "Patron Member",
     isVerified: true,
+    approvalStatus: "approved",
     joinedDate: "2019-11-04",
     achievements: [
       "Advisor to European Ayurveda Medical Association",
@@ -147,7 +161,8 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     linkedinUrl: "https://linkedin.com",
     whatsappNumber: "447700900123",
     websiteUrl: "https://ayurvedicbotanicals.co.uk",
-    bloodGroup: "O-"
+    bloodGroup: "O-",
+    connectedAlumniIds: ["alumni-001", "alumni-003"]
   },
   {
     id: "alumni-006",
@@ -155,6 +170,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     fullNameHindi: "डॉ. आशुतोष द्विवेदी",
     email: "dr.ashutosh@dwivediayurveda.com",
     phone: "+91 94561 22334",
+    dateOfBirth: "1992-11-04",
     avatarUrl: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?q=80&w=400&auto=format&fit=crop",
     batchYear: 2016,
     degree: "BAMS",
@@ -168,6 +184,7 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     membershipId: "RISHI-LM-0782",
     membershipTier: "Life Member",
     isVerified: true,
+    approvalStatus: "approved",
     joinedDate: "2022-03-18",
     achievements: [
       "Young Vaidya Innovator Award 2024",
@@ -175,7 +192,127 @@ export const MOCK_ALUMNI: AlumniProfile[] = [
     ],
     linkedinUrl: "https://linkedin.com",
     whatsappNumber: "919456122334",
-    bloodGroup: "B+"
+    bloodGroup: "B+",
+    connectedAlumniIds: ["alumni-002", "alumni-004"]
+  },
+  {
+    id: "alumni-pending-01",
+    fullName: "Dr. Kavita Upadhyay",
+    fullNameHindi: "डॉ. कविता उपाध्याय",
+    email: "kavita.upadhyay@ayurcare.org",
+    phone: "+91 97561 88990",
+    dateOfBirth: "1988-03-14",
+    avatarUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop",
+    batchYear: 2010,
+    degree: "MD (Ayurveda)",
+    specialization: "Kaumarbhritya (Pediatrics)",
+    designation: "Consultant Pediatrician",
+    workplace: "Arogya Child Clinic",
+    city: "Roorkee",
+    state: "Uttarakhand",
+    country: "India",
+    bio: "Graduated BAMS in 2010 from Rishikul. Applying for Life Membership and directory listing.",
+    membershipId: "RISHI-PEN-9011",
+    membershipTier: "Life Member",
+    isVerified: false,
+    approvalStatus: "pending",
+    joinedDate: "2026-09-15",
+    bloodGroup: "O+",
+    connectedAlumniIds: []
+  },
+  {
+    id: "alumni-pending-02",
+    fullName: "Dr. Deepak Semwal",
+    fullNameHindi: "डॉ. दीपक सेमवाल",
+    email: "deepak.semwal@himalayaayur.com",
+    phone: "+91 94111 34567",
+    dateOfBirth: "1972-07-20",
+    avatarUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
+    batchYear: 1995,
+    degree: "BAMS",
+    specialization: "Dravyaguna (Pharmacology)",
+    designation: "Senior Plant Extract Scientist",
+    workplace: "Himalaya Wellness Herbs",
+    city: "Dehradun",
+    state: "Uttarakhand",
+    country: "India",
+    bio: "Seeking Patron Membership to sponsor Rishikul student welfare programs and research publications.",
+    membershipId: "RISHI-PEN-9012",
+    membershipTier: "Patron Member",
+    isVerified: false,
+    approvalStatus: "pending",
+    joinedDate: "2026-09-16",
+    bloodGroup: "A+",
+    connectedAlumniIds: []
+  }
+];
+
+export const INITIAL_ACHIEVERS: LifetimeAchiever[] = [
+  {
+    id: "achiever-1",
+    name: "Padma Bhushan Vaidya Devendra Triguna",
+    nameHindi: "पद्म भूषण वैद्य देवेंद्र त्रिगुणा",
+    batchYear: 1971,
+    degree: "Ayurvedacharya (BAMS)",
+    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
+    title: "Legendary Nadi Pariksha Master & National AYUSH Leader",
+    citation: "Honored with Padma Shri and Padma Bhushan by the President of India. Renowned globally for pulse diagnosis and representing Ayurveda at the World Health Organization (WHO).",
+    awards: ["Padma Bhushan (2009)", "Padma Shri (1999)", "Dhanvantari Award"],
+    currentRole: "President, All India Ayurvedic Congress",
+    orderIndex: 1
+  },
+  {
+    id: "achiever-2",
+    name: "Prof. (Dr.) Satya Prakash Gupta",
+    nameHindi: "प्रो. (डॉ.) सत्य प्रकाश गुप्ता",
+    batchYear: 1965,
+    degree: "MD (Ayurveda), PhD",
+    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
+    title: "Doyen of Rasashastra & Ayurvedic Pharmacology",
+    citation: "Authored 12 definitive textbook volumes on Bhaishajya Kalpana used across 80+ universities. Mentored over 140 postgraduate scholars and PhDs.",
+    awards: ["Rashtriya Vaidya Ratna", "Charak International Scholar Medal"],
+    currentRole: "Professor Emeritus & Chair, Herbal Pharmacopoeia Committee",
+    orderIndex: 2
+  },
+  {
+    id: "achiever-3",
+    name: "Dr. Sunita Pant (Bhardwaj)",
+    nameHindi: "डॉ. सुनीता पंत (भारद्वाज)",
+    batchYear: 1983,
+    degree: "MS (Shalya Tantra)",
+    photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop",
+    title: "Pioneering Woman Surgeon & Ksharasutra Specialist",
+    citation: "One of the earliest women surgeons to master and standardize Ksharasutra technique in Northern India, serving over 25,000 patients without surgery recurrence.",
+    awards: ["Uttarakhand Mahila Gaurav Samman", "Sushruta Gold Seal"],
+    currentRole: "Director, Ganga Anorectal Surgical Research Institute",
+    orderIndex: 3
+  }
+];
+
+export const INITIAL_SHRADHANJALI: ShradhanjaliRecord[] = [
+  {
+    id: "shradhanjali-1",
+    name: "Late Vaidya Dr. Harish Chandra Sharma",
+    nameHindi: "स्व. वैद्य डॉ. हरीश चंद्र शर्मा",
+    batchYear: 1962,
+    degree: "BAMS (Gold Medalist)",
+    photoUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop",
+    dateOfDemise: "2025-11-12",
+    tribute: "A stalwart of pure classical Ayurveda who dedicated 55 years of unselfish service at Haridwar. His legendary diagnosis without fees for the needy continues to inspire generations.",
+    condolencesCount: 148,
+    postedBy: "Association Executive Committee"
+  },
+  {
+    id: "shradhanjali-2",
+    name: "Late Dr. Birendra Singh Rawat",
+    nameHindi: "स्व. डॉ. बीरेंद्र सिंह रावत",
+    batchYear: 1977,
+    degree: "MD (Kayachikitsa)",
+    photoUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
+    dateOfDemise: "2026-02-04",
+    tribute: "Former Chief Medical Officer (CMO), Tehri Garhwal. A noble soul who championed free medical relief across disaster-hit Himalayan valleys.",
+    condolencesCount: 92,
+    postedBy: "Batch of 1977"
   }
 ];
 
@@ -234,7 +371,7 @@ export const EXECUTIVE_MEMBERS: ExecutiveMember[] = [
     batch: "Batch of 1978",
     photo: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
     location: "Haridwar / Dehradun",
-    message: "Rishikul is not just our alma mater; it is the spiritual crucible where our medical consciousness was born under the blessing of the Holy Ganges."
+    message: "Rishikul is not just where we studied; it is our lifelong fraternity uniting thousands of vaidyas across the globe."
   },
   {
     id: "exec-2",
@@ -252,7 +389,7 @@ export const EXECUTIVE_MEMBERS: ExecutiveMember[] = [
     batch: "Batch of 1989",
     photo: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?q=80&w=400&auto=format&fit=crop",
     location: "Haridwar",
-    message: "Transparency and alumni welfare funds remain our top fiduciary priority, sponsoring poor patients and scholarship programs."
+    message: "Transparency and alumni welfare funds remain our top fiduciary priority, supporting alumni during health crises and sponsoring reunions."
   },
   {
     id: "exec-4",
@@ -261,7 +398,7 @@ export const EXECUTIVE_MEMBERS: ExecutiveMember[] = [
     batch: "Batch of 1982",
     photo: "https://images.unsplash.com/photo-1560250097-0b93528c311a?q=80&w=400&auto=format&fit=crop",
     location: "New Delhi",
-    message: "Bridging government policies with clinical field reality through the collective strength of thousands of Rishikul graduates."
+    message: "Bridging healthcare policies with clinical field reality through the collective strength of thousands of Rishikul graduates."
   }
 ];
 

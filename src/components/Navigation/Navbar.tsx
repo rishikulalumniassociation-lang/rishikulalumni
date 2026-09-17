@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
@@ -12,18 +12,35 @@ import {
   CreditCard,
   Building2,
   UserCheck,
+  Award,
+  Heart,
+  Cake,
+  ShieldAlert,
+  Lock,
+  LogOut
 } from "lucide-react";
+import { isAdminAuthenticated, setAdminAuthenticated } from "@/lib/store";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  useEffect(() => {
+    setIsAdmin(isAdminAuthenticated());
+    const handleAuth = () => setIsAdmin(isAdminAuthenticated());
+    window.addEventListener("admin_auth_changed", handleAuth);
+    return () => window.removeEventListener("admin_auth_changed", handleAuth);
+  }, []);
 
   const navLinks = [
     { name: "Home", href: "/", icon: GraduationCap },
     { name: "Alumni Directory", href: "/directory", icon: Users },
+    { name: "Lifetime Achievers", href: "/achievers", icon: Award },
+    { name: "Shradhanjali", href: "/shradhanjali", icon: Heart },
+    { name: "Birthdays", href: "/birthdays", icon: Cake },
     { name: "Digital ID & Membership", href: "/membership", icon: CreditCard },
     { name: "Events & Reunions", href: "/events", icon: Calendar },
-    { name: "Heritage & About", href: "/about", icon: Building2 },
   ];
 
   return (
@@ -35,11 +52,38 @@ export default function Navbar() {
           <span className="font-medium text-[#C5A059]">ESTD. 1919</span>
           <span className="hidden sm:inline text-slate-400">|</span>
           <span className="hidden sm:inline text-slate-300">
-            Rishikul Govt Ayurvedic College, Haridwar
+            Alumni Association of Rishikul Govt Ayurvedic College
           </span>
         </div>
         <div className="flex items-center gap-3 font-medium text-[11px]">
           <span className="text-amber-200">ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन</span>
+          <span className="text-slate-500">|</span>
+          {isAdmin ? (
+            <div className="flex items-center gap-2">
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1 text-emerald-400 font-bold hover:underline"
+              >
+                <ShieldAlert className="w-3 h-3" />
+                Admin Panel
+              </Link>
+              <button
+                onClick={() => setAdminAuthenticated(false)}
+                className="text-red-300 hover:text-red-200 flex items-center gap-0.5 ml-1"
+                title="Logout Admin"
+              >
+                <LogOut className="w-3 h-3" />
+              </button>
+            </div>
+          ) : (
+            <Link
+              href="/admin/login"
+              className="inline-flex items-center gap-1 text-slate-400 hover:text-amber-200 transition-colors"
+            >
+              <Lock className="w-3 h-3 text-[#C5A059]" />
+              <span>Admin Login</span>
+            </Link>
+          )}
         </div>
       </div>
 
@@ -63,14 +107,14 @@ export default function Navbar() {
           </Link>
 
           {/* Desktop Navigation Links */}
-          <nav className="hidden md:flex items-center gap-1 lg:gap-2">
+          <nav className="hidden lg:flex items-center gap-1">
             {navLinks.map((link) => {
               const isActive = pathname === link.href;
               return (
                 <Link
                   key={link.name}
                   href={link.href}
-                  className={`px-3 py-2 text-sm font-medium rounded-lg transition-all ${
+                  className={`px-2.5 py-2 text-xs xl:text-sm font-medium rounded-lg transition-all ${
                     isActive
                       ? "text-[#0F172A] bg-[#C5A059]/15 font-semibold"
                       : "text-[#64748B] hover:text-[#0F172A] hover:bg-[#F3ECE2]"
@@ -84,6 +128,15 @@ export default function Navbar() {
 
           {/* Right Action: Register CTA */}
           <div className="hidden sm:flex items-center gap-3">
+            {isAdmin && (
+              <Link
+                href="/admin"
+                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold uppercase bg-emerald-700 text-white hover:bg-emerald-800 transition-colors shadow-sm"
+              >
+                <ShieldAlert className="w-3.5 h-3.5" />
+                Admin Dashboard
+              </Link>
+            )}
             <Link
               href="/register"
               className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-[#0F172A] text-[#FAF7F2] hover:bg-[#2D5A43] hover:shadow-md transition-all duration-200 border border-[#C5A059]/40"
@@ -94,12 +147,12 @@ export default function Navbar() {
           </div>
 
           {/* Mobile hamburger menu button */}
-          <div className="flex md:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-2">
             <Link
               href="/register"
               className="px-3 py-1.5 text-xs font-semibold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40"
             >
-              Register
+              Join
             </Link>
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -114,7 +167,7 @@ export default function Navbar() {
 
       {/* Mobile Drawer Dropdown */}
       {mobileMenuOpen && (
-        <div className="md:hidden border-t border-[#C5A059]/20 bg-[#FAF7F2] px-4 pt-2 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2">
+        <div className="lg:hidden border-t border-[#C5A059]/20 bg-[#FAF7F2] px-4 pt-2 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2">
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;
@@ -138,6 +191,28 @@ export default function Navbar() {
               </Link>
             );
           })}
+
+          <div className="pt-2 border-t border-slate-200">
+            {isAdmin ? (
+              <Link
+                href="/admin"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-bold text-emerald-700 bg-emerald-50"
+              >
+                <ShieldAlert className="w-5 h-5" />
+                <span>Go to Admin Panel</span>
+              </Link>
+            ) : (
+              <Link
+                href="/admin/login"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-semibold text-slate-700 hover:bg-[#F3ECE2]"
+              >
+                <Lock className="w-5 h-5 text-[#C5A059]" />
+                <span>Admin Login</span>
+              </Link>
+            )}
+          </div>
         </div>
       )}
     </header>

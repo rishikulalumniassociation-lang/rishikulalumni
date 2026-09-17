@@ -1,13 +1,13 @@
 import React from "react";
 import Link from "next/link";
-import { Mail, Phone, MapPin, Heart, ExternalLink } from "lucide-react";
+import { Mail, Phone, MapPin, Heart, Lock, Award, Cake, Users } from "lucide-react";
 
 export default function Footer() {
   return (
     <footer className="bg-[#0F172A] text-[#FAF7F2] border-t border-[#C5A059]/30 pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-          {/* Column 1: Brand & Heritage */}
+          {/* Column 1: Brand & Alumni Fraternity */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-full border border-[#C5A059] bg-[#FAF7F2]/10 flex items-center justify-center text-[#C5A059] font-serif-heading font-bold text-xl">
@@ -21,18 +21,17 @@ export default function Footer() {
               </div>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Serving the lineage of Rishikul Government Ayurvedic College, Haridwar (est. 1919).
-              Uniting thousands of vaidyas, researchers, and practitioners worldwide.
+              The official alumni fraternity platform uniting thousands of BAMS, MD, and MS graduates of Rishikul Government Ayurvedic College, Haridwar across India and abroad.
             </p>
             <div className="text-[11px] text-amber-200/80 font-medium">
               ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन • हरिद्वार (उत्तराखंड)
             </div>
           </div>
 
-          {/* Column 2: Quick Links */}
+          {/* Column 2: Alumni Quick Links */}
           <div>
             <h4 className="font-serif-heading text-base font-semibold text-[#C5A059] mb-4 tracking-wider uppercase">
-              Quick Links
+              Fraternity Links
             </h4>
             <ul className="space-y-2 text-xs">
               <li>
@@ -41,23 +40,23 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
-                <Link href="/register" className="text-slate-300 hover:text-white transition-colors">
-                  New Member Registration
+                <Link href="/birthdays" className="text-slate-300 hover:text-white transition-colors">
+                  Today's & Upcoming Birthdays
+                </Link>
+              </li>
+              <li>
+                <Link href="/achievers" className="text-slate-300 hover:text-white transition-colors">
+                  Lifetime Achievers Hall of Fame
+                </Link>
+              </li>
+              <li>
+                <Link href="/shradhanjali" className="text-slate-300 hover:text-white transition-colors">
+                  Shradhanjali (Departed Souls)
                 </Link>
               </li>
               <li>
                 <Link href="/membership" className="text-slate-300 hover:text-white transition-colors">
-                  Digital ID Card & Tiers
-                </Link>
-              </li>
-              <li>
-                <Link href="/events" className="text-slate-300 hover:text-white transition-colors">
-                  Conclaves & Reunions
-                </Link>
-              </li>
-              <li>
-                <Link href="/about" className="text-slate-300 hover:text-white transition-colors">
-                  Executive Body & Bylaws
+                  Digital Smart ID Card
                 </Link>
               </li>
             </ul>
@@ -77,7 +76,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 4: Contact & Secretariat */}
+          {/* Column 4: Association Secretariat & Admin */}
           <div className="space-y-3">
             <h4 className="font-serif-heading text-base font-semibold text-[#C5A059] mb-4 tracking-wider uppercase">
               Secretariat
@@ -85,17 +84,22 @@ export default function Footer() {
             <div className="flex items-start gap-2.5 text-xs text-slate-300">
               <MapPin className="w-4 h-4 text-[#C5A059] flex-shrink-0 mt-0.5" />
               <span>
-                Association Office, Rishikul Ayurvedic College Campus,
+                Association Office, Rishikul Campus,
                 Haridwar, Uttarakhand - 249401, India
               </span>
             </div>
             <div className="flex items-center gap-2.5 text-xs text-slate-300">
-              <Phone className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
-              <span>+91 1334 227000 / +91 94120 78901</span>
-            </div>
-            <div className="flex items-center gap-2.5 text-xs text-slate-300">
               <Mail className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
               <span>contact@rishikulalumni.org</span>
+            </div>
+            <div className="pt-2">
+              <Link
+                href="/admin/login"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-[#C5A059] text-xs font-semibold transition-colors"
+              >
+                <Lock className="w-3.5 h-3.5" />
+                <span>Association Admin Login</span>
+              </Link>
             </div>
           </div>
         </div>
@@ -104,7 +108,7 @@ export default function Footer() {
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
           <p>© {new Date().getFullYear()} Rishikul Snatak Evam Snatkottar Association. All rights reserved.</p>
           <div className="flex items-center gap-1">
-            <span>Preserving 100+ years of Ayurvedic excellence</span>
+            <span>Preserving 100+ years of Rishikul alumni fraternity</span>
             <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
           </div>
         </div>

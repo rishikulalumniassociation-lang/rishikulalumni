@@ -1,9 +1,10 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import FilterDrawer from "@/components/Directory/FilterDrawer";
-import { MOCK_ALUMNI, SPECIALIZATION_OPTIONS, BATCH_YEARS } from "@/lib/mockData";
+import { SPECIALIZATION_OPTIONS, BATCH_YEARS } from "@/lib/mockData";
+import { getAlumniList } from "@/lib/store";
 import { AlumniProfile, DirectoryFilterState } from "@/types";
 import {
   Search,
@@ -17,12 +18,25 @@ import {
   Phone,
   Mail,
   Share2,
-  ExternalLink
+  ExternalLink,
+  Users2,
+  Cake
 } from "lucide-react";
 
 export default function DirectoryPage() {
+  const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AlumniProfile | null>(null);
+
+  // Active current user demo context (Dr. Ramesh Chandra Joshi)
+  const currentAlumniId = "alumni-001";
+
+  useEffect(() => {
+    setAlumniList(getAlumniList());
+    const handleUpdate = () => setAlumniList(getAlumniList());
+    window.addEventListener("alumni_updated", handleUpdate);
+    return () => window.removeEventListener("alumni_updated", handleUpdate);
+  }, []);
 
   const [filters, setFilters] = useState<DirectoryFilterState>({
     searchQuery: "",
@@ -48,10 +62,15 @@ export default function DirectoryPage() {
     });
   };
 
+  // Only display verified / approved alumni in public directory
+  const verifiedAlumni = useMemo(() => {
+    return alumniList.filter((a) => a.isVerified && a.approvalStatus !== "rejected");
+  }, [alumniList]);
+
   // Filter logic
   const filteredAlumni = useMemo(() => {
-    return MOCK_ALUMNI.filter((alumni) => {
-      // Search query (name, hindi name, designation, workplace, city)
+    return verifiedAlumni.filter((alumni) => {
+      // Search query
       if (filters.searchQuery) {
         const q = filters.searchQuery.toLowerCase();
         const matchesSearch =
@@ -106,7 +125,7 @@ export default function DirectoryPage() {
 
       return true;
     });
-  }, [filters]);
+  }, [verifiedAlumni, filters]);
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
@@ -121,18 +140,18 @@ export default function DirectoryPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Title & Breadcrumb Header */}
+        {/* Page Title & Network Indicator */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
             <span>ऋषिकुल डायरेक्टरी</span>
             <span>•</span>
-            <span>Worldwide Network</span>
+            <span>Verified Alumni Network</span>
           </div>
           <h1 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold text-[#0F172A] tracking-tight">
-            Alumni Directory
+            Alumni Directory & Network
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1.5 max-w-2xl">
-            Search verified graduates of Rishikul Government Ayurvedic College across batches, clinical specialties, and global locations.
+            Search verified graduates of Rishikul Government Ayurvedic College. Connect with batchmates, view mutual connections, and stay linked with the fraternity.
           </p>
         </div>
 
@@ -176,7 +195,7 @@ export default function DirectoryPage() {
             </button>
           </div>
 
-          {/* Quick Filter Pills (Horizontal Scroll for Mobile) */}
+          {/* Quick Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 no-scrollbar text-xs">
             <button
               onClick={() => handleFilterChange("specialization", "")}
@@ -227,12 +246,14 @@ export default function DirectoryPage() {
               <AlumniCard
                 key={alumni.id}
                 alumni={alumni}
+                allAlumni={alumniList}
+                currentAlumniId={currentAlumniId}
                 onSelect={(selected) => setSelectedProfile(selected)}
+                onConnectionToggle={() => setAlumniList(getAlumniList())}
               />
             ))}
           </div>
         ) : (
-          /* Empty State */
           <div className="text-center py-20 px-4 bg-white rounded-3xl border border-[#C5A059]/30 max-w-md mx-auto my-8">
             <div className="w-16 h-16 rounded-full bg-[#FAF7F2] border border-[#C5A059] flex items-center justify-center mx-auto mb-4 text-[#C5A059]">
               <Users className="w-8 h-8" />
@@ -241,7 +262,7 @@ export default function DirectoryPage() {
               No Alumni Found
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              We couldn't find any doctor matching your search filters. Try adjusting your batch year or specialty.
+              We couldn't find any verified doctor matching your search filters.
             </p>
             <button
               onClick={handleReset}
@@ -284,7 +305,7 @@ export default function DirectoryPage() {
               </div>
               <div>
                 <span className="text-[10px] font-bold uppercase tracking-wider text-[#C5A059] block">
-                  {selectedProfile.membershipTier}
+                  {selectedProfile.membershipTier} • Verified
                 </span>
                 <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
                   {selectedProfile.fullName}
@@ -310,20 +331,31 @@ export default function DirectoryPage() {
               <div>
                 <strong className="text-slate-800">Location:</strong> {selectedProfile.city}, {selectedProfile.state}, {selectedProfile.country}
               </div>
+              {selectedProfile.dateOfBirth && (
+                <div className="flex items-center gap-1.5 text-amber-800">
+                  <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <span><strong>Birthday:</strong> {selectedProfile.dateOfBirth}</span>
+                </div>
+              )}
               {selectedProfile.bio && (
                 <div>
                   <strong className="text-slate-800">Biography:</strong>
                   <p className="mt-1 italic leading-relaxed text-slate-500">{selectedProfile.bio}</p>
                 </div>
               )}
-              {selectedProfile.achievements && selectedProfile.achievements.length > 0 && (
+              {selectedProfile.connectedAlumniIds && selectedProfile.connectedAlumniIds.length > 0 && (
                 <div>
-                  <strong className="text-slate-800">Key Distinctions:</strong>
-                  <ul className="list-disc list-inside mt-1 space-y-1 text-slate-500">
-                    {selectedProfile.achievements.map((a, i) => (
-                      <li key={i}>{a}</li>
-                    ))}
-                  </ul>
+                  <strong className="text-slate-800">Connected With:</strong>
+                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                    {selectedProfile.connectedAlumniIds.map((id) => {
+                      const c = alumniList.find((a) => a.id === id);
+                      return c ? (
+                        <span key={id} className="px-2 py-0.5 bg-slate-100 rounded-md text-[11px] font-medium text-slate-700">
+                          Dr. {c.fullName.split(" ")[1] || c.fullName} ('{c.batchYear.toString().slice(-2)})
+                        </span>
+                      ) : null;
+                    })}
+                  </div>
                 </div>
               )}
             </div>

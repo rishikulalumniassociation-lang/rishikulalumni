@@ -6,8 +6,9 @@ import { usePathname } from "next/navigation";
 import {
   Home,
   Users,
-  CreditCard,
-  Calendar,
+  Award,
+  Cake,
+  Heart,
   UserPlus
 } from "lucide-react";
 
@@ -17,13 +18,13 @@ export default function MobileNav() {
   const tabs = [
     { label: "Home", href: "/", icon: Home },
     { label: "Directory", href: "/directory", icon: Users },
-    { label: "Join Us", href: "/register", icon: UserPlus, highlight: true },
-    { label: "My Card", href: "/membership", icon: CreditCard },
-    { label: "Events", href: "/events", icon: Calendar },
+    { label: "Join", href: "/register", icon: UserPlus, highlight: true },
+    { label: "Birthdays", href: "/birthdays", icon: Cake },
+    { label: "Memorials", href: "/shradhanjali", icon: Heart },
   ];
 
   return (
-    <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-lg border-t border-[#C5A059]/30 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
+    <nav className="lg:hidden fixed bottom-0 left-0 right-0 z-50 bg-[#FAF7F2]/95 backdrop-blur-lg border-t border-[#C5A059]/30 pb-safe shadow-[0_-4px_12px_rgba(0,0,0,0.06)]">
       <div className="flex items-center justify-around h-16 px-2">
         {tabs.map((tab) => {
           const Icon = tab.icon;

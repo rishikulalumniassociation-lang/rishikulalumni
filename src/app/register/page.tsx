@@ -12,9 +12,11 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  ArrowRight
+  Cake
 } from "lucide-react";
 import { SPECIALIZATION_OPTIONS } from "@/lib/mockData";
+import { getAlumniList, saveAlumniList } from "@/lib/store";
+import { AlumniProfile } from "@/types";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
@@ -22,17 +24,18 @@ export default function RegisterPage() {
   const [generatedMembershipId, setGeneratedMembershipId] = useState("");
 
   const [formData, setFormData] = useState({
-    // Step 1: Personal
+    // Step 1: Personal + ACTUAL DATE OF BIRTH
     fullName: "",
     fullNameHindi: "",
     email: "",
     phone: "",
+    dateOfBirth: "", // Required actual birth date
     bloodGroup: "O+",
 
     // Step 2: Academic
-    degree: "BAMS",
+    degree: "BAMS" as any,
     batchYear: "2015",
-    specialization: "Kayachikitsa (Internal Medicine)",
+    specialization: "Kayachikitsa (Internal Medicine)" as any,
     rollNumberOrRegNo: "",
 
     // Step 3: Professional
@@ -45,7 +48,7 @@ export default function RegisterPage() {
     bio: "",
 
     // Step 4: Membership Tier
-    membershipTier: "Life Member",
+    membershipTier: "Life Member" as any,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -53,18 +56,54 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const nextStep = () => setStep((s) => Math.min(s + 1, 4));
+  const nextStep = () => {
+    if (step === 1 && !formData.dateOfBirth) {
+      alert("कृपया अपनी जन्म तिथि (Date of Birth) अवश्य भरें ताकि अल्युम्नाई बर्थडे रडार में आपका जन्मदिन प्रदर्शित हो सके।");
+      return;
+    }
+    setStep((s) => Math.min(s + 1, 4));
+  };
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Simulate generation of official membership ID
     const randomNum = Math.floor(1000 + Math.random() * 9000);
-    const memId = `RISHI-LM-${randomNum}`;
+    const memId = `RISHI-PEN-${randomNum}`;
     setGeneratedMembershipId(memId);
+
+    // Save to pending store for Admin approval
+    const newProfile: AlumniProfile = {
+      id: `alumni-${Date.now()}`,
+      fullName: formData.fullName,
+      fullNameHindi: formData.fullNameHindi,
+      email: formData.email,
+      phone: formData.phone,
+      dateOfBirth: formData.dateOfBirth,
+      avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop",
+      batchYear: Number(formData.batchYear) || 2015,
+      degree: formData.degree,
+      specialization: formData.specialization,
+      designation: formData.designation,
+      workplace: formData.workplace,
+      city: formData.city,
+      state: formData.state,
+      country: formData.country,
+      bio: formData.bio,
+      membershipId: memId,
+      membershipTier: formData.membershipTier,
+      isVerified: false,
+      approvalStatus: "pending", // Waiting for admin
+      joinedDate: new Date().toISOString().split("T")[0],
+      bloodGroup: formData.bloodGroup,
+      whatsappNumber: formData.whatsappNumber,
+      connectedAlumniIds: [],
+    };
+
+    const currentList = getAlumniList();
+    saveAlumniList([newProfile, ...currentList]);
+
     setSubmitted(true);
 
-    // Trigger celebration confetti
     try {
       confetti({
         particleCount: 120,
@@ -72,9 +111,7 @@ export default function RegisterPage() {
         origin: { y: 0.6 },
         colors: ["#C5A059", "#2D5A43", "#0F172A"],
       });
-    } catch (err) {
-      // ignore
-    }
+    } catch (err) {}
   };
 
   return (
@@ -83,15 +120,15 @@ export default function RegisterPage() {
         {/* Header Branding */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
-            <span>ऋषिकुल सदस्यता आवेदन</span>
+            <span>ऋषिकुल पुरातन छात्र सदस्यता</span>
             <span>•</span>
-            <span>Official Onboarding</span>
+            <span>Alumni Verification</span>
           </div>
           <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
-            Join the Alumni Association
+            Alumni Registration Portal
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-1">
-            Open exclusively to graduates & postgraduates of Rishikul Govt Ayurvedic College Haridwar.
+            Exclusively for graduates & postgraduates of Rishikul Govt Ayurvedic College. Submissions are verified by the Executive Association Admin.
           </p>
         </div>
 
@@ -101,10 +138,10 @@ export default function RegisterPage() {
             <div className="flex items-center justify-between relative">
               <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200 -translate-y-1/2 -z-0" />
               {[
-                { s: 1, label: "Personal", icon: User },
-                { s: 2, label: "Academic", icon: GraduationCap },
+                { s: 1, label: "Personal & DOB", icon: User },
+                { s: 2, label: "Rishikul Batch", icon: GraduationCap },
                 { s: 3, label: "Practice", icon: Briefcase },
-                { s: 4, label: "Category", icon: ShieldCheck },
+                { s: 4, label: "Membership", icon: ShieldCheck },
               ].map(({ s, label, icon: Icon }) => (
                 <div key={s} className="relative z-10 flex flex-col items-center">
                   <div
@@ -142,53 +179,53 @@ export default function RegisterPage() {
 
               <div>
                 <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
-                  Membership Application Received!
+                  Application Submitted for Admin Approval!
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">
-                  Welcome aboard, <strong className="text-[#0F172A]">{formData.fullName}</strong>. Your application has been logged into the Association records.
+                  Thank you, <strong className="text-[#0F172A]">{formData.fullName}</strong>. Your profile and membership request have been queued for admin verification by the association committee.
                 </p>
               </div>
 
               <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#C5A059]/40 max-w-sm mx-auto text-left">
                 <div className="text-[10px] uppercase font-bold text-[#C5A059] mb-1">
-                  Provisional Alumni ID
+                  Provisional Tracking ID
                 </div>
                 <div className="font-mono text-xl font-bold text-[#0F172A]">
                   {generatedMembershipId}
                 </div>
                 <div className="text-[11px] text-slate-500 mt-1">
-                  Tier: {formData.membershipTier} • Batch of {formData.batchYear}
+                  Status: <strong>Pending Admin Approval</strong> • Category: {formData.membershipTier}
                 </div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
                 <Link
-                  href="/membership"
+                  href="/directory"
                   className="px-6 py-3.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors"
                 >
-                  View Digital ID Card
+                  Explore Alumni Directory
                 </Link>
                 <Link
-                  href="/directory"
+                  href="/birthdays"
                   className="px-6 py-3.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider hover:bg-slate-200 transition-colors"
                 >
-                  Explore Batchmates
+                  View Birthday Radar
                 </Link>
               </div>
             </div>
           ) : (
             /* Multi-Step Form */
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* STEP 1: Personal Information */}
+              {/* STEP 1: Personal Information & Actual Date of Birth */}
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in">
                   <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 1: Personal Details
+                    Step 1: Personal Information & Date of Birth
                   </h3>
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Full Name (as per Degree Certificate) *
+                      Full Name (as per Rishikul Degree Certificate) *
                     </label>
                     <input
                       type="text"
@@ -213,6 +250,25 @@ export default function RegisterPage() {
                       onChange={handleChange}
                       className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                     />
+                  </div>
+
+                  {/* ACTUAL DATE OF BIRTH */}
+                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
+                    <label className="block text-xs font-bold uppercase text-amber-950 mb-1 flex items-center gap-1.5">
+                      <Cake className="w-4 h-4 text-[#C5A059]" />
+                      Actual Date of Birth (वास्तविक जन्म तिथि) *
+                    </label>
+                    <input
+                      type="date"
+                      name="dateOfBirth"
+                      required
+                      value={formData.dateOfBirth}
+                      onChange={handleChange}
+                      className="w-full bg-white border border-amber-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
+                    />
+                    <p className="text-[11px] text-amber-800 mt-1.5">
+                      आपकी जन्मतिथि अल्युम्नाई 'Birthday Radar' में जन्मदिन पर बैचमेट्स और गुरुजनों की शुभकामनाओं के लिए उपयोग की जाएगी।
+                    </p>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -269,13 +325,13 @@ export default function RegisterPage() {
               {step === 2 && (
                 <div className="space-y-4 animate-in fade-in">
                   <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 2: Rishikul Academic History
+                    Step 2: Rishikul Batch & Specialization
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Degree Obtained *
+                        Degree Conferred *
                       </label>
                       <select
                         name="degree"
@@ -355,7 +411,7 @@ export default function RegisterPage() {
                         type="text"
                         name="designation"
                         required
-                        placeholder="e.g. Senior Medical Officer / Founder"
+                        placeholder="e.g. Senior Medical Officer / Consultant"
                         value={formData.designation}
                         onChange={handleChange}
                         className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
@@ -364,13 +420,13 @@ export default function RegisterPage() {
 
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Clinic / Hospital / Organization *
+                        Clinic / Hospital / Institution *
                       </label>
                       <input
                         type="text"
                         name="workplace"
                         required
-                        placeholder="e.g. Patanjali Yogpeeth / Self Practice"
+                        placeholder="e.g. Patanjali Yogpeeth / Private Clinic"
                         value={formData.workplace}
                         onChange={handleChange}
                         className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
@@ -425,7 +481,7 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      WhatsApp Number (for Alumni directory connects)
+                      WhatsApp Number (for Batchmate connects)
                     </label>
                     <input
                       type="tel"
@@ -444,7 +500,7 @@ export default function RegisterPage() {
                     <textarea
                       name="bio"
                       rows={2}
-                      placeholder="Special focus areas, hospital ties, research interests..."
+                      placeholder="Special clinical focus, publications, awards..."
                       value={formData.bio}
                       onChange={handleChange}
                       className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
@@ -457,7 +513,7 @@ export default function RegisterPage() {
               {step === 4 && (
                 <div className="space-y-4 animate-in fade-in">
                   <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 4: Select Membership Category
+                    Step 4: Select Association Membership Category
                   </h3>
 
                   <div className="space-y-3">
@@ -465,14 +521,14 @@ export default function RegisterPage() {
                       {
                         tier: "Life Member",
                         cost: "₹3,100 (One Time)",
-                        badge: "Most Popular",
-                        desc: "Lifetime voting rights, official Digital ID card, directory listing, discount on reunion and CME registrations.",
+                        badge: "Approved by Admin",
+                        desc: "Lifetime voting rights, official Digital ID card, directory listing, discount on reunion registrations.",
                       },
                       {
                         tier: "Patron Member",
                         cost: "₹11,000 (One Time)",
-                        badge: "Patron",
-                        desc: "All Life Member benefits plus VIP seating at Annual Conclaves, donor roll honor, and advisory invitations.",
+                        badge: "VIP Patron",
+                        desc: "All Life Member benefits plus VIP seating at Conclaves, donor roll honor, and executive advisory seat.",
                       },
                       {
                         tier: "Annual Member",
@@ -522,8 +578,8 @@ export default function RegisterPage() {
                     ))}
                   </div>
 
-                  <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
-                    <strong>Note:</strong> Membership fee payments can be made via UPI / Bank Transfer directly to the official association account upon verification.
+                  <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                    <strong>Note:</strong> All registrations and membership upgrades are reviewed and approved directly by the Association Administrator before being activated in the official public directory.
                   </div>
                 </div>
               )}
@@ -556,7 +612,7 @@ export default function RegisterPage() {
                     className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-lg"
                   >
                     <Sparkles className="w-4 h-4" />
-                    Submit Application
+                    Submit for Approval
                   </button>
                 )}
               </div>
