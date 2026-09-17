@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import FilterDrawer from "@/components/Directory/FilterDrawer";
-import { SPECIALIZATION_OPTIONS, BATCH_YEARS } from "@/lib/mockData";
+import { SPECIALIZATION_OPTIONS, BATCH_YEARS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
 import { getAlumniList } from "@/lib/store";
 import { AlumniProfile, DirectoryFilterState } from "@/types";
 import {
@@ -20,7 +20,8 @@ import {
   Share2,
   ExternalLink,
   Users2,
-  Cake
+  Cake,
+  Briefcase
 } from "lucide-react";
 
 export default function DirectoryPage() {
@@ -28,7 +29,6 @@ export default function DirectoryPage() {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AlumniProfile | null>(null);
 
-  // Active current user demo context (Dr. Ramesh Chandra Joshi)
   const currentAlumniId = "alumni-001";
 
   useEffect(() => {
@@ -40,37 +40,43 @@ export default function DirectoryPage() {
 
   const [filters, setFilters] = useState<DirectoryFilterState>({
     searchQuery: "",
-    batchYear: "",
+    educationFilter: "ALL",
+    ugBatchYear: "",
+    pgBatchYear: "",
     specialization: "",
+    jobType: "",
     state: "",
     city: "",
     membershipTier: "",
   });
 
-  const handleFilterChange = (key: keyof DirectoryFilterState, value: string) => {
+  const handleFilterChange = (key: keyof DirectoryFilterState, value: any) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleReset = () => {
     setFilters({
       searchQuery: "",
-      batchYear: "",
+      educationFilter: "ALL",
+      ugBatchYear: "",
+      pgBatchYear: "",
       specialization: "",
+      jobType: "",
       state: "",
       city: "",
       membershipTier: "",
     });
   };
 
-  // Only display verified / approved alumni in public directory
+  // Only display verified alumni approved by Admin
   const verifiedAlumni = useMemo(() => {
     return alumniList.filter((a) => a.isVerified && a.approvalStatus !== "rejected");
   }, [alumniList]);
 
-  // Filter logic
+  // Comprehensive Filter logic
   const filteredAlumni = useMemo(() => {
     return verifiedAlumni.filter((alumni) => {
-      // Search query
+      // 1. Search Query
       if (filters.searchQuery) {
         const q = filters.searchQuery.toLowerCase();
         const matchesSearch =
@@ -79,46 +85,71 @@ export default function DirectoryPage() {
           alumni.designation.toLowerCase().includes(q) ||
           alumni.workplace.toLowerCase().includes(q) ||
           alumni.city.toLowerCase().includes(q) ||
-          alumni.specialization.toLowerCase().includes(q);
+          alumni.specialization.toLowerCase().includes(q) ||
+          (alumni.ugBatchYear && alumni.ugBatchYear.toString().includes(q)) ||
+          (alumni.pgBatchYear && alumni.pgBatchYear.toString().includes(q));
 
         if (!matchesSearch) return false;
       }
 
-      // Batch year match
-      if (filters.batchYear) {
-        if (filters.batchYear.includes("-")) {
-          const [start, end] = filters.batchYear.split("-").map(Number);
-          if (alumni.batchYear < start || alumni.batchYear > end) return false;
-        } else if (filters.batchYear.startsWith("Before")) {
-          const year = parseInt(filters.batchYear.replace(/\D/g, ""), 10);
-          if (alumni.batchYear >= year) return false;
-        } else {
-          if (alumni.batchYear !== Number(filters.batchYear)) return false;
-        }
+      // 2. Education Filter (ALL / UG / PG / BOTH)
+      if (filters.educationFilter !== "ALL") {
+        if (filters.educationFilter === "BOTH" && alumni.rishikulEducation !== "BOTH") return false;
+        if (filters.educationFilter === "UG" && alumni.rishikulEducation !== "UG" && alumni.rishikulEducation !== "BOTH") return false;
+        if (filters.educationFilter === "PG" && alumni.rishikulEducation !== "PG" && alumni.rishikulEducation !== "BOTH") return false;
       }
 
-      // Specialization match
+      // 3. UG Batch Year Match
+      if (filters.ugBatchYear && alumni.ugBatchYear) {
+        if (filters.ugBatchYear.includes("-")) {
+          const [start, end] = filters.ugBatchYear.split("-").map(Number);
+          if (alumni.ugBatchYear < start || alumni.ugBatchYear > end) return false;
+        } else if (filters.ugBatchYear.startsWith("Before")) {
+          const year = parseInt(filters.ugBatchYear.replace(/\D/g, ""), 10);
+          if (alumni.ugBatchYear >= year) return false;
+        } else {
+          if (alumni.ugBatchYear !== Number(filters.ugBatchYear)) return false;
+        }
+      } else if (filters.ugBatchYear && !alumni.ugBatchYear) {
+        return false;
+      }
+
+      // 4. PG Batch Year Match
+      if (filters.pgBatchYear && alumni.pgBatchYear) {
+        if (filters.pgBatchYear.includes("-")) {
+          const [start, end] = filters.pgBatchYear.split("-").map(Number);
+          if (alumni.pgBatchYear < start || alumni.pgBatchYear > end) return false;
+        } else if (filters.pgBatchYear.startsWith("Before")) {
+          const year = parseInt(filters.pgBatchYear.replace(/\D/g, ""), 10);
+          if (alumni.pgBatchYear >= year) return false;
+        } else {
+          if (alumni.pgBatchYear !== Number(filters.pgBatchYear)) return false;
+        }
+      } else if (filters.pgBatchYear && !alumni.pgBatchYear) {
+        return false;
+      }
+
+      // 5. Job Type Match
+      if (filters.jobType && alumni.jobType !== filters.jobType) {
+        return false;
+      }
+
+      // 6. Specialization Match
       if (filters.specialization && alumni.specialization !== filters.specialization) {
         return false;
       }
 
-      // State match
-      if (
-        filters.state &&
-        !alumni.state.toLowerCase().includes(filters.state.toLowerCase())
-      ) {
+      // 7. State Match
+      if (filters.state && !alumni.state.toLowerCase().includes(filters.state.toLowerCase())) {
         return false;
       }
 
-      // City match
-      if (
-        filters.city &&
-        !alumni.city.toLowerCase().includes(filters.city.toLowerCase())
-      ) {
+      // 8. City Match
+      if (filters.city && !alumni.city.toLowerCase().includes(filters.city.toLowerCase())) {
         return false;
       }
 
-      // Membership tier
+      // 9. Membership Tier Match
       if (filters.membershipTier && alumni.membershipTier !== filters.membershipTier) {
         return false;
       }
@@ -129,7 +160,10 @@ export default function DirectoryPage() {
 
   const activeFiltersCount = useMemo(() => {
     let count = 0;
-    if (filters.batchYear) count++;
+    if (filters.educationFilter !== "ALL") count++;
+    if (filters.ugBatchYear) count++;
+    if (filters.pgBatchYear) count++;
+    if (filters.jobType) count++;
     if (filters.specialization) count++;
     if (filters.state) count++;
     if (filters.city) count++;
@@ -140,22 +174,22 @@ export default function DirectoryPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Page Title & Network Indicator */}
+        {/* Page Header */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
-            <span>ऋषिकुल डायरेक्टरी</span>
+            <span>ऋषिकुल पुरातन छात्र डायरेक्टरी</span>
             <span>•</span>
-            <span>Verified Alumni Network</span>
+            <span>UG & PG Alumni Network</span>
           </div>
           <h1 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold text-[#0F172A] tracking-tight">
             Alumni Directory & Network
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1.5 max-w-2xl">
-            Search verified graduates of Rishikul Government Ayurvedic College. Connect with batchmates, view mutual connections, and stay linked with the fraternity.
+          <p className="text-xs sm:text-sm text-[#64748B] mt-1.5 max-w-2xl leading-relaxed">
+            Search verified graduates of Rishikul across <strong>UG Batches</strong>, <strong>PG Batches</strong>, job sectors (Private Practice, Govt Job, Retired), and clinical specialties.
           </p>
         </div>
 
-        {/* Mobile-first Search & Filter Bar */}
+        {/* Mobile Search & Filter Toolbar */}
         <div className="sticky top-20 z-30 bg-[#FAF7F2]/95 backdrop-blur-md py-3 -mx-4 px-4 sm:mx-0 sm:px-0 mb-6">
           <div className="flex items-center gap-3">
             {/* Search Input */}
@@ -163,7 +197,7 @@ export default function DirectoryPage() {
               <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search by doctor name, specialty, hospital, city..."
+                placeholder="Search by doctor name, UG batch, PG batch, hospital, city..."
                 value={filters.searchQuery}
                 onChange={(e) => handleFilterChange("searchQuery", e.target.value)}
                 className="w-full bg-white border border-[#C5A059]/40 rounded-xl pl-10 pr-4 py-3 text-xs sm:text-sm text-[#0F172A] placeholder:text-slate-400 focus:ring-2 focus:ring-[#2D5A43] outline-none shadow-sm transition-all"
@@ -179,7 +213,7 @@ export default function DirectoryPage() {
               )}
             </div>
 
-            {/* Mobile Filter Drawer Trigger Button */}
+            {/* Filter Drawer Trigger */}
             <button
               type="button"
               onClick={() => setFilterDrawerOpen(true)}
@@ -195,35 +229,46 @@ export default function DirectoryPage() {
             </button>
           </div>
 
-          {/* Quick Filter Pills */}
+          {/* Quick Degree Filter Pills (UG / PG / Both) */}
           <div className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 no-scrollbar text-xs">
-            <button
-              onClick={() => handleFilterChange("specialization", "")}
-              className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-colors ${
-                !filters.specialization
-                  ? "bg-[#0F172A] text-white font-medium"
-                  : "bg-white text-slate-600 border border-slate-200"
-              }`}
-            >
-              All Specialties
-            </button>
-            {["Kayachikitsa (Internal Medicine)", "Panchakarma", "Shalya Tantra (Surgery)", "General Ayurvedic Practice"].map((spec) => (
+            {[
+              { id: "ALL", label: "All Alumni" },
+              { id: "UG", label: "UG (BAMS) Batches" },
+              { id: "PG", label: "PG (MD/MS) Batches" },
+              { id: "BOTH", label: "Both UG + PG" },
+            ].map((item) => (
               <button
-                key={spec}
-                onClick={() => handleFilterChange("specialization", spec)}
+                key={item.id}
+                onClick={() => handleFilterChange("educationFilter", item.id)}
+                className={`px-3 py-1.5 rounded-full whitespace-nowrap font-medium transition-colors ${
+                  filters.educationFilter === item.id
+                    ? "bg-[#0F172A] text-[#C5A059]"
+                    : "bg-white text-slate-600 border border-slate-200 hover:bg-[#F3ECE2]"
+                }`}
+              >
+                {item.label}
+              </button>
+            ))}
+
+            <span className="text-slate-300">|</span>
+
+            {["Private Practice", "Govt Job", "Retired"].map((job) => (
+              <button
+                key={job}
+                onClick={() => handleFilterChange("jobType", filters.jobType === job ? "" : job)}
                 className={`px-3 py-1.5 rounded-full whitespace-nowrap transition-colors ${
-                  filters.specialization === spec
+                  filters.jobType === job
                     ? "bg-[#2D5A43] text-white font-medium"
                     : "bg-white text-slate-600 border border-slate-200 hover:bg-[#F3ECE2]"
                 }`}
               >
-                {spec.split(" ")[0]}
+                {job}
               </button>
             ))}
           </div>
         </div>
 
-        {/* Results Count & Active Filters Display */}
+        {/* Results Counter */}
         <div className="flex items-center justify-between text-xs text-[#64748B] mb-6">
           <span>
             Showing <strong className="text-[#0F172A]">{filteredAlumni.length}</strong> verified doctors
@@ -262,7 +307,7 @@ export default function DirectoryPage() {
               No Alumni Found
             </h3>
             <p className="text-xs text-slate-500 mb-6">
-              We couldn't find any verified doctor matching your search filters.
+              We couldn't find any verified doctor matching your criteria. Try resetting UG/PG batch or job type filters.
             </p>
             <button
               onClick={handleReset}
@@ -274,7 +319,7 @@ export default function DirectoryPage() {
         )}
       </div>
 
-      {/* Filter Drawer Component */}
+      {/* Filter Drawer */}
       <FilterDrawer
         isOpen={filterDrawerOpen}
         onClose={() => setFilterDrawerOpen(false)}
@@ -315,47 +360,51 @@ export default function DirectoryPage() {
                     {selectedProfile.fullNameHindi}
                   </p>
                 )}
-                <p className="text-xs text-[#2D5A43] font-semibold mt-1">
-                  {selectedProfile.degree} • Batch of {selectedProfile.batchYear}
-                </p>
+                
+                {/* UG / PG badges in modal */}
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {selectedProfile.ugBatchYear && (
+                    <span className="px-2 py-0.5 rounded bg-slate-100 text-[#0F172A] text-[11px] font-bold border">
+                      UG Batch: {selectedProfile.ugBatchYear} ({selectedProfile.ugDegree || "BAMS"})
+                    </span>
+                  )}
+                  {selectedProfile.pgBatchYear && (
+                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#2D5A43] text-[11px] font-bold border border-emerald-200">
+                      PG Batch: {selectedProfile.pgBatchYear} ({selectedProfile.pgDegree || "MD"})
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
             <div className="space-y-3 text-xs text-slate-600 border-t border-b border-slate-100 py-4 mb-6">
               <div>
+                <strong className="text-slate-800">Job Type:</strong> {selectedProfile.jobType}
+              </div>
+              <div>
+                <strong className="text-slate-800">Designation & Workplace:</strong> {selectedProfile.designation} at {selectedProfile.workplace}
+              </div>
+              <div>
                 <strong className="text-slate-800">Specialization:</strong> {selectedProfile.specialization}
               </div>
               <div>
-                <strong className="text-slate-800">Current Workplace:</strong> {selectedProfile.designation} at {selectedProfile.workplace}
+                <strong className="text-slate-800">City & State:</strong> {selectedProfile.city}, {selectedProfile.state}
               </div>
-              <div>
-                <strong className="text-slate-800">Location:</strong> {selectedProfile.city}, {selectedProfile.state}, {selectedProfile.country}
-              </div>
+              {selectedProfile.address && (
+                <div>
+                  <strong className="text-slate-800">Address:</strong> {selectedProfile.address}
+                </div>
+              )}
               {selectedProfile.dateOfBirth && (
                 <div className="flex items-center gap-1.5 text-amber-800">
                   <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span><strong>Birthday:</strong> {selectedProfile.dateOfBirth}</span>
+                  <span><strong>Date of Birth:</strong> {selectedProfile.dateOfBirth}</span>
                 </div>
               )}
               {selectedProfile.bio && (
                 <div>
                   <strong className="text-slate-800">Biography:</strong>
                   <p className="mt-1 italic leading-relaxed text-slate-500">{selectedProfile.bio}</p>
-                </div>
-              )}
-              {selectedProfile.connectedAlumniIds && selectedProfile.connectedAlumniIds.length > 0 && (
-                <div>
-                  <strong className="text-slate-800">Connected With:</strong>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
-                    {selectedProfile.connectedAlumniIds.map((id) => {
-                      const c = alumniList.find((a) => a.id === id);
-                      return c ? (
-                        <span key={id} className="px-2 py-0.5 bg-slate-100 rounded-md text-[11px] font-medium text-slate-700">
-                          Dr. {c.fullName.split(" ")[1] || c.fullName} ('{c.batchYear.toString().slice(-2)})
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
                 </div>
               )}
             </div>

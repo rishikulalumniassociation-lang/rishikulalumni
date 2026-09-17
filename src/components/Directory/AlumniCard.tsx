@@ -12,14 +12,14 @@ import {
   Share2,
   Users2,
   Cake,
-  UserCheck
+  Building
 } from "lucide-react";
 import { toggleAlumniConnection } from "@/lib/store";
 
 interface AlumniCardProps {
   alumni: AlumniProfile;
   allAlumni?: AlumniProfile[];
-  currentAlumniId?: string; // e.g. "alumni-001"
+  currentAlumniId?: string;
   onSelect?: (alumni: AlumniProfile) => void;
   onConnectionToggle?: () => void;
 }
@@ -27,17 +27,15 @@ interface AlumniCardProps {
 export default function AlumniCard({
   alumni,
   allAlumni = [],
-  currentAlumniId = "alumni-001", // Active user demo context
+  currentAlumniId = "alumni-001",
   onSelect,
   onConnectionToggle
 }: AlumniCardProps) {
   const [copied, setCopied] = useState(false);
 
-  // Check if active user is connected to this alumnus
   const isConnectedWithMe = (alumni.connectedAlumniIds || []).includes(currentAlumniId);
   const totalConnectionsCount = (alumni.connectedAlumniIds || []).length;
 
-  // Find names of connected batchmates
   const connectedPeople = (alumni.connectedAlumniIds || [])
     .map((id) => allAlumni.find((a) => a.id === id))
     .filter(Boolean) as AlumniProfile[];
@@ -46,7 +44,7 @@ export default function AlumniCard({
     e.stopPropagation();
     if (navigator.clipboard) {
       navigator.clipboard.writeText(
-        `Dr. ${alumni.fullName} (${alumni.degree}, Batch ${alumni.batchYear}) - Rishikul Alumni: ${window.location.origin}/directory?id=${alumni.id}`
+        `Dr. ${alumni.fullName} - Rishikul Alumni: ${window.location.origin}/directory?id=${alumni.id}`
       );
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -59,13 +57,31 @@ export default function AlumniCard({
     if (onConnectionToggle) onConnectionToggle();
   };
 
+  // Render UG / PG batch badges dynamically
+  const renderBatchBadges = () => {
+    return (
+      <div className="flex flex-wrap items-center gap-1">
+        {alumni.ugBatchYear && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#FAF7F2] text-[#0F172A] border border-[#C5A059]/50">
+            UG Batch: {alumni.ugBatchYear}
+          </span>
+        )}
+        {alumni.pgBatchYear && (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30">
+            PG Batch: {alumni.pgBatchYear}
+          </span>
+        )}
+      </div>
+    );
+  };
+
   return (
     <div
       onClick={() => onSelect && onSelect(alumni)}
       className="group relative bg-white rounded-2xl p-5 sm:p-6 border border-[#C5A059]/30 hover:border-[#C5A059] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer"
     >
-      {/* Top Header: Avatar, Verified Badge, Batch Pill */}
       <div>
+        {/* Header with Photo, Verified Badge, and Membership Tier */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="relative">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-[#C5A059]/40 group-hover:border-[#2D5A43] transition-colors relative bg-slate-100 flex-shrink-0">
@@ -86,16 +102,14 @@ export default function AlumniCard({
           </div>
 
           <div className="flex flex-col items-end gap-1.5">
-            <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-semibold bg-[#FAF7F2] text-[#0F172A] border border-[#C5A059]/40">
-              Batch {alumni.batchYear}
-            </span>
+            {renderBatchBadges()}
             <span className="text-[10px] uppercase font-bold tracking-wider text-[#C5A059]">
               {alumni.membershipTier}
             </span>
           </div>
         </div>
 
-        {/* Doctor Name & Hindi Name */}
+        {/* Doctor Name & Degree */}
         <div className="mb-2">
           <h3 className="font-serif-heading text-lg sm:text-xl font-bold text-[#0F172A] group-hover:text-[#2D5A43] transition-colors line-clamp-1">
             {alumni.fullName}
@@ -107,18 +121,22 @@ export default function AlumniCard({
           )}
         </div>
 
-        {/* Degree & Specialization Badge */}
+        {/* Education Tag & Specialization */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
-          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43]">
-            <GraduationCap className="w-3 h-3" />
-            {alumni.degree}
+          <span className="inline-flex items-center gap-1 text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#0F172A]/5 text-[#0F172A]">
+            <GraduationCap className="w-3 h-3 text-[#C5A059]" />
+            {alumni.rishikulEducation === "BOTH"
+              ? "UG (BAMS) + PG (MD/MS)"
+              : alumni.rishikulEducation === "PG"
+              ? "PG (MD/MS)"
+              : "UG (BAMS)"}
           </span>
-          <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#0F172A]/5 text-[#0F172A] line-clamp-1">
+          <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43] line-clamp-1">
             {alumni.specialization}
           </span>
         </div>
 
-        {/* Workplace & Designation */}
+        {/* Job Type, Workplace & Designation */}
         <div className="space-y-1.5 text-xs text-[#64748B] mb-3">
           <div className="flex items-start gap-2">
             <Briefcase className="w-3.5 h-3.5 text-[#C5A059] flex-shrink-0 mt-0.5" />
@@ -127,14 +145,17 @@ export default function AlumniCard({
             </span>
           </div>
           <div className="flex items-center gap-2">
-            <MapPin className="w-3.5 h-3.5 text-[#C5A059] flex-shrink-0" />
-            <span>
+            <Building className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+            <span className="text-slate-600 font-medium">{alumni.jobType}</span>
+            <span>•</span>
+            <span className="flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-[#C5A059]" />
               {alumni.city}, {alumni.state}
             </span>
           </div>
         </div>
 
-        {/* Mutual / Alumni Network Connections indicator */}
+        {/* Mutual Alumni Network indicator */}
         <div className="pt-2.5 pb-3 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="flex -space-x-2 overflow-hidden">
@@ -155,7 +176,6 @@ export default function AlumniCard({
             </span>
           </div>
 
-          {/* Quick Connect / Connected Button */}
           {alumni.id !== currentAlumniId && (
             <button
               onClick={handleConnectClick}

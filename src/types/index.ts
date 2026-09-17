@@ -1,6 +1,8 @@
-export type DegreeType = 'BAMS' | 'MD (Ayurveda)' | 'MS (Ayurveda)' | 'PhD' | 'Diploma' | 'Other';
+export type RishikulEducationType = 'UG' | 'PG' | 'BOTH';
 
-export type MembershipTier = 'Life Member' | 'Patron Member' | 'Annual Member' | 'Student Member' | 'Honorary Fellow';
+export type JobType = 'Private Practice' | 'Govt Job' | 'Retired' | 'Teaching / Academia' | 'Corporate / Industry' | 'Other';
+
+export type MembershipTier = 'Non-Paid Member' | 'Life Member' | 'Patron Member' | 'Annual Member' | 'Student Member' | 'Honorary Fellow';
 
 export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
 
@@ -24,31 +26,59 @@ export interface AlumniProfile {
   id: string;
   fullName: string;
   fullNameHindi?: string;
+  username: string; // for login
+  passwordHash?: string; // stored credentials
   email: string;
-  phone?: string;
-  dateOfBirth?: string; // YYYY-MM-DD for birthday tracking
-  avatarUrl?: string;
-  batchYear: number;
-  degree: DegreeType;
+  mobile: string;
+  whatsappNumber: string;
+  dateOfBirth: string; // YYYY-MM-DD
+  avatarUrl?: string; // photo max 50kb
+  
+  // Education at Rishikul (UG / PG / BOTH)
+  rishikulEducation: RishikulEducationType;
+  ugBatchYear?: number; // e.g. 1992
+  pgBatchYear?: number; // e.g. 1998
+  batchYear?: number; // fallback helper
+  ugDegree?: string; // e.g. BAMS
+  pgDegree?: string; // e.g. MD (Ayurveda), MS (Ayurveda)
+  degree?: string; // fallback helper
   specialization: Specialization;
-  pgSpecialization?: string;
+  
+  // Job & Professional Details
+  jobType: JobType;
   designation: string;
-  workplace: string;
+  workplace: string; // Institution / Hospital / Clinic name
+  
+  // Address & Location
   city: string;
   state: string;
+  address?: string;
   country: string;
+
+  // Bio & Achievements
   bio?: string;
+  achievements?: string[];
+  bloodGroup?: string;
+
+  // Membership & Governance
   membershipId: string;
   membershipTier: MembershipTier;
   isVerified: boolean;
   approvalStatus: ApprovalStatus;
   joinedDate: string;
-  achievements?: string[];
-  linkedinUrl?: string;
-  whatsappNumber?: string;
-  websiteUrl?: string;
-  bloodGroup?: string;
-  connectedAlumniIds?: string[]; // IDs of batchmates/colleagues connected
+  connectedAlumniIds?: string[];
+}
+
+export interface PasswordResetRequest {
+  id: string;
+  alumniId: string;
+  fullName: string;
+  username: string;
+  mobile: string;
+  email: string;
+  requestedAt: string;
+  status: 'pending' | 'resolved';
+  newPasswordAssigned?: string;
 }
 
 export interface LifetimeAchiever {
@@ -72,7 +102,7 @@ export interface ShradhanjaliRecord {
   batchYear: number;
   degree: string;
   photoUrl: string;
-  dateOfDemise: string; // YYYY-MM-DD
+  dateOfDemise: string;
   tribute: string;
   condolencesCount: number;
   postedBy?: string;
@@ -110,8 +140,11 @@ export interface ExecutiveMember {
 
 export interface DirectoryFilterState {
   searchQuery: string;
-  batchYear: string;
+  educationFilter: 'ALL' | 'UG' | 'PG' | 'BOTH';
+  ugBatchYear: string;
+  pgBatchYear: string;
   specialization: string;
+  jobType: string;
   state: string;
   city: string;
   membershipTier: string;

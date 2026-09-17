@@ -12,43 +12,57 @@ import {
   ChevronRight,
   ChevronLeft,
   Sparkles,
-  Cake
+  Cake,
+  Upload,
+  Lock,
+  Phone,
+  Building,
+  MapPin
 } from "lucide-react";
-import { SPECIALIZATION_OPTIONS } from "@/lib/mockData";
+import { SPECIALIZATION_OPTIONS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
 import { getAlumniList, saveAlumniList } from "@/lib/store";
-import { AlumniProfile } from "@/types";
+import { compressImageTo50Kb } from "@/lib/imageCompressor";
+import { AlumniProfile, RishikulEducationType, JobType } from "@/types";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(1);
   const [submitted, setSubmitted] = useState(false);
   const [generatedMembershipId, setGeneratedMembershipId] = useState("");
 
+  // Photo state with compression info
+  const [photoDataUrl, setPhotoDataUrl] = useState<string>("");
+  const [photoSizeKb, setPhotoSizeKb] = useState<number>(0);
+  const [isCompressing, setIsCompressing] = useState<boolean>(false);
+
   const [formData, setFormData] = useState({
-    // Step 1: Personal + ACTUAL DATE OF BIRTH
+    // Step 1: Basic Personal & Credentials
     fullName: "",
     fullNameHindi: "",
+    username: "",
+    password: "",
+    confirmPassword: "",
     email: "",
-    phone: "",
-    dateOfBirth: "", // Required actual birth date
+    mobile: "",
+    whatsappNumber: "",
+    dateOfBirth: "",
     bloodGroup: "O+",
 
-    // Step 2: Academic
-    degree: "BAMS" as any,
-    batchYear: "2015",
+    // Step 2: Rishikul Education (UG / PG / BOTH)
+    rishikulEducation: "UG" as RishikulEducationType,
+    ugBatchYear: "1995",
+    ugDegree: "BAMS",
+    pgBatchYear: "2000",
+    pgDegree: "MD (Ayurveda)",
     specialization: "Kayachikitsa (Internal Medicine)" as any,
-    rollNumberOrRegNo: "",
 
-    // Step 3: Professional
+    // Step 3: Professional Practice & Address
+    jobType: "Private Practice" as JobType,
     designation: "",
-    workplace: "",
+    workplace: "", // Hospital / Clinic / Institute name
     city: "",
     state: "Uttarakhand",
+    address: "",
     country: "India",
-    whatsappNumber: "",
-    bio: "",
-
-    // Step 4: Membership Tier
-    membershipTier: "Life Member" as any,
   });
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>) => {
@@ -56,13 +70,36 @@ export default function RegisterPage() {
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const nextStep = () => {
-    if (step === 1 && !formData.dateOfBirth) {
-      alert("कृपया अपनी जन्म तिथि (Date of Birth) अवश्य भरें ताकि अल्युम्नाई बर्थडे रडार में आपका जन्मदिन प्रदर्शित हो सके।");
-      return;
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    try {
+      setIsCompressing(true);
+      const { dataUrl, sizeKb } = await compressImageTo50Kb(file, 50);
+      setPhotoDataUrl(dataUrl);
+      setPhotoSizeKb(sizeKb);
+    } catch (err) {
+      alert("Error compressing photo. Please try another image.");
+    } finally {
+      setIsCompressing(false);
     }
-    setStep((s) => Math.min(s + 1, 4));
   };
+
+  const nextStep = () => {
+    if (step === 1) {
+      if (!formData.fullName || !formData.username || !formData.password || !formData.mobile || !formData.dateOfBirth) {
+        alert("कृपया सभी आवश्यक फ़ील्ड (नाम, यूज़रनेम, पासवर्ड, मोबाइल, वास्तविक जन्मतिथि) भरें।");
+        return;
+      }
+      if (formData.password !== formData.confirmPassword) {
+        alert("पासवर्ड और कन्फर्म पासवर्ड मेल नहीं खाते। कृपया पुनः जांचें।");
+        return;
+      }
+    }
+    setStep((s) => Math.min(s + 1, 3));
+  };
+
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -71,31 +108,42 @@ export default function RegisterPage() {
     const memId = `RISHI-PEN-${randomNum}`;
     setGeneratedMembershipId(memId);
 
-    // Save to pending store for Admin approval
     const newProfile: AlumniProfile = {
       id: `alumni-${Date.now()}`,
       fullName: formData.fullName,
       fullNameHindi: formData.fullNameHindi,
+      username: formData.username.trim().toLowerCase(),
+      passwordHash: formData.password,
       email: formData.email,
-      phone: formData.phone,
+      mobile: formData.mobile,
+      whatsappNumber: formData.whatsappNumber || formData.mobile,
       dateOfBirth: formData.dateOfBirth,
-      avatarUrl: "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop",
-      batchYear: Number(formData.batchYear) || 2015,
-      degree: formData.degree,
+      avatarUrl: photoDataUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop",
+      
+      // Rishikul Education
+      rishikulEducation: formData.rishikulEducation,
+      ugBatchYear: formData.rishikulEducation === "PG" ? undefined : Number(formData.ugBatchYear),
+      ugDegree: formData.rishikulEducation === "PG" ? undefined : formData.ugDegree,
+      pgBatchYear: formData.rishikulEducation === "UG" ? undefined : Number(formData.pgBatchYear),
+      pgDegree: formData.rishikulEducation === "UG" ? undefined : formData.pgDegree,
       specialization: formData.specialization,
+
+      // Job & Address
+      jobType: formData.jobType,
       designation: formData.designation,
       workplace: formData.workplace,
       city: formData.city,
       state: formData.state,
+      address: formData.address,
       country: formData.country,
-      bio: formData.bio,
+
+      // Admin verification queue
       membershipId: memId,
-      membershipTier: formData.membershipTier,
+      membershipTier: "Non-Paid Member", // Default until Admin assigns / approves
       isVerified: false,
-      approvalStatus: "pending", // Waiting for admin
+      approvalStatus: "pending",
       joinedDate: new Date().toISOString().split("T")[0],
       bloodGroup: formData.bloodGroup,
-      whatsappNumber: formData.whatsappNumber,
       connectedAlumniIds: [],
     };
 
@@ -117,31 +165,30 @@ export default function RegisterPage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-16">
       <div className="max-w-2xl mx-auto px-4 sm:px-6">
-        {/* Header Branding */}
+        {/* Header */}
         <div className="text-center mb-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
-            <span>ऋषिकुल पुरातन छात्र सदस्यता</span>
+            <span>ऋषिकुल पुरातन छात्र पंजीकरण</span>
             <span>•</span>
-            <span>Alumni Verification</span>
+            <span>Basic Alumni Registration</span>
           </div>
           <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
-            Alumni Registration Portal
+            Alumni Registration & Account Creation
           </h1>
-          <p className="text-xs sm:text-sm text-[#64748B] mt-1">
-            Exclusively for graduates & postgraduates of Rishikul Govt Ayurvedic College. Submissions are verified by the Executive Association Admin.
+          <p className="text-xs sm:text-sm text-[#64748B] mt-1.5 leading-relaxed">
+            पंजीकरण के बाद आपका आवेदन एडमिन द्वारा सत्यापित (Approve) किया जाएगा और आपकी सदस्यता श्रेणी (Non-Paid, Lifetime, Patron) निर्धारित की जाएगी।
           </p>
         </div>
 
-        {/* Multi-Step Wizard Progress Bar */}
+        {/* Multi-Step Wizard Progress */}
         {!submitted && (
           <div className="mb-8">
             <div className="flex items-center justify-between relative">
               <div className="absolute top-1/2 left-0 right-0 h-0.5 bg-slate-200 -translate-y-1/2 -z-0" />
               {[
-                { s: 1, label: "Personal & DOB", icon: User },
-                { s: 2, label: "Rishikul Batch", icon: GraduationCap },
-                { s: 3, label: "Practice", icon: Briefcase },
-                { s: 4, label: "Membership", icon: ShieldCheck },
+                { s: 1, label: "Basic & Login", icon: User },
+                { s: 2, label: "Rishikul UG / PG", icon: GraduationCap },
+                { s: 3, label: "Job & Address", icon: Briefcase },
               ].map(({ s, label, icon: Icon }) => (
                 <div key={s} className="relative z-10 flex flex-col items-center">
                   <div
@@ -168,10 +215,9 @@ export default function RegisterPage() {
           </div>
         )}
 
-        {/* Registration Card / Steps */}
+        {/* Card Form */}
         <div className="bg-white rounded-3xl p-6 sm:p-10 border-2 border-[#C5A059]/30 shadow-xl">
           {submitted ? (
-            /* Success View */
             <div className="text-center py-6 space-y-6">
               <div className="w-20 h-20 rounded-full bg-emerald-50 text-[#2D5A43] border-2 border-[#2D5A43] flex items-center justify-center mx-auto shadow-inner">
                 <CheckCircle2 className="w-10 h-10" />
@@ -179,53 +225,46 @@ export default function RegisterPage() {
 
               <div>
                 <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
-                  Application Submitted for Admin Approval!
+                  Registration Queued for Admin Approval!
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-md mx-auto leading-relaxed">
-                  Thank you, <strong className="text-[#0F172A]">{formData.fullName}</strong>. Your profile and membership request have been queued for admin verification by the association committee.
+                  धन्यवाद, <strong className="text-[#0F172A]">{formData.fullName}</strong>। आपका रजिस्ट्रेशन विवरण एसोसिएशन एडमिन के पास अनुमोदन (Approval) हेतु भेज दिया गया है।
                 </p>
               </div>
 
-              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#C5A059]/40 max-w-sm mx-auto text-left">
-                <div className="text-[10px] uppercase font-bold text-[#C5A059] mb-1">
-                  Provisional Tracking ID
-                </div>
-                <div className="font-mono text-xl font-bold text-[#0F172A]">
-                  {generatedMembershipId}
-                </div>
-                <div className="text-[11px] text-slate-500 mt-1">
-                  Status: <strong>Pending Admin Approval</strong> • Category: {formData.membershipTier}
-                </div>
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#C5A059]/40 max-w-sm mx-auto text-left space-y-1 text-xs">
+                <div><strong>Username:</strong> {formData.username}</div>
+                <div><strong>Education:</strong> {formData.rishikulEducation} ({formData.rishikulEducation === "PG" ? `PG: ${formData.pgBatchYear}` : formData.rishikulEducation === "UG" ? `UG: ${formData.ugBatchYear}` : `UG: ${formData.ugBatchYear}, PG: ${formData.pgBatchYear}`})</div>
+                <div><strong>Status:</strong> <span className="text-amber-700 font-bold">Pending Admin Approval & Tier Assignment</span></div>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-3 justify-center pt-4">
                 <Link
-                  href="/directory"
+                  href="/login"
                   className="px-6 py-3.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors"
                 >
-                  Explore Alumni Directory
+                  Go to Alumni Login
                 </Link>
                 <Link
-                  href="/birthdays"
+                  href="/directory"
                   className="px-6 py-3.5 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold uppercase tracking-wider hover:bg-slate-200 transition-colors"
                 >
-                  View Birthday Radar
+                  Browse Directory
                 </Link>
               </div>
             </div>
           ) : (
-            /* Multi-Step Form */
             <form onSubmit={handleSubmit} className="space-y-6">
-              {/* STEP 1: Personal Information & Actual Date of Birth */}
+              {/* STEP 1: Basic Data & Login Creation */}
               {step === 1 && (
                 <div className="space-y-4 animate-in fade-in">
                   <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 1: Personal Information & Date of Birth
+                    Step 1: Basic Details, Login & Photo Upload
                   </h3>
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Full Name (as per Rishikul Degree Certificate) *
+                      Full Name (पूरा नाम) *
                     </label>
                     <input
                       type="text"
@@ -234,47 +273,95 @@ export default function RegisterPage() {
                       placeholder="e.g. Dr. Rajesh Kumar Sharma"
                       value={formData.fullName}
                       onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                     />
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Full Name in Hindi / Devanagari (वैकल्पिक)
-                    </label>
-                    <input
-                      type="text"
-                      name="fullNameHindi"
-                      placeholder="उदा. डॉ. राजेश कुमार शर्मा"
-                      value={formData.fullNameHindi}
-                      onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                    />
+                  {/* Username & Password Creation */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
+                        Create Username *
+                      </label>
+                      <input
+                        type="text"
+                        name="username"
+                        required
+                        placeholder="e.g. rajesh.sharma"
+                        value={formData.username}
+                        onChange={handleChange}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
+                        Create Password *
+                      </label>
+                      <input
+                        type="password"
+                        name="password"
+                        required
+                        placeholder="••••••••"
+                        value={formData.password}
+                        onChange={handleChange}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
+                        Confirm Password *
+                      </label>
+                      <input
+                        type="password"
+                        name="confirmPassword"
+                        required
+                        placeholder="••••••••"
+                        value={formData.confirmPassword}
+                        onChange={handleChange}
+                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      />
+                    </div>
                   </div>
 
-                  {/* ACTUAL DATE OF BIRTH */}
-                  <div className="p-4 bg-amber-50 rounded-2xl border border-amber-200">
-                    <label className="block text-xs font-bold uppercase text-amber-950 mb-1 flex items-center gap-1.5">
-                      <Cake className="w-4 h-4 text-[#C5A059]" />
-                      Actual Date of Birth (वास्तविक जन्म तिथि) *
-                    </label>
-                    <input
-                      type="date"
-                      name="dateOfBirth"
-                      required
-                      value={formData.dateOfBirth}
-                      onChange={handleChange}
-                      className="w-full bg-white border border-amber-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
-                    />
-                    <p className="text-[11px] text-amber-800 mt-1.5">
-                      आपकी जन्मतिथि अल्युम्नाई 'Birthday Radar' में जन्मदिन पर बैचमेट्स और गुरुजनों की शुभकामनाओं के लिए उपयोग की जाएगी।
-                    </p>
-                  </div>
-
+                  {/* Mobile & WhatsApp */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Email Address *
+                        Mobile Number *
+                      </label>
+                      <input
+                        type="tel"
+                        name="mobile"
+                        required
+                        placeholder="+91 98971 00000"
+                        value={formData.mobile}
+                        onChange={handleChange}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        WhatsApp Number *
+                      </label>
+                      <input
+                        type="tel"
+                        name="whatsappNumber"
+                        placeholder="919897100000"
+                        value={formData.whatsappNumber}
+                        onChange={handleChange}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Email & Date of Birth */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        Email ID *
                       </label>
                       <input
                         type="email"
@@ -283,85 +370,180 @@ export default function RegisterPage() {
                         placeholder="doctor@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                       />
                     </div>
 
                     <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Mobile Phone Number *
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
+                        <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
+                        Actual Date of Birth *
                       </label>
                       <input
-                        type="tel"
-                        name="phone"
+                        type="date"
+                        name="dateOfBirth"
                         required
-                        placeholder="+91 98971 00000"
-                        value={formData.phone}
+                        value={formData.dateOfBirth}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
                       />
                     </div>
                   </div>
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Blood Group
+                  {/* PHOTO UPLOAD (Auto compressed to max 50KB) */}
+                  <div className="p-4 rounded-2xl border-2 border-dashed border-[#C5A059]/60 bg-[#FAF7F2]">
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1.5">
+                      <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
+                      Profile Photo (Auto-compressed to Max 50KB)
                     </label>
-                    <select
-                      name="bloodGroup"
-                      value={formData.bloodGroup}
-                      onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                    >
-                      {["O+", "O-", "A+", "A-", "B+", "B-", "AB+", "AB-"].map((bg) => (
-                        <option key={bg} value={bg}>{bg}</option>
-                      ))}
-                    </select>
+
+                    <div className="flex items-center gap-4 mt-2">
+                      {photoDataUrl ? (
+                        <div className="relative">
+                          <img
+                            src={photoDataUrl}
+                            alt="Uploaded"
+                            className="w-16 h-16 rounded-xl object-cover border-2 border-[#2D5A43]"
+                          />
+                          <span className="text-[10px] bg-[#2D5A43] text-white px-1.5 py-0.5 rounded-full absolute -bottom-2 -right-1">
+                            {photoSizeKb} KB
+                          </span>
+                        </div>
+                      ) : (
+                        <div className="w-16 h-16 rounded-xl bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-400">
+                          <User className="w-8 h-8" />
+                        </div>
+                      )}
+
+                      <div className="flex-1">
+                        <input
+                          type="file"
+                          accept="image/*"
+                          onChange={handlePhotoUpload}
+                          className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0F172A] file:text-white hover:file:bg-[#2D5A43] cursor-pointer"
+                        />
+                        <p className="text-[10px] text-slate-500 mt-1">
+                          {isCompressing ? "Compressing image..." : "किसी भी आकार की फोटो चुनें, सिस्टम उसे 50KB के अंदर ऑटो-कंप्रेस कर देगा।"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}
 
-              {/* STEP 2: Academic Details */}
+              {/* STEP 2: Rishikul Education (UG / PG / BOTH) */}
               {step === 2 && (
-                <div className="space-y-4 animate-in fade-in">
+                <div className="space-y-5 animate-in fade-in">
                   <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 2: Rishikul Batch & Specialization
+                    Step 2: Rishikul Education (UG / PG / Both)
                   </h3>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Degree Conferred *
-                      </label>
-                      <select
-                        name="degree"
-                        value={formData.degree}
-                        onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      >
-                        {["BAMS", "MD (Ayurveda)", "MS (Ayurveda)", "PhD", "Diploma", "Other"].map((deg) => (
-                          <option key={deg} value={deg}>{deg}</option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Graduation Batch Year *
-                      </label>
-                      <input
-                        type="number"
-                        name="batchYear"
-                        required
-                        min="1940"
-                        max="2026"
-                        placeholder="e.g. 1996"
-                        value={formData.batchYear}
-                        onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-2">
+                      ऋषिकुल से आपने क्या किया है? (Select Degree Level at Rishikul) *
+                    </label>
+                    <div className="grid grid-cols-3 gap-3">
+                      {[
+                        { id: "UG", label: "केवल UG (BAMS)" },
+                        { id: "PG", label: "केवल PG (MD/MS)" },
+                        { id: "BOTH", label: "दोनों (UG + PG)" },
+                      ].map((item) => (
+                        <button
+                          key={item.id}
+                          type="button"
+                          onClick={() => setFormData({ ...formData, rishikulEducation: item.id as any })}
+                          className={`py-3 px-2 rounded-xl text-xs font-bold text-center border-2 transition-all ${
+                            formData.rishikulEducation === item.id
+                              ? "bg-[#0F172A] text-[#C5A059] border-[#0F172A] shadow-md"
+                              : "bg-white text-slate-700 border-slate-200 hover:bg-[#FAF7F2]"
+                          }`}
+                        >
+                          {item.label}
+                        </button>
+                      ))}
                     </div>
                   </div>
+
+                  {/* UG Details (if UG or BOTH) */}
+                  {(formData.rishikulEducation === "UG" || formData.rishikulEducation === "BOTH") && (
+                    <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-slate-300 space-y-3">
+                      <div className="text-xs font-bold uppercase text-[#2D5A43] flex items-center gap-1.5">
+                        <GraduationCap className="w-4 h-4" />
+                        Rishikul UG (Undergraduate) Details
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                            UG Entrance / Batch Year *
+                          </label>
+                          <input
+                            type="number"
+                            name="ugBatchYear"
+                            min="1940"
+                            max="2026"
+                            placeholder="e.g. 1994"
+                            value={formData.ugBatchYear}
+                            onChange={handleChange}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                            Degree
+                          </label>
+                          <input
+                            type="text"
+                            disabled
+                            value="BAMS"
+                            className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-500"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* PG Details (if PG or BOTH) */}
+                  {(formData.rishikulEducation === "PG" || formData.rishikulEducation === "BOTH") && (
+                    <div className="p-4 rounded-2xl bg-amber-50/60 border border-[#C5A059]/40 space-y-3">
+                      <div className="text-xs font-bold uppercase text-[#C5A059] flex items-center gap-1.5">
+                        <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+                        Rishikul PG (Postgraduate) Details
+                      </div>
+                      <div className="grid grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                            PG Entrance / Batch Year *
+                          </label>
+                          <input
+                            type="number"
+                            name="pgBatchYear"
+                            min="1970"
+                            max="2026"
+                            placeholder="e.g. 2002"
+                            value={formData.pgBatchYear}
+                            onChange={handleChange}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                            PG Degree
+                          </label>
+                          <select
+                            name="pgDegree"
+                            value={formData.pgDegree}
+                            onChange={handleChange}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none"
+                          >
+                            <option value="MD (Ayurveda)">MD (Ayurveda)</option>
+                            <option value="MS (Ayurveda)">MS (Ayurveda)</option>
+                            <option value="PhD">PhD</option>
+                            <option value="Diploma">Diploma</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
@@ -371,41 +553,43 @@ export default function RegisterPage() {
                       name="specialization"
                       value={formData.specialization}
                       onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                     >
                       {SPECIALIZATION_OPTIONS.filter((s) => s !== "All Specializations").map((spec) => (
                         <option key={spec} value={spec}>{spec}</option>
                       ))}
                     </select>
                   </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      College Roll No / State Medical Council Reg No
-                    </label>
-                    <input
-                      type="text"
-                      name="rollNumberOrRegNo"
-                      placeholder="e.g. UKMC-AYUR-4821 or 1996/BAMS/42"
-                      value={formData.rollNumberOrRegNo}
-                      onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                    />
-                  </div>
                 </div>
               )}
 
-              {/* STEP 3: Professional Practice */}
+              {/* STEP 3: Job, Workplace & Address Details */}
               {step === 3 && (
                 <div className="space-y-4 animate-in fade-in">
                   <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 3: Professional Practice & Location
+                    Step 3: Job Type, Workplace & Address
                   </h3>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Current Designation *
+                        Current Job Type (कार्य का प्रकार) *
+                      </label>
+                      <select
+                        name="jobType"
+                        value={formData.jobType}
+                        onChange={handleChange}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      >
+                        {JOB_TYPE_OPTIONS.filter((j) => j !== "All Job Types").map((job) => (
+                          <option key={job} value={job}>{job}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        Current Designation (पदनाम) *
                       </label>
                       <input
                         type="text"
@@ -414,27 +598,27 @@ export default function RegisterPage() {
                         placeholder="e.g. Senior Medical Officer / Consultant"
                         value={formData.designation}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Clinic / Hospital / Institution *
-                      </label>
-                      <input
-                        type="text"
-                        name="workplace"
-                        required
-                        placeholder="e.g. Patanjali Yogpeeth / Private Clinic"
-                        value={formData.workplace}
-                        onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      Institution / Hospital / Organization Name *
+                    </label>
+                    <input
+                      type="text"
+                      name="workplace"
+                      required
+                      placeholder="e.g. Govt Hospital Haridwar / Self Clinic / Patanjali"
+                      value={formData.workplace}
+                      onChange={handleChange}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
                         City *
@@ -446,7 +630,7 @@ export default function RegisterPage() {
                         placeholder="e.g. Haridwar"
                         value={formData.city}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                       />
                     </div>
 
@@ -461,125 +645,27 @@ export default function RegisterPage() {
                         placeholder="e.g. Uttarakhand"
                         value={formData.state}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Country
-                      </label>
-                      <input
-                        type="text"
-                        name="country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                       />
                     </div>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      WhatsApp Number (for Batchmate connects)
-                    </label>
-                    <input
-                      type="tel"
-                      name="whatsappNumber"
-                      placeholder="919876543210"
-                      value={formData.whatsappNumber}
-                      onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                    />
-                  </div>
-
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Brief Bio / Clinical Focus (Optional)
+                      Residential / Clinic Address (पता)
                     </label>
                     <textarea
-                      name="bio"
+                      name="address"
                       rows={2}
-                      placeholder="Special clinical focus, publications, awards..."
-                      value={formData.bio}
+                      placeholder="House/Clinic No., Street, Colony, Landmark..."
+                      value={formData.address}
                       onChange={handleChange}
                       className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                     />
                   </div>
-                </div>
-              )}
-
-              {/* STEP 4: Membership Category */}
-              {step === 4 && (
-                <div className="space-y-4 animate-in fade-in">
-                  <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                    Step 4: Select Association Membership Category
-                  </h3>
-
-                  <div className="space-y-3">
-                    {[
-                      {
-                        tier: "Life Member",
-                        cost: "₹3,100 (One Time)",
-                        badge: "Approved by Admin",
-                        desc: "Lifetime voting rights, official Digital ID card, directory listing, discount on reunion registrations.",
-                      },
-                      {
-                        tier: "Patron Member",
-                        cost: "₹11,000 (One Time)",
-                        badge: "VIP Patron",
-                        desc: "All Life Member benefits plus VIP seating at Conclaves, donor roll honor, and executive advisory seat.",
-                      },
-                      {
-                        tier: "Annual Member",
-                        cost: "₹500 / year",
-                        desc: "1-year access to directory, newsletters, and association webinars.",
-                      },
-                    ].map((plan) => (
-                      <label
-                        key={plan.tier}
-                        className={`block p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                          formData.membershipTier === plan.tier
-                            ? "border-[#2D5A43] bg-[#2D5A43]/5 shadow-sm"
-                            : "border-slate-200 hover:border-[#C5A059]/60 bg-white"
-                        }`}
-                      >
-                        <div className="flex items-start justify-between gap-2">
-                          <div className="flex items-center gap-3">
-                            <input
-                              type="radio"
-                              name="membershipTier"
-                              value={plan.tier}
-                              checked={formData.membershipTier === plan.tier}
-                              onChange={handleChange}
-                              className="w-4 h-4 text-[#2D5A43] focus:ring-[#2D5A43]"
-                            />
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-sm text-[#0F172A]">
-                                  {plan.tier}
-                                </span>
-                                {plan.badge && (
-                                  <span className="px-2 py-0.5 text-[10px] font-bold rounded-full bg-[#C5A059] text-[#0F172A]">
-                                    {plan.badge}
-                                  </span>
-                                )}
-                              </div>
-                              <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                                {plan.desc}
-                              </p>
-                            </div>
-                          </div>
-                          <span className="text-xs font-bold text-[#0F172A] whitespace-nowrap">
-                            {plan.cost}
-                          </span>
-                        </div>
-                      </label>
-                    ))}
-                  </div>
 
                   <div className="p-3.5 bg-amber-50 rounded-xl border border-amber-200 text-xs text-amber-900 leading-relaxed">
-                    <strong>Note:</strong> All registrations and membership upgrades are reviewed and approved directly by the Association Administrator before being activated in the official public directory.
+                    <strong>Admin Verification Note:</strong> पंजीकरण सबमिट करने के बाद आपकी सदस्यता श्रेणी (Non-Paid, Lifetime, Patron) एडमिन द्वारा तय और स्वीकृत की जाएगी। बाकी प्रोफाइल विवरण आप लॉगिन अप्रूव होने के बाद भी अपडेट कर सकेंगे।
                   </div>
                 </div>
               )}
@@ -597,7 +683,7 @@ export default function RegisterPage() {
                   </button>
                 ) : <div />}
 
-                {step < 4 ? (
+                {step < 3 ? (
                   <button
                     type="button"
                     onClick={nextStep}
@@ -609,10 +695,10 @@ export default function RegisterPage() {
                 ) : (
                   <button
                     type="submit"
-                    className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-lg"
+                    className="flex items-center gap-2 px-8 py-3.5 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors shadow-lg font-bold"
                   >
                     <Sparkles className="w-4 h-4" />
-                    Submit for Approval
+                    Submit Registration
                   </button>
                 )}
               </div>

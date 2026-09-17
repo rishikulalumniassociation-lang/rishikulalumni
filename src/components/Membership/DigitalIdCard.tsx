@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
-import { Download, Share2, ShieldCheck, Award, Sparkles, RefreshCw } from "lucide-react";
+import { Download, Share2, ShieldCheck, Award, Sparkles, RefreshCw, GraduationCap } from "lucide-react";
 import { AlumniProfile } from "@/types";
 
 interface DigitalIdCardProps {
@@ -17,7 +17,6 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
   const [isFlipped, setIsFlipped] = useState<boolean>(false);
 
   useEffect(() => {
-    // Generate QR verification payload
     const verificationUrl = `${typeof window !== "undefined" ? window.location.origin : ""}/verify?id=${alumni.membershipId}&name=${encodeURIComponent(alumni.fullName)}`;
     QRCode.toDataURL(verificationUrl, {
       margin: 1,
@@ -51,6 +50,14 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
     }
   };
 
+  // Compute batch labels
+  const batchLabel = [
+    alumni.ugBatchYear ? `UG: ${alumni.ugBatchYear}` : null,
+    alumni.pgBatchYear ? `PG: ${alumni.pgBatchYear}` : null,
+  ]
+    .filter(Boolean)
+    .join(" | ") || `Batch ${alumni.batchYear || ""}`;
+
   return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto">
       {/* Interactive Card Flip Preview */}
@@ -61,10 +68,12 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
           className={`w-full h-full rounded-2xl p-5 sm:p-6 shadow-2xl transition-transform duration-500 cursor-pointer select-none relative overflow-hidden flex flex-col justify-between border-2 ${
             alumni.membershipTier === "Patron Member"
               ? "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A0F1D] border-[#C5A059] text-white"
-              : "bg-gradient-to-br from-[#0F172A] to-[#162A20] border-[#C5A059]/60 text-white"
+              : alumni.membershipTier === "Life Member"
+              ? "bg-gradient-to-br from-[#0F172A] to-[#162A20] border-[#C5A059]/60 text-white"
+              : "bg-gradient-to-br from-[#1E293B] to-[#0F172A] border-slate-600 text-white"
           }`}
         >
-          {/* Subtle Background Ayurvedic Mandala / Watermark */}
+          {/* Subtle Background Ayurvedic Mandala */}
           <div className="absolute -right-12 -bottom-12 w-48 h-48 rounded-full border-[12px] border-[#C5A059]/10 pointer-events-none" />
           <div className="absolute -right-6 -bottom-6 w-36 h-36 rounded-full border-[6px] border-[#C5A059]/15 pointer-events-none" />
 
@@ -117,7 +126,7 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
                 )}
               </div>
               <p className="text-xs text-amber-200/90 font-medium">
-                {alumni.degree} • Batch of {alumni.batchYear}
+                {batchLabel}
               </p>
               <p className="text-[11px] text-slate-300 truncate mt-0.5">
                 {alumni.specialization}
@@ -132,7 +141,7 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
           <div className="relative z-10 pt-2 border-t border-white/15 flex items-center justify-between">
             <div className="text-[9px] text-slate-400">
               <p>Blood Group: <span className="text-white font-semibold">{alumni.bloodGroup || "O+"}</span></p>
-              <p>Member Since: {alumni.joinedDate}</p>
+              <p>DOB: <span className="text-slate-200 font-medium">{alumni.dateOfBirth}</span></p>
             </div>
 
             <div className="flex items-center gap-2">

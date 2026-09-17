@@ -17,7 +17,12 @@ import {
   LogOut,
   Star,
   Check,
-  AlertTriangle
+  AlertTriangle,
+  Key,
+  KeyRound,
+  Lock,
+  GraduationCap,
+  Briefcase
 } from "lucide-react";
 import {
   getAlumniList,
@@ -26,23 +31,30 @@ import {
   saveLifetimeAchievers,
   getShradhanjaliList,
   saveShradhanjaliList,
+  getPasswordResetRequests,
+  savePasswordResetRequests,
   isAdminAuthenticated,
   setAdminAuthenticated
 } from "@/lib/store";
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest } from "@/types";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"approvals" | "achievers" | "shradhanjali" | "patrons">("approvals");
+  const [activeTab, setActiveTab] = useState<"approvals" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali">("approvals");
 
   // State
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
+  const [resetRequests, setResetRequests] = useState<PasswordResetRequest[]>([]);
   const [achieversList, setAchieversList] = useState<LifetimeAchiever[]>([]);
   const [shradhanjaliList, setShradhanjaliList] = useState<ShradhanjaliRecord[]>([]);
 
-  // Search filter inside admin
+  // Search filter
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Password reset execution modal
+  const [activeResetModalReq, setActiveResetModalReq] = useState<PasswordResetRequest | null>(null);
+  const [newPasswordToAssign, setNewPasswordToAssign] = useState("rishikul2026");
 
   // Modals for creating new Achiever & Shradhanjali
   const [showAchieverModal, setShowAchieverModal] = useState(false);
@@ -81,21 +93,22 @@ export default function AdminDashboardPage() {
 
   const loadAllData = () => {
     setAlumniList(getAlumniList());
+    setResetRequests(getPasswordResetRequests());
     setAchieversList(getLifetimeAchievers());
     setShradhanjaliList(getShradhanjaliList());
   };
 
   if (!mounted) return null;
 
-  // Actions for Alumni Approvals
-  const handleApproveAlumni = (id: string, tier?: MembershipTier) => {
+  // 1. APPROVE ALUMNI WITH SPECIFIC MEMBERSHIP TIER (Non-Paid, Lifetime, Patron)
+  const handleApproveAlumni = (id: string, tier: MembershipTier) => {
     const updated = alumniList.map((a) => {
       if (a.id === id) {
         return {
           ...a,
           isVerified: true,
           approvalStatus: "approved" as const,
-          membershipTier: tier || a.membershipTier,
+          membershipTier: tier,
         };
       }
       return a;
@@ -130,7 +143,43 @@ export default function AdminDashboardPage() {
     saveAlumniList(updated);
   };
 
-  // Actions for Lifetime Achievers
+  // 2. RESOLVE PASSWORD RESET REQUEST (Admin changes password only when requested)
+  const handleExecutePasswordReset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeResetModalReq || !newPasswordToAssign) return;
+
+    // Update alumnus password
+    const updatedAlumni = alumniList.map((a) => {
+      if (a.id === activeResetModalReq.alumniId || a.username === activeResetModalReq.username) {
+        return {
+          ...a,
+          passwordHash: newPasswordToAssign,
+        };
+      }
+      return a;
+    });
+    setAlumniList(updatedAlumni);
+    saveAlumniList(updatedAlumni);
+
+    // Mark reset request as resolved
+    const updatedRequests = resetRequests.map((r) => {
+      if (r.id === activeResetModalReq.id) {
+        return {
+          ...r,
+          status: "resolved" as const,
+          newPasswordAssigned: newPasswordToAssign,
+        };
+      }
+      return r;
+    });
+    setResetRequests(updatedRequests);
+    savePasswordResetRequests(updatedRequests);
+
+    alert(`Password for ${activeResetModalReq.fullName} (${activeResetModalReq.username}) has been updated to: ${newPasswordToAssign}`);
+    setActiveResetModalReq(null);
+  };
+
+  // Achievers & Shradhanjali handlers
   const handleAddAchiever = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAchiever.name || !newAchiever.title) return;
@@ -161,7 +210,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Actions for Shradhanjali
   const handleAddShradhanjali = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newShradhanjali.name || !newShradhanjali.tribute) return;
@@ -191,7 +239,6 @@ export default function AdminDashboardPage() {
     }
   };
 
-  // Logout
   const handleLogout = () => {
     setAdminAuthenticated(false);
     router.push("/admin/login");
@@ -199,7 +246,9 @@ export default function AdminDashboardPage() {
 
   // Pending approval alumni
   const pendingAlumni = alumniList.filter((a) => a.approvalStatus === "pending" || !a.isVerified);
-  // Patron members
+  // Pending password requests
+  const pendingPasswordResets = resetRequests.filter((r) => r.status === "pending");
+  // Patrons
   const patronMembers = alumniList.filter((a) => a.membershipTier === "Patron Member");
 
   return (
@@ -210,13 +259,13 @@ export default function AdminDashboardPage() {
           <div>
             <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-100 text-emerald-900 text-xs font-bold uppercase tracking-wider mb-2">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-700" />
-              Administrative Governance Panel
+              Administrative Governance Center
             </div>
             <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A]">
-              Rishikul Alumni Admin Center
+              Association Admin Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Approve new registrations, manage Patron lists, update Lifetime Achievers & Shradhanjali memorials.
+              Approve pending alumni registrations, assign membership tiers (Non-Paid, Lifetime, Patron), manage password reset requests, and view all registered alumni.
             </p>
           </div>
 
@@ -226,12 +275,12 @@ export default function AdminDashboardPage() {
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider hover:bg-red-50 transition-colors shadow-sm"
             >
               <LogOut className="w-3.5 h-3.5" />
-              Logout
+              Logout Admin
             </button>
           </div>
         </div>
 
-        {/* Dashboard Stat Counters */}
+        {/* Top Counter Badges */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -240,7 +289,27 @@ export default function AdminDashboardPage() {
             <div className="text-3xl font-serif-heading font-bold text-amber-600 mt-1">
               {pendingAlumni.length}
             </div>
-            <span className="text-[11px] text-slate-500">Requires verification</span>
+            <span className="text-[11px] text-slate-500">New registration requests</span>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Total Registered Alumni
+            </span>
+            <div className="text-3xl font-serif-heading font-bold text-[#0F172A] mt-1">
+              {alumniList.length}
+            </div>
+            <span className="text-[11px] text-slate-500">In association database</span>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Password Reset Requests
+            </span>
+            <div className="text-3xl font-serif-heading font-bold text-red-600 mt-1">
+              {pendingPasswordResets.length}
+            </div>
+            <span className="text-[11px] text-slate-500">Pending admin action</span>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
@@ -250,37 +319,19 @@ export default function AdminDashboardPage() {
             <div className="text-3xl font-serif-heading font-bold text-[#C5A059] mt-1">
               {patronMembers.length}
             </div>
-            <span className="text-[11px] text-slate-500">Tier 3 VIP Donors</span>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Lifetime Achievers
-            </span>
-            <div className="text-3xl font-serif-heading font-bold text-[#2D5A43] mt-1">
-              {achieversList.length}
-            </div>
-            <span className="text-[11px] text-slate-500">Hall of Fame vaidyas</span>
-          </div>
-
-          <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Shradhanjali Records
-            </span>
-            <div className="text-3xl font-serif-heading font-bold text-[#0F172A] mt-1">
-              {shradhanjaliList.length}
-            </div>
-            <span className="text-[11px] text-slate-500">Departed alumni tributes</span>
+            <span className="text-[11px] text-slate-500">VIP Patron donors</span>
           </div>
         </div>
 
-        {/* Tab Navigation Controls */}
+        {/* Tab Navigation */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-slate-200">
           {[
-            { id: "approvals", label: `Member Approvals (${pendingAlumni.length})`, icon: Users },
-            { id: "patrons", label: `Patron Directory (${patronMembers.length})`, icon: Star },
+            { id: "approvals", label: `Pending Approvals (${pendingAlumni.length})`, icon: Users },
+            { id: "all_registered", label: `All Registered Alumni (${alumniList.length})`, icon: Users },
+            { id: "password_resets", label: `Password Resets (${pendingPasswordResets.length})`, icon: KeyRound },
+            { id: "patrons", label: `Patron Roster (${patronMembers.length})`, icon: Star },
             { id: "achievers", label: `Lifetime Achievers (${achieversList.length})`, icon: Award },
-            { id: "shradhanjali", label: `Shradhanjali Memorials (${shradhanjaliList.length})`, icon: Heart },
+            { id: "shradhanjali", label: `Shradhanjali (${shradhanjaliList.length})`, icon: Heart },
           ].map(({ id, label, icon: Icon }) => (
             <button
               key={id}
@@ -297,100 +348,259 @@ export default function AdminDashboardPage() {
           ))}
         </div>
 
-        {/* TAB 1: Member Approvals */}
+        {/* TAB 1: PENDING APPROVALS */}
         {activeTab === "approvals" && (
-          <div className="space-y-6">
-            <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
-              <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
-                Pending Verification Requests
-              </h2>
-              <p className="text-xs text-slate-500 mb-6">
-                Review submitted BAMS/MD alumni registrations. You can verify and approve them directly as Life Member or Patron Member.
-              </p>
+          <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
+            <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
+              New Member Verification & Tier Assignment
+            </h2>
+            <p className="text-xs text-slate-500 mb-6">
+              Review basic data submitted by the alumnus. Choose and assign their official membership tier (Non-Paid, Lifetime, or Patron Member).
+            </p>
 
-              {pendingAlumni.length === 0 ? (
-                <div className="text-center py-12 text-slate-500 text-xs">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
-                  All alumni applications are up to date! No pending registrations.
-                </div>
-              ) : (
-                <div className="space-y-4">
-                  {pendingAlumni.map((alumnus) => (
-                    <div
-                      key={alumnus.id}
-                      className="p-5 rounded-2xl bg-[#FAF7F2] border border-slate-200 flex flex-col md:flex-row md:items-center justify-between gap-4"
-                    >
-                      <div className="flex items-start gap-3.5">
-                        <img
-                          src={alumnus.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop"}
-                          alt={alumnus.fullName}
-                          className="w-14 h-14 rounded-xl object-cover border border-slate-300"
-                        />
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h3 className="font-serif-heading text-lg font-bold text-[#0F172A]">
-                              {alumnus.fullName}
-                            </h3>
-                            <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-amber-100 text-amber-900">
-                              Applied: {alumnus.membershipTier}
-                            </span>
-                          </div>
-                          <p className="text-xs text-[#2D5A43] font-medium">
-                            {alumnus.degree} • Batch of {alumnus.batchYear} • {alumnus.specialization}
-                          </p>
-                          <p className="text-[11px] text-slate-500 mt-0.5">
-                            Workplace: {alumnus.designation} at {alumnus.workplace} ({alumnus.city}, {alumnus.state})
-                          </p>
-                          {alumnus.dateOfBirth && (
-                            <p className="text-[11px] text-slate-500">
-                              DOB: <strong>{alumnus.dateOfBirth}</strong> | Email: {alumnus.email} | Phone: {alumnus.phone}
-                            </p>
-                          )}
+            {pendingAlumni.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">
+                <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                All alumni registration requests have been approved!
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {pendingAlumni.map((alumnus) => (
+                  <div
+                    key={alumnus.id}
+                    className="p-5 rounded-2xl bg-[#FAF7F2] border border-slate-300 flex flex-col lg:flex-row lg:items-center justify-between gap-4"
+                  >
+                    <div className="flex items-start gap-3.5">
+                      <img
+                        src={alumnus.avatarUrl}
+                        alt={alumnus.fullName}
+                        className="w-16 h-16 rounded-xl object-cover border border-slate-300 flex-shrink-0"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <h3 className="font-serif-heading text-lg font-bold text-[#0F172A]">
+                            {alumnus.fullName}
+                          </h3>
+                          <span className="text-[10px] font-mono bg-slate-200 px-2 py-0.5 rounded text-slate-700">
+                            @{alumnus.username}
+                          </span>
                         </div>
-                      </div>
 
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <button
-                          onClick={() => handleApproveAlumni(alumnus.id, "Life Member")}
-                          className="px-3.5 py-2 rounded-xl bg-[#2D5A43] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#234734] transition-colors"
-                        >
-                          Approve as Life Member
-                        </button>
-                        <button
-                          onClick={() => handleApproveAlumni(alumnus.id, "Patron Member")}
-                          className="px-3.5 py-2 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors"
-                        >
-                          Approve as Patron
-                        </button>
-                        <button
-                          onClick={() => handleRejectAlumni(alumnus.id)}
-                          className="p-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                          title="Reject"
-                        >
-                          <XCircle className="w-5 h-5" />
-                        </button>
+                        {/* UG / PG badges */}
+                        <div className="flex flex-wrap gap-1.5 my-1">
+                          {alumnus.ugBatchYear && (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-white border border-[#C5A059]/60 text-[#0F172A]">
+                              UG Batch: {alumnus.ugBatchYear}
+                            </span>
+                          )}
+                          {alumnus.pgBatchYear && (
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 border border-emerald-300 text-[#2D5A43]">
+                              PG Batch: {alumnus.pgBatchYear} ({alumnus.pgDegree || "MD"})
+                            </span>
+                          )}
+                          <span className="text-[11px] text-slate-600 font-medium px-2 py-0.5 rounded bg-slate-100">
+                            {alumnus.specialization}
+                          </span>
+                        </div>
+
+                        <p className="text-xs text-slate-600">
+                          <strong>Job:</strong> {alumnus.jobType} • {alumnus.designation} at {alumnus.workplace} ({alumnus.city}, {alumnus.state})
+                        </p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          Mobile: <strong>{alumnus.mobile}</strong> | DOB: <strong>{alumnus.dateOfBirth}</strong> | Email: {alumnus.email}
+                        </p>
                       </div>
                     </div>
-                  ))}
-                </div>
-              )}
+
+                    {/* Admin Action: Assign Tier and Approve */}
+                    <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
+                      <button
+                        onClick={() => handleApproveAlumni(alumnus.id, "Non-Paid Member")}
+                        className="px-3 py-2 rounded-xl bg-slate-800 text-white text-xs font-bold uppercase tracking-wider hover:bg-slate-900 transition-colors"
+                      >
+                        Approve (Non-Paid)
+                      </button>
+                      <button
+                        onClick={() => handleApproveAlumni(alumnus.id, "Life Member")}
+                        className="px-3.5 py-2 rounded-xl bg-[#2D5A43] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#234734] transition-colors"
+                      >
+                        Approve (Life Member)
+                      </button>
+                      <button
+                        onClick={() => handleApproveAlumni(alumnus.id, "Patron Member")}
+                        className="px-3.5 py-2 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors font-bold"
+                      >
+                        Approve (Patron)
+                      </button>
+                      <button
+                        onClick={() => handleRejectAlumni(alumnus.id)}
+                        className="p-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
+                        title="Reject Registration"
+                      >
+                        <XCircle className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 2: ALL REGISTERED ALUMNI LIST */}
+        {activeTab === "all_registered" && (
+          <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+              <div>
+                <h2 className="font-serif-heading text-xl font-bold text-[#0F172A]">
+                  Complete Registered Alumni Roster ({alumniList.length})
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Full list of registered members. You can adjust their membership tiers or manage accounts.
+                </p>
+              </div>
+
+              <input
+                type="text"
+                placeholder="Search alumni by name, username, city..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="px-4 py-2 text-xs bg-[#FAF7F2] border border-slate-300 rounded-xl outline-none focus:ring-2 focus:ring-[#2D5A43] w-full sm:w-64"
+              />
+            </div>
+
+            <div className="space-y-3">
+              {alumniList
+                .filter((a) =>
+                  searchQuery ? a.fullName.toLowerCase().includes(searchQuery.toLowerCase()) || a.username?.toLowerCase().includes(searchQuery.toLowerCase()) || a.city.toLowerCase().includes(searchQuery.toLowerCase()) : true
+                )
+                .map((a) => (
+                  <div
+                    key={a.id}
+                    className="p-4 rounded-2xl bg-[#FAF7F2] border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                  >
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={a.avatarUrl}
+                        alt={a.fullName}
+                        className="w-12 h-12 rounded-xl object-cover border border-slate-300"
+                      />
+                      <div>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-sm text-[#0F172A]">{a.fullName}</span>
+                          <span className="font-mono text-[10px] text-slate-500">@{a.username}</span>
+                          <span
+                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                              a.isVerified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                            }`}
+                          >
+                            {a.isVerified ? "Approved" : "Pending"}
+                          </span>
+                        </div>
+                        <div className="text-slate-600 mt-0.5">
+                          {a.ugBatchYear ? `UG: ${a.ugBatchYear} ` : ""}
+                          {a.pgBatchYear ? `PG: ${a.pgBatchYear} ` : ""}
+                          • {a.jobType} ({a.workplace}, {a.city})
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <select
+                        value={a.membershipTier}
+                        onChange={(e) => handleChangeTier(a.id, e.target.value as MembershipTier)}
+                        className="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none"
+                      >
+                        <option value="Non-Paid Member">Non-Paid Member</option>
+                        <option value="Life Member">Life Member</option>
+                        <option value="Patron Member">Patron Member</option>
+                        <option value="Annual Member">Annual Member</option>
+                      </select>
+                    </div>
+                  </div>
+                ))}
             </div>
           </div>
         )}
 
-        {/* TAB 2: Patron Management */}
+        {/* TAB 3: PASSWORD RESET REQUESTS */}
+        {activeTab === "password_resets" && (
+          <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
+            <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
+              Alumni Password Reset Requests
+            </h2>
+            <p className="text-xs text-slate-500 mb-6">
+              सुरक्षा नियम: बिना अल्युम्नाई की आधिकारिक रिक्वेस्ट के पासवर्ड नहीं बदला जा सकता। जब कोई छात्र 'Forgot Password' सबमिट करता है, तभी यहाँ रिक्वेस्ट आती है।
+            </p>
+
+            {resetRequests.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">
+                <Key className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                No password reset requests currently in queue.
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {resetRequests.map((req) => (
+                  <div
+                    key={req.id}
+                    className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                      req.status === "pending"
+                        ? "bg-amber-50/70 border-amber-200"
+                        : "bg-slate-50 border-slate-200 opacity-75"
+                    }`}
+                  >
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-sm text-[#0F172A]">{req.fullName}</span>
+                        <span className="font-mono text-slate-500">(@{req.username})</span>
+                        <span
+                          className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                            req.status === "pending"
+                              ? "bg-amber-200 text-amber-900"
+                              : "bg-emerald-100 text-emerald-800"
+                          }`}
+                        >
+                          {req.status === "pending" ? "Action Required" : "Resolved"}
+                        </span>
+                      </div>
+                      <p className="text-slate-600 mt-1">
+                        Mobile: <strong>{req.mobile}</strong> | Requested at: {req.requestedAt}
+                      </p>
+                      {req.newPasswordAssigned && (
+                        <p className="text-emerald-700 font-mono mt-0.5">
+                          New password assigned: <strong>{req.newPasswordAssigned}</strong>
+                        </p>
+                      )}
+                    </div>
+
+                    {req.status === "pending" && (
+                      <button
+                        onClick={() => {
+                          setActiveResetModalReq(req);
+                          setNewPasswordToAssign("rishikul2026");
+                        }}
+                        className="flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors"
+                      >
+                        <KeyRound className="w-3.5 h-3.5 text-[#C5A059]" />
+                        Reset Password
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB 4: PATRON ROSTER */}
         {activeTab === "patrons" && (
           <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
-            <div className="flex items-center justify-between mb-6">
-              <div>
-                <h2 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                  Patron Members Roster
-                </h2>
-                <p className="text-xs text-slate-500 mt-0.5">
-                  Promote existing members to Patron status or adjust their membership tiers.
-                </p>
-              </div>
-            </div>
+            <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
+              Patron Members Roster ({patronMembers.length})
+            </h2>
+            <p className="text-xs text-slate-500 mb-6">
+              VIP Patrons who have contributed to the Rishikul Alumni Association corpus.
+            </p>
 
             <div className="space-y-4">
               {patronMembers.map((patron) => (
@@ -414,7 +624,7 @@ export default function AdminDashboardPage() {
                         </span>
                       </div>
                       <p className="text-xs text-[#2D5A43]">
-                        {patron.degree} • Batch of {patron.batchYear} • {patron.city}
+                        {patron.ugBatchYear ? `UG: ${patron.ugBatchYear} ` : ""}{patron.pgBatchYear ? `PG: ${patron.pgBatchYear} ` : ""}• {patron.city}
                       </p>
                     </div>
                   </div>
@@ -427,7 +637,7 @@ export default function AdminDashboardPage() {
                     >
                       <option value="Patron Member">Patron Member</option>
                       <option value="Life Member">Life Member</option>
-                      <option value="Annual Member">Annual Member</option>
+                      <option value="Non-Paid Member">Non-Paid Member</option>
                     </select>
                   </div>
                 </div>
@@ -436,7 +646,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 3: Lifetime Achievers Management */}
+        {/* TAB 5: LIFETIME ACHIEVERS */}
         {activeTab === "achievers" && (
           <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -487,17 +697,6 @@ export default function AdminDashboardPage() {
                     <p className="text-xs text-slate-600 line-clamp-3 leading-relaxed mb-3 italic">
                       "{achiever.citation}"
                     </p>
-
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {achiever.awards.map((award, idx) => (
-                        <span
-                          key={idx}
-                          className="px-2 py-0.5 bg-amber-100 text-amber-900 rounded-md text-[10px] font-semibold"
-                        >
-                          {award}
-                        </span>
-                      ))}
-                    </div>
                   </div>
 
                   <div className="pt-3 border-t border-slate-200 flex justify-end">
@@ -515,13 +714,13 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 4: Shradhanjali Management */}
+        {/* TAB 6: SHRADHANJALI */}
         {activeTab === "shradhanjali" && (
           <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                  Shradhanjali (शोक श्रद्धांजलि) Management
+                  Shradhanjali (शोक श्रद्धांजलि) Memorials
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Publish heartfelt memorials and condolences for departed vaidyas and batchmates.
@@ -533,7 +732,7 @@ export default function AdminDashboardPage() {
                 className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors shadow-sm"
               >
                 <Plus className="w-4 h-4 text-[#C5A059]" />
-                Add Shradhanjali Tribute
+                Add Memorial Tribute
               </button>
             </div>
 
@@ -587,125 +786,48 @@ export default function AdminDashboardPage() {
         )}
       </div>
 
-      {/* Modal: Add Lifetime Achiever */}
-      {showAchieverModal && (
+      {/* Modal: Admin Execute Password Reset */}
+      {activeResetModalReq && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-[#C5A059]/40 max-h-[90vh] overflow-y-auto">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-[#C5A059]/40">
             <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A] mb-1">
-              Add Lifetime Achiever
+              Reset Alumnus Password
             </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Enter alumnus accomplishments, batch, and portrait photo.
+            <p className="text-xs text-slate-500 mb-4">
+              Fulfilling password reset requested by <strong>{activeResetModalReq.fullName}</strong> (@{activeResetModalReq.username}).
             </p>
 
-            <form onSubmit={handleAddAchiever} className="space-y-4">
+            <form onSubmit={handleExecutePasswordReset} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Full Name *
+                  Assign New Password
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Padma Shri Dr. Ram Prakash"
-                  value={newAchiever.name}
-                  onChange={(e) => setNewAchiever({ ...newAchiever, name: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                  value={newPasswordToAssign}
+                  onChange={(e) => setNewPasswordToAssign(e.target.value)}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-mono focus:ring-2 focus:ring-[#2D5A43] outline-none"
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                    Graduation Batch Year *
-                  </label>
-                  <input
-                    type="number"
-                    required
-                    value={newAchiever.batchYear}
-                    onChange={(e) => setNewAchiever({ ...newAchiever, batchYear: Number(e.target.value) })}
-                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                    Degree
-                  </label>
-                  <input
-                    type="text"
-                    value={newAchiever.degree}
-                    onChange={(e) => setNewAchiever({ ...newAchiever, degree: e.target.value })}
-                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                  />
-                </div>
+              <div className="p-3 bg-amber-50 rounded-xl text-[11px] text-amber-900">
+                You can communicate this temporary password to the alumnus via WhatsApp: <strong>{activeResetModalReq.mobile}</strong>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Title / Distinguishing Honor *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Master of Pulse Diagnosis & Herbal Chemist"
-                  value={newAchiever.title}
-                  onChange={(e) => setNewAchiever({ ...newAchiever, title: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Photo URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={newAchiever.photoUrl}
-                  onChange={(e) => setNewAchiever({ ...newAchiever, photoUrl: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Citation / Notable Achievements *
-                </label>
-                <textarea
-                  required
-                  rows={3}
-                  placeholder="Contributions to Ayurveda, government policies, books published..."
-                  value={newAchiever.citation}
-                  onChange={(e) => setNewAchiever({ ...newAchiever, citation: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Awards (Comma-separated)
-                </label>
-                <input
-                  type="text"
-                  placeholder="Padma Shri, Dhanvantari Award, AYUSH Ratna"
-                  value={Array.isArray(newAchiever.awards) ? newAchiever.awards.join(", ") : newAchiever.awards}
-                  onChange={(e) => setNewAchiever({ ...newAchiever, awards: e.target.value as any })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                />
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3">
+              <div className="pt-2 flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  onClick={() => setShowAchieverModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100"
+                  onClick={() => setActiveResetModalReq(null)}
+                  className="px-4 py-2 text-xs font-bold uppercase text-slate-500"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors"
+                  className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43]"
                 >
-                  Save Achiever
+                  Confirm & Save Password
                 </button>
               </div>
             </form>
@@ -713,113 +835,127 @@ export default function AdminDashboardPage() {
         </div>
       )}
 
-      {/* Modal: Add Shradhanjali Tribute */}
+      {/* Modal: Add Lifetime Achiever */}
+      {showAchieverModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-[#C5A059]/40 max-h-[90vh] overflow-y-auto">
+            <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A] mb-1">
+              Add Lifetime Achiever
+            </h3>
+            <form onSubmit={handleAddAchiever} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Full Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={newAchiever.name}
+                  onChange={(e) => setNewAchiever({ ...newAchiever, name: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Batch Year *</label>
+                  <input
+                    type="number"
+                    required
+                    value={newAchiever.batchYear}
+                    onChange={(e) => setNewAchiever({ ...newAchiever, batchYear: Number(e.target.value) })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Degree</label>
+                  <input
+                    type="text"
+                    value={newAchiever.degree}
+                    onChange={(e) => setNewAchiever({ ...newAchiever, degree: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
+                  />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Honor / Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={newAchiever.title}
+                  onChange={(e) => setNewAchiever({ ...newAchiever, title: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Citation *</label>
+                <textarea
+                  required
+                  rows={3}
+                  value={newAchiever.citation}
+                  onChange={(e) => setNewAchiever({ ...newAchiever, citation: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm outline-none"
+                />
+              </div>
+              <div className="pt-2 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowAchieverModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500">Cancel</button>
+                <button type="submit" className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase hover:bg-[#2D5A43]">Save Achiever</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal: Add Shradhanjali */}
       {showShradhanjaliModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
           <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-[#C5A059]/40 max-h-[90vh] overflow-y-auto">
             <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A] mb-1">
-              Add Shradhanjali Memorial (शोक श्रद्धांजलि)
+              Add Shradhanjali Tribute
             </h3>
-            <p className="text-xs text-slate-500 mb-6">
-              Memorialize late alumni doctors and colleagues with their demise date and heartfelt tribute.
-            </p>
-
             <form onSubmit={handleAddShradhanjali} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Full Name of Departed Alumnus *
-                </label>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Name of Departed Alumnus *</label>
                 <input
                   type="text"
                   required
-                  placeholder="e.g. Late Dr. Birendra Singh"
                   value={newShradhanjali.name}
                   onChange={(e) => setNewShradhanjali({ ...newShradhanjali, name: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
                 />
               </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                    Graduation Batch Year *
-                  </label>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Batch Year *</label>
                   <input
                     type="number"
                     required
                     value={newShradhanjali.batchYear}
                     onChange={(e) => setNewShradhanjali({ ...newShradhanjali, batchYear: Number(e.target.value) })}
-                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                    Date of Demise (स्वर्गवास तिथि) *
-                  </label>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Date of Demise *</label>
                   <input
                     type="date"
                     required
                     value={newShradhanjali.dateOfDemise}
                     onChange={(e) => setNewShradhanjali({ ...newShradhanjali, dateOfDemise: e.target.value })}
-                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
                   />
                 </div>
               </div>
-
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Memorial Photo URL
-                </label>
-                <input
-                  type="url"
-                  placeholder="https://images.unsplash.com/..."
-                  value={newShradhanjali.photoUrl}
-                  onChange={(e) => setNewShradhanjali({ ...newShradhanjali, photoUrl: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Heartfelt Tribute / Memorial Words *
-                </label>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">Tribute Words *</label>
                 <textarea
                   required
                   rows={3}
-                  placeholder="Memories, medical service to society, batches they studied with..."
                   value={newShradhanjali.tribute}
                   onChange={(e) => setNewShradhanjali({ ...newShradhanjali, tribute: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm outline-none"
                 />
               </div>
-
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Posted On Behalf Of
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Batch of 1977 / Executive Committee"
-                  value={newShradhanjali.postedBy}
-                  onChange={(e) => setNewShradhanjali({ ...newShradhanjali, postedBy: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                />
-              </div>
-
-              <div className="pt-4 flex items-center justify-end gap-3">
-                <button
-                  type="button"
-                  onClick={() => setShowShradhanjaliModal(false)}
-                  className="px-4 py-2.5 rounded-xl text-xs font-bold uppercase tracking-wider text-slate-600 hover:bg-slate-100"
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors"
-                >
-                  Publish Tribute
-                </button>
+              <div className="pt-2 flex justify-end gap-3">
+                <button type="button" onClick={() => setShowShradhanjaliModal(false)} className="px-4 py-2 text-xs font-bold uppercase text-slate-500">Cancel</button>
+                <button type="submit" className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase hover:bg-[#2D5A43]">Publish Tribute</button>
               </div>
             </form>
           </div>

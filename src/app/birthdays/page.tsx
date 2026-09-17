@@ -15,14 +15,13 @@ export default function BirthdaysPage() {
     setAlumni(getAlumniList());
   }, []);
 
-  // Compute Today's Month-Day (e.g. "09-17")
+  // Compute Today's Month-Day
   const today = new Date();
   const todayMonthDay = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
   // Filter today's birthdays
   const todaysBirthdays = alumni.filter((a) => {
     if (!a.dateOfBirth) return false;
-    // a.dateOfBirth format: "YYYY-MM-DD"
     const parts = a.dateOfBirth.split("-");
     if (parts.length < 3) return false;
     const mDay = `${parts[1]}-${parts[2]}`;
@@ -58,6 +57,13 @@ export default function BirthdaysPage() {
     }
   };
 
+  const getBatchText = (a: AlumniProfile) => {
+    if (a.ugBatchYear && a.pgBatchYear) return `UG: ${a.ugBatchYear} | PG: ${a.pgBatchYear}`;
+    if (a.ugBatchYear) return `UG Batch: ${a.ugBatchYear}`;
+    if (a.pgBatchYear) return `PG Batch: ${a.pgBatchYear}`;
+    return `Batch: ${a.batchYear || ""}`;
+  };
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,7 +81,7 @@ export default function BirthdaysPage() {
           </p>
         </div>
 
-        {/* SECTION 1: TODAY'S BIRTHDAYS (Hero Celebration) */}
+        {/* SECTION 1: TODAY'S BIRTHDAYS */}
         <div className="mb-16">
           <div className="flex items-center gap-3 mb-6">
             <span className="w-3 h-3 rounded-full bg-red-500 animate-ping" />
@@ -114,7 +120,7 @@ export default function BirthdaysPage() {
                             {alumnus.fullName}
                           </h3>
                           <p className="text-xs text-[#2D5A43] font-semibold">
-                            {alumnus.degree} • Batch of {alumnus.batchYear}
+                            {getBatchText(alumnus)}
                           </p>
                           <p className="text-[11px] text-slate-500">
                             {alumnus.workplace}, {alumnus.city}
@@ -167,7 +173,7 @@ export default function BirthdaysPage() {
           )}
         </div>
 
-        {/* SECTION 2: UPCOMING BIRTHDAYS (NEXT 7 DAYS) */}
+        {/* SECTION 2: UPCOMING BIRTHDAYS */}
         <div>
           <div className="flex items-center gap-2 mb-6">
             <Calendar className="w-5 h-5 text-[#2D5A43]" />
@@ -202,7 +208,7 @@ export default function BirthdaysPage() {
                         {alumnus.fullName}
                       </h4>
                       <p className="text-xs text-[#2D5A43]">
-                        {alumnus.degree} • Batch of {alumnus.batchYear}
+                        {getBatchText(alumnus)}
                       </p>
                       <p className="text-[11px] text-slate-500">{alumnus.city}, {alumnus.state}</p>
                     </div>

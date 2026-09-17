@@ -1,15 +1,15 @@
 "use client";
 
 import React from "react";
-import { X, Filter, RotateCcw } from "lucide-react";
-import { SPECIALIZATION_OPTIONS, BATCH_YEARS } from "@/lib/mockData";
+import { X, Filter, RotateCcw, GraduationCap, Briefcase } from "lucide-react";
+import { SPECIALIZATION_OPTIONS, BATCH_YEARS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
 import { DirectoryFilterState } from "@/types";
 
 interface FilterDrawerProps {
   isOpen: boolean;
   onClose: () => void;
   filters: DirectoryFilterState;
-  onFilterChange: (key: keyof DirectoryFilterState, value: string) => void;
+  onFilterChange: (key: keyof DirectoryFilterState, value: any) => void;
   onReset: () => void;
   totalResults: number;
 }
@@ -38,7 +38,7 @@ export default function FilterDrawer({
         <div className="px-6 py-5 border-b border-[#C5A059]/25 flex items-center justify-between bg-[#0F172A] text-white">
           <div className="flex items-center gap-2">
             <Filter className="w-5 h-5 text-[#C5A059]" />
-            <h2 className="font-serif-heading text-xl font-bold">Filter Directory</h2>
+            <h2 className="font-serif-heading text-xl font-bold">Filter Alumni Network</h2>
           </div>
           <button
             onClick={onClose}
@@ -48,21 +48,88 @@ export default function FilterDrawer({
           </button>
         </div>
 
-        {/* Filter Controls Body */}
+        {/* Filter Controls */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          {/* Batch Year Filter */}
+          {/* Education Level (UG / PG / Both) */}
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-2">
-              Graduation Batch
+              Rishikul Degree Level
+            </label>
+            <div className="grid grid-cols-4 gap-1.5 text-xs">
+              {[
+                { id: "ALL", label: "All" },
+                { id: "UG", label: "UG (BAMS)" },
+                { id: "PG", label: "PG (MD/MS)" },
+                { id: "BOTH", label: "Both" },
+              ].map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  onClick={() => onFilterChange("educationFilter", item.id)}
+                  className={`py-2 px-1 rounded-lg font-semibold border text-center transition-colors ${
+                    filters.educationFilter === item.id
+                      ? "bg-[#0F172A] text-white border-[#0F172A]"
+                      : "bg-white text-slate-700 border-slate-200 hover:bg-[#F3ECE2]"
+                  }`}
+                >
+                  {item.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* UG Batch Year Filter */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-1.5 flex items-center gap-1.5">
+              <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+              UG Entrance / Batch Year
             </label>
             <select
-              value={filters.batchYear}
-              onChange={(e) => onFilterChange("batchYear", e.target.value)}
-              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-3 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] focus:border-transparent outline-none transition-all"
+              value={filters.ugBatchYear}
+              onChange={(e) => onFilterChange("ugBatchYear", e.target.value)}
+              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-2.5 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
             >
               {BATCH_YEARS.map((year) => (
-                <option key={year} value={year === "All Batches" ? "" : year}>
-                  {year}
+                <option key={`ug-${year}`} value={year === "All Batches" ? "" : year}>
+                  {year === "All Batches" ? "Any UG Batch" : `UG Batch ${year}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* PG Batch Year Filter */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-1.5 flex items-center gap-1.5">
+              <GraduationCap className="w-4 h-4 text-[#2D5A43]" />
+              PG Entrance / Batch Year
+            </label>
+            <select
+              value={filters.pgBatchYear}
+              onChange={(e) => onFilterChange("pgBatchYear", e.target.value)}
+              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-2.5 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
+            >
+              {BATCH_YEARS.map((year) => (
+                <option key={`pg-${year}`} value={year === "All Batches" ? "" : year}>
+                  {year === "All Batches" ? "Any PG Batch" : `PG Batch ${year}`}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Job Type Filter */}
+          <div>
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-1.5 flex items-center gap-1.5">
+              <Briefcase className="w-4 h-4 text-slate-500" />
+              Job / Profession Type
+            </label>
+            <select
+              value={filters.jobType}
+              onChange={(e) => onFilterChange("jobType", e.target.value)}
+              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-2.5 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
+            >
+              {JOB_TYPE_OPTIONS.map((job) => (
+                <option key={job} value={job === "All Job Types" ? "" : job}>
+                  {job}
                 </option>
               ))}
             </select>
@@ -70,13 +137,13 @@ export default function FilterDrawer({
 
           {/* Specialization Filter */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-2">
+            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-1.5">
               Ayurvedic Specialization
             </label>
             <select
               value={filters.specialization}
               onChange={(e) => onFilterChange("specialization", e.target.value)}
-              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-3 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] focus:border-transparent outline-none transition-all"
+              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-2.5 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
             >
               {SPECIALIZATION_OPTIONS.map((spec) => (
                 <option key={spec} value={spec === "All Specializations" ? "" : spec}>
@@ -86,32 +153,28 @@ export default function FilterDrawer({
             </select>
           </div>
 
-          {/* State / Region Filter */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-2">
-              State / Region
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Uttarakhand, Delhi, Uttar Pradesh"
-              value={filters.state}
-              onChange={(e) => onFilterChange("state", e.target.value)}
-              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-3 text-sm text-[#0F172A] placeholder:text-slate-400 focus:ring-2 focus:ring-[#2D5A43] outline-none"
-            />
-          </div>
-
-          {/* City Filter */}
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-2">
-              City
-            </label>
-            <input
-              type="text"
-              placeholder="e.g. Haridwar, Dehradun, Rishikesh"
-              value={filters.city}
-              onChange={(e) => onFilterChange("city", e.target.value)}
-              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-3 text-sm text-[#0F172A] placeholder:text-slate-400 focus:ring-2 focus:ring-[#2D5A43] outline-none"
-            />
+          {/* State / City */}
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="block text-xs font-bold uppercase text-[#0F172A] mb-1">State</label>
+              <input
+                type="text"
+                placeholder="e.g. Uttarakhand"
+                value={filters.state}
+                onChange={(e) => onFilterChange("state", e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#2D5A43]"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase text-[#0F172A] mb-1">City</label>
+              <input
+                type="text"
+                placeholder="e.g. Haridwar"
+                value={filters.city}
+                onChange={(e) => onFilterChange("city", e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-xs outline-none focus:ring-2 focus:ring-[#2D5A43]"
+              />
+            </div>
           </div>
 
           {/* Membership Tier Filter */}
@@ -120,12 +183,12 @@ export default function FilterDrawer({
               Membership Category
             </label>
             <div className="grid grid-cols-2 gap-2">
-              {["All", "Life Member", "Patron Member", "Annual Member"].map((tier) => (
+              {["All", "Non-Paid Member", "Life Member", "Patron Member"].map((tier) => (
                 <button
                   key={tier}
                   type="button"
                   onClick={() => onFilterChange("membershipTier", tier === "All" ? "" : tier)}
-                  className={`py-2 px-3 rounded-lg text-xs font-medium border text-center transition-colors ${
+                  className={`py-2 px-2 rounded-lg text-xs font-medium border text-center transition-colors truncate ${
                     (tier === "All" && !filters.membershipTier) ||
                     filters.membershipTier === tier
                       ? "bg-[#2D5A43] text-white border-[#2D5A43]"
@@ -147,7 +210,7 @@ export default function FilterDrawer({
             className="flex items-center gap-1.5 px-4 py-3 rounded-xl text-xs font-semibold text-slate-600 hover:bg-slate-100 transition-colors"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            Reset All
+            Reset
           </button>
           <button
             type="button"

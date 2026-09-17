@@ -17,20 +17,31 @@ import {
   Cake,
   ShieldAlert,
   Lock,
-  LogOut
+  LogOut,
+  LogIn
 } from "lucide-react";
-import { isAdminAuthenticated, setAdminAuthenticated } from "@/lib/store";
+import { isAdminAuthenticated, setAdminAuthenticated, getLoggedInAlumni, setLoggedInAlumni } from "@/lib/store";
+import { AlumniProfile } from "@/types";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [loggedInUser, setLoggedInUser] = useState<AlumniProfile | null>(null);
 
   useEffect(() => {
     setIsAdmin(isAdminAuthenticated());
-    const handleAuth = () => setIsAdmin(isAdminAuthenticated());
-    window.addEventListener("admin_auth_changed", handleAuth);
-    return () => window.removeEventListener("admin_auth_changed", handleAuth);
+    setLoggedInUser(getLoggedInAlumni());
+
+    const handleAdminAuth = () => setIsAdmin(isAdminAuthenticated());
+    const handleUserAuth = () => setLoggedInUser(getLoggedInAlumni());
+
+    window.addEventListener("admin_auth_changed", handleAdminAuth);
+    window.addEventListener("user_auth_changed", handleUserAuth);
+    return () => {
+      window.removeEventListener("admin_auth_changed", handleAdminAuth);
+      window.removeEventListener("user_auth_changed", handleUserAuth);
+    };
   }, []);
 
   const navLinks = [
@@ -39,8 +50,8 @@ export default function Navbar() {
     { name: "Lifetime Achievers", href: "/achievers", icon: Award },
     { name: "Shradhanjali", href: "/shradhanjali", icon: Heart },
     { name: "Birthdays", href: "/birthdays", icon: Cake },
-    { name: "Digital ID & Membership", href: "/membership", icon: CreditCard },
-    { name: "Events & Reunions", href: "/events", icon: Calendar },
+    { name: "Digital ID", href: "/membership", icon: CreditCard },
+    { name: "Events", href: "/events", icon: Calendar },
   ];
 
   return (
@@ -81,7 +92,7 @@ export default function Navbar() {
               className="inline-flex items-center gap-1 text-slate-400 hover:text-amber-200 transition-colors"
             >
               <Lock className="w-3 h-3 text-[#C5A059]" />
-              <span>Admin Login</span>
+              <span>Admin</span>
             </Link>
           )}
         </div>
@@ -126,31 +137,56 @@ export default function Navbar() {
             })}
           </nav>
 
-          {/* Right Action: Register CTA */}
-          <div className="hidden sm:flex items-center gap-3">
-            {isAdmin && (
+          {/* Right Action: Alumni Login / Register CTA */}
+          <div className="hidden sm:flex items-center gap-2">
+            {loggedInUser ? (
+              <div className="flex items-center gap-2 bg-white border border-[#C5A059]/40 py-1.5 px-3 rounded-full shadow-sm">
+                <img
+                  src={loggedInUser.avatarUrl}
+                  alt={loggedInUser.fullName}
+                  className="w-6 h-6 rounded-full object-cover border"
+                />
+                <span className="text-xs font-bold text-[#0F172A] truncate max-w-[120px]">
+                  Dr. {loggedInUser.fullName.split(" ")[1] || loggedInUser.fullName}
+                </span>
+                <button
+                  onClick={() => setLoggedInAlumni(null)}
+                  className="text-slate-400 hover:text-red-600 p-0.5"
+                  title="Logout"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
               <Link
-                href="/admin"
-                className="inline-flex items-center gap-1.5 px-3 py-2 rounded-full text-xs font-bold uppercase bg-emerald-700 text-white hover:bg-emerald-800 transition-colors shadow-sm"
+                href="/login"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider text-[#0F172A] bg-white border border-slate-300 hover:bg-[#FAF7F2] transition-colors"
               >
-                <ShieldAlert className="w-3.5 h-3.5" />
-                Admin Dashboard
+                <LogIn className="w-3.5 h-3.5 text-[#C5A059]" />
+                Login
               </Link>
             )}
+
             <Link
               href="/register"
-              className="inline-flex items-center gap-2 px-4 py-2.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-[#0F172A] text-[#FAF7F2] hover:bg-[#2D5A43] hover:shadow-md transition-all duration-200 border border-[#C5A059]/40"
+              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-[#0F172A] text-[#FAF7F2] hover:bg-[#2D5A43] hover:shadow-md transition-all duration-200 border border-[#C5A059]/40"
             >
               <UserCheck className="w-3.5 h-3.5 text-[#C5A059]" />
-              Join Alumni Network
+              Join Alumni
             </Link>
           </div>
 
-          {/* Mobile hamburger menu button */}
+          {/* Mobile hamburger menu */}
           <div className="flex lg:hidden items-center gap-2">
             <Link
+              href="/login"
+              className="px-2.5 py-1 text-xs font-bold uppercase bg-white border border-slate-300 rounded-md text-[#0F172A]"
+            >
+              Login
+            </Link>
+            <Link
               href="/register"
-              className="px-3 py-1.5 text-xs font-semibold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40"
+              className="px-2.5 py-1 text-xs font-bold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40"
             >
               Join
             </Link>
