@@ -368,3 +368,89 @@ VALUES
     ('admin-1', 'admin', 'a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84', 'Super Admin'),
     ('admin-2', 'secretary', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'General Secretary')
 ON CONFLICT (username) DO NOTHING;
+
+-- ==============================================================================
+-- 14. Community Showcase / Gallery Posts (ऋषिकुल संगम पटल) - Additive
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.community_posts (
+    id TEXT PRIMARY KEY DEFAULT ('post-' || floor(extract(epoch from now()) * 1000)::text),
+    user_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    author_name TEXT NOT NULL,
+    author_avatar TEXT,
+    author_batch TEXT,
+    title TEXT NOT NULL,
+    description TEXT,
+    content_type TEXT NOT NULL DEFAULT 'photo',
+    category TEXT NOT NULL DEFAULT 'Photos',
+    file_url TEXT,
+    thumbnail_url TEXT,
+    external_url TEXT,
+    file_name TEXT,
+    mime_type TEXT,
+    file_size BIGINT,
+    related_batch TEXT,
+    tags TEXT[] DEFAULT '{}',
+    is_pinned BOOLEAN DEFAULT FALSE,
+    pin_order INTEGER DEFAULT 0,
+    pinned_at TIMESTAMP WITH TIME ZONE,
+    pinned_by TEXT,
+    is_hidden BOOLEAN DEFAULT FALSE,
+    likes_count INTEGER DEFAULT 0,
+    reports_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+CREATE INDEX IF NOT EXISTS idx_community_posts_pinned ON public.community_posts(is_pinned, pin_order, created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_community_posts_user ON public.community_posts(user_id);
+CREATE INDEX IF NOT EXISTS idx_community_posts_category ON public.community_posts(category);
+
+-- Community Post Reports (अनुचित सामग्री रिपोर्टिंग)
+CREATE TABLE IF NOT EXISTS public.community_post_reports (
+    id TEXT PRIMARY KEY DEFAULT ('report-' || floor(extract(epoch from now()) * 1000)::text),
+    post_id TEXT NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
+    reporter_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    reporter_name TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    details TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'reviewed', 'dismissed')),
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Community Post Likes (लाइक्स)
+CREATE TABLE IF NOT EXISTS public.community_post_likes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    post_id TEXT NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(post_id, user_id)
+);
+
+-- RLS & Policies for Community Showcase
+ALTER TABLE public.community_posts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_post_reports ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_post_likes ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Public read community_posts" ON public.community_posts;
+    DROP POLICY IF EXISTS "Enable all community_posts" ON public.community_posts;
+
+    DROP POLICY IF EXISTS "Public read community_post_reports" ON public.community_post_reports;
+    DROP POLICY IF EXISTS "Enable all community_post_reports" ON public.community_post_reports;
+
+    DROP POLICY IF EXISTS "Public read community_post_likes" ON public.community_post_likes;
+    DROP POLICY IF EXISTS "Enable all community_post_likes" ON public.community_post_likes;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+CREATE POLICY "Public read community_posts" ON public.community_posts FOR SELECT USING (true);
+CREATE POLICY "Enable all community_posts" ON public.community_posts FOR ALL USING (true);
+
+CREATE POLICY "Public read community_post_reports" ON public.community_post_reports FOR SELECT USING (true);
+CREATE POLICY "Enable all community_post_reports" ON public.community_post_reports FOR ALL USING (true);
+
+CREATE POLICY "Public read community_post_likes" ON public.community_post_likes FOR SELECT USING (true);
+CREATE POLICY "Enable all community_post_likes" ON public.community_post_likes FOR ALL USING (true);
+

@@ -244,3 +244,79 @@ export interface AchieverNomination {
   status: 'pending' | 'approved' | 'rejected';
   adminRemarks?: string;
 }
+
+// ---------------------------------------------------------------------------
+// Community Showcase & Gallery Types (Additive)
+// ---------------------------------------------------------------------------
+
+export type PostContentType =
+  | 'photo'
+  | 'video'
+  | 'poem'
+  | 'article'
+  | 'research'
+  | 'artwork'
+  | 'document'
+  | 'memory'
+  | 'link'
+  | 'other';
+
+export type PostCategory =
+  | 'All'
+  | 'Photos'
+  | 'Videos'
+  | 'Research'
+  | 'Articles'
+  | 'Poems'
+  | 'Artwork'
+  | 'Documents'
+  | 'Memories'
+  | 'Other';
+
+export interface CommunityPost {
+  id: string;
+  userId: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorBatch?: string;
+  title: string;
+  description?: string;
+  contentType: PostContentType;
+  category: string;
+  fileUrl?: string;
+  thumbnailUrl?: string;
+  externalUrl?: string;
+  fileName?: string;
+  mimeType?: string;
+  fileSize?: number;
+  relatedBatch?: string;
+  tags?: string[];
+  createdAt: string;
+  updatedAt: string;
+  isPinned: boolean;
+  pinOrder?: number;
+  pinnedAt?: string;
+  pinnedBy?: string;
+  isHidden: boolean;
+  likesCount?: number;
+  reportsCount?: number;
+}
+
+export interface CommunityPostReport {
+  id: string;
+  postId: string;
+  postTitle?: string;
+  reporterId: string;
+  reporterName: string;
+  reason:
+    | 'Inappropriate content'
+    | 'Copyright concern'
+    | 'Privacy concern'
+    | 'Spam'
+    | 'Incorrect information'
+    | 'Other';
+  details?: string;
+  status: 'pending' | 'reviewed' | 'dismissed';
+  createdAt: string;
+}
+

@@ -10,6 +10,8 @@ import {
   CommunityAchievement,
   AssociationEvent,
   AchieverNomination,
+  CommunityPost,
+  CommunityPostReport,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -826,3 +828,366 @@ export async function addEvent(
   }
   return newEvent;
 }
+
+// ---------------------------------------------------------------------------
+// COMMUNITY SHOWCASE & GALLERY (Supabase "community_posts")
+// ---------------------------------------------------------------------------
+
+function rowToCommunityPost(row: Record<string, unknown>): CommunityPost {
+  return {
+    id: row.id as string,
+    userId: row.user_id as string,
+    authorName: row.author_name as string,
+    authorAvatar: row.author_avatar as string | undefined,
+    authorBatch: row.author_batch as string | undefined,
+    title: row.title as string,
+    description: (row.description as string) || "",
+    contentType: (row.content_type as CommunityPost["contentType"]) || "photo",
+    category: (row.category as string) || "Photos",
+    fileUrl: row.file_url as string | undefined,
+    thumbnailUrl: row.thumbnail_url as string | undefined,
+    externalUrl: row.external_url as string | undefined,
+    fileName: row.file_name as string | undefined,
+    mimeType: row.mime_type as string | undefined,
+    fileSize: row.file_size ? Number(row.file_size) : undefined,
+    relatedBatch: row.related_batch as string | undefined,
+    tags: (row.tags as string[]) || [],
+    isPinned: Boolean(row.is_pinned),
+    pinOrder: row.pin_order ? Number(row.pin_order) : 0,
+    pinnedAt: row.pinned_at as string | undefined,
+    pinnedBy: row.pinned_by as string | undefined,
+    isHidden: Boolean(row.is_hidden),
+    likesCount: Number(row.likes_count) || 0,
+    reportsCount: Number(row.reports_count) || 0,
+    createdAt: row.created_at as string,
+    updatedAt: row.updated_at as string,
+  };
+}
+
+function communityPostToRow(post: Omit<CommunityPost, "createdAt" | "updatedAt" | "likesCount" | "reportsCount">): Record<string, unknown> {
+  return {
+    id: post.id,
+    user_id: post.userId,
+    author_name: post.authorName,
+    author_avatar: post.authorAvatar ?? null,
+    author_batch: post.authorBatch ?? null,
+    title: post.title,
+    description: post.description ?? null,
+    content_type: post.contentType,
+    category: post.category,
+    file_url: post.fileUrl ?? null,
+    thumbnail_url: post.thumbnailUrl ?? null,
+    external_url: post.externalUrl ?? null,
+    file_name: post.fileName ?? null,
+    mime_type: post.mimeType ?? null,
+    file_size: post.fileSize ?? null,
+    related_batch: post.relatedBatch ?? null,
+    tags: post.tags ?? [],
+    is_pinned: post.isPinned ?? false,
+    pin_order: post.pinOrder ?? 0,
+    pinned_at: post.pinnedAt ?? null,
+    pinned_by: post.pinnedBy ?? null,
+    is_hidden: post.isHidden ?? false,
+  };
+}
+
+export async function getCommunityPosts(options?: {
+  category?: string;
+  userId?: string;
+  authorId?: string;
+  includeHidden?: boolean;
+}): Promise<CommunityPost[]> {
+  let query = supabase
+    .from("community_posts")
+    .select("*")
+    .order("is_pinned", { ascending: false })
+    .order("pin_order", { ascending: true })
+    .order("created_at", { ascending: false });
+
+  if (!options?.includeHidden) {
+    query = query.eq("is_hidden", false);
+  }
+
+  if (options?.category && options.category !== "All") {
+    query = query.eq("category", options.category);
+  }
+
+  const filterUser = options?.userId || options?.authorId;
+  if (filterUser) {
+    query = query.eq("user_id", filterUser);
+  }
+
+  const { data, error } = await query;
+  if (error) {
+    console.error("getCommunityPosts error:", error.message);
+    return [];
+  }
+  return (data ?? []).map(rowToCommunityPost);
+}
+
+export async function createCommunityPost(
+  post: Omit<
+    CommunityPost,
+    "id" | "createdAt" | "updatedAt" | "isPinned" | "pinOrder" | "isHidden" | "likesCount" | "reportsCount"
+  >
+): Promise<CommunityPost> {
+  const newId = `post-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+  const now = new Date().toISOString();
+
+  const fullPost: CommunityPost = {
+    ...post,
+    id: newId,
+    isPinned: false,
+    pinOrder: 0,
+    isHidden: false,
+    likesCount: 0,
+    reportsCount: 0,
+    createdAt: now,
+    updatedAt: now,
+  };
+
+  const row = communityPostToRow(fullPost);
+  const { error } = await supabase.from("community_posts").insert(row);
+  if (error) {
+    console.error("createCommunityPost error:", error.message);
+    throw new Error(error.message);
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("community_posts_updated"));
+  }
+  return fullPost;
+}
+
+export async function updateCommunityPost(
+  id: string,
+  updates: Partial<CommunityPost>
+): Promise<void> {
+  const snakeUpdates: Record<string, unknown> = {
+    updated_at: new Date().toISOString(),
+  };
+
+  if (updates.title !== undefined) snakeUpdates.title = updates.title;
+  if (updates.description !== undefined) snakeUpdates.description = updates.description;
+  if (updates.category !== undefined) snakeUpdates.category = updates.category;
+  if (updates.contentType !== undefined) snakeUpdates.content_type = updates.contentType;
+  if (updates.externalUrl !== undefined) snakeUpdates.external_url = updates.externalUrl;
+  if (updates.fileUrl !== undefined) snakeUpdates.file_url = updates.fileUrl;
+  if (updates.thumbnailUrl !== undefined) snakeUpdates.thumbnail_url = updates.thumbnailUrl;
+  if (updates.tags !== undefined) snakeUpdates.tags = updates.tags;
+  if (updates.relatedBatch !== undefined) snakeUpdates.related_batch = updates.relatedBatch;
+  if (updates.isPinned !== undefined) snakeUpdates.is_pinned = updates.isPinned;
+  if (updates.pinOrder !== undefined) snakeUpdates.pin_order = updates.pinOrder;
+  if (updates.pinnedAt !== undefined) snakeUpdates.pinned_at = updates.pinnedAt;
+  if (updates.pinnedBy !== undefined) snakeUpdates.pinned_by = updates.pinnedBy;
+  if (updates.isHidden !== undefined) snakeUpdates.is_hidden = updates.isHidden;
+
+  const { error } = await supabase.from("community_posts").update(snakeUpdates).eq("id", id);
+  if (error) {
+    console.error("updateCommunityPost error:", error.message);
+    throw new Error(error.message);
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("community_posts_updated"));
+  }
+}
+
+export async function deleteCommunityPost(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase.from("community_posts").delete().eq("id", id);
+    if (error) throw new Error(error.message);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("community_posts_updated"));
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("deleteCommunityPost error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function pinCommunityPost(
+  id: string,
+  pinOrder: number = 1,
+  adminName: string = "Association Admin"
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await updateCommunityPost(id, {
+      isPinned: true,
+      pinOrder,
+      pinnedAt: new Date().toISOString(),
+      pinnedBy: adminName,
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.error("pinCommunityPost error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function unpinCommunityPost(id: string): Promise<{ success: boolean; error?: string }> {
+  try {
+    await updateCommunityPost(id, {
+      isPinned: false,
+      pinOrder: 0,
+      pinnedAt: undefined,
+      pinnedBy: undefined,
+    });
+    return { success: true };
+  } catch (err: any) {
+    console.error("unpinCommunityPost error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function hideCommunityPost(
+  id: string,
+  isHidden: boolean = true
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    await updateCommunityPost(id, { isHidden });
+    return { success: true };
+  } catch (err: any) {
+    console.error("hideCommunityPost error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+// Likes
+export async function toggleCommunityPostLike(
+  postId: string,
+  userId: string
+): Promise<{ liked: boolean; likesCount: number }> {
+  const { data: existing } = await supabase
+    .from("community_post_likes")
+    .select("id")
+    .eq("post_id", postId)
+    .eq("user_id", userId)
+    .maybeSingle();
+
+  if (existing) {
+    // Unlike
+    await supabase.from("community_post_likes").delete().eq("post_id", postId).eq("user_id", userId);
+    // Decrement
+    const { data: post } = await supabase.from("community_posts").select("likes_count").eq("id", postId).single();
+    const newCount = Math.max(0, ((post?.likes_count as number) || 1) - 1);
+    await supabase.from("community_posts").update({ likes_count: newCount }).eq("id", postId);
+    return { liked: false, likesCount: newCount };
+  } else {
+    // Like
+    await supabase.from("community_post_likes").insert({ post_id: postId, user_id: userId });
+    const { data: post } = await supabase.from("community_posts").select("likes_count").eq("id", postId).single();
+    const newCount = ((post?.likes_count as number) || 0) + 1;
+    await supabase.from("community_posts").update({ likes_count: newCount }).eq("id", postId);
+    return { liked: true, likesCount: newCount };
+  }
+}
+
+export async function getMyLikedPostIds(userId: string): Promise<string[]> {
+  if (!userId) return [];
+  const { data } = await supabase
+    .from("community_post_likes")
+    .select("post_id")
+    .eq("user_id", userId);
+  return (data ?? []).map((r: Record<string, unknown>) => r.post_id as string);
+}
+
+// Reports
+export async function reportCommunityPost(report: {
+  postId: string;
+  postTitle?: string;
+  reporterId: string;
+  reporterName: string;
+  reason: CommunityPostReport["reason"];
+  details?: string;
+}): Promise<{ success: boolean; error?: string }> {
+  try {
+    const newId = `report-${Date.now()}`;
+    const row = {
+      id: newId,
+      post_id: report.postId,
+      reporter_id: report.reporterId,
+      reporter_name: report.reporterName,
+      reason: report.reason,
+      details: report.details ?? null,
+      status: "pending",
+    };
+
+    const { error } = await supabase.from("community_post_reports").insert(row);
+    if (error) throw new Error(error.message);
+
+    // Increment report count on post
+    const { data: post } = await supabase.from("community_posts").select("reports_count").eq("id", report.postId).single();
+    const currentReports = (post?.reports_count as number) || 0;
+    await supabase.from("community_posts").update({ reports_count: currentReports + 1 }).eq("id", report.postId);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("post_reported"));
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("reportCommunityPost error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+
+export async function getCommunityPostReports(): Promise<CommunityPostReport[]> {
+  const { data, error } = await supabase
+    .from("community_post_reports")
+    .select(`
+      id,
+      post_id,
+      reporter_id,
+      reporter_name,
+      reason,
+      details,
+      status,
+      created_at,
+      community_posts (
+        title
+      )
+    `)
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getCommunityPostReports error:", error.message);
+    return [];
+  }
+
+  return (data ?? []).map((row: any) => ({
+    id: row.id as string,
+    postId: row.post_id as string,
+    postTitle: row.community_posts?.title || "Post",
+    reporterId: row.reporter_id as string,
+    reporterName: row.reporter_name as string,
+    reason: row.reason as CommunityPostReport["reason"],
+    details: row.details as string | undefined,
+    status: row.status as CommunityPostReport["status"],
+    createdAt: row.created_at as string,
+  }));
+}
+
+export async function reviewCommunityPostReport(
+  reportId: string,
+  status: "reviewed" | "dismissed",
+  hidePostId?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const { error } = await supabase
+      .from("community_post_reports")
+      .update({ status })
+      .eq("id", reportId);
+    if (error) throw new Error(error.message);
+
+    if (hidePostId && status === "reviewed") {
+      await hideCommunityPost(hidePostId, true);
+    }
+    return { success: true };
+  } catch (err: any) {
+    console.error("reviewCommunityPostReport error:", err.message);
+    return { success: false, error: err.message };
+  }
+}
+

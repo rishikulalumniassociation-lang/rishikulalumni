@@ -27,7 +27,13 @@ import {
   Flower,
   Trophy,
   Medal,
-  RefreshCw
+  RefreshCw,
+  Camera,
+  Pin,
+  Eye,
+  EyeOff,
+  Flag,
+  ExternalLink
 } from "lucide-react";
 import {
   getAlumniList,
@@ -45,14 +51,22 @@ import {
   getAchieverNominations,
   approveAchieverNomination,
   rejectAchieverNomination,
-  hashPassword
+  hashPassword,
+  getCommunityPosts,
+  deleteCommunityPost,
+  pinCommunityPost,
+  unpinCommunityPost,
+  hideCommunityPost,
+  getCommunityPostReports,
+  reviewCommunityPostReport
 } from "@/lib/store";
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest, AchieverNomination } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest, AchieverNomination, CommunityPost, CommunityPostReport } from "@/types";
+import MediaLightbox from "@/components/Community/MediaLightbox";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"approvals" | "nominations" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali">("approvals");
+  const [activeTab, setActiveTab] = useState<"approvals" | "nominations" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali" | "showcase">("approvals");
 
   // State
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
@@ -62,6 +76,14 @@ export default function AdminDashboardPage() {
   const [nominationsList, setNominationsList] = useState<AchieverNomination[]>([]);
   const [nominationFilter, setNominationFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const [nominationSearch, setNominationSearch] = useState("");
+
+  // Showcase state
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
+  const [communityReports, setCommunityReports] = useState<CommunityPostReport[]>([]);
+  const [showcaseSubTab, setShowcaseSubTab] = useState<"posts" | "reports">("posts");
+  const [showcaseSearch, setShowcaseSearch] = useState("");
+  const [showcaseFilter, setShowcaseFilter] = useState<"all" | "pinned" | "hidden" | "visible">("all");
+  const [lightboxPost, setLightboxPost] = useState<CommunityPost | null>(null);
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -142,18 +164,78 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   const loadAllData = async () => {
-    const [alumni, resets, achievers, shradhanjali, nominations] = await Promise.all([
+    const [alumni, resets, achievers, shradhanjali, nominations, posts, reports] = await Promise.all([
       getAlumniList(),
       getPasswordResetRequests(),
       getLifetimeAchievers(),
       getShradhanjaliList(),
       getAchieverNominations(),
+      getCommunityPosts({ includeHidden: true }),
+      getCommunityPostReports(),
     ]);
     setAlumniList(alumni);
     setResetRequests(resets);
     setAchieversList(achievers);
     setShradhanjaliList(shradhanjali);
     setNominationsList(nominations);
+    setCommunityPosts(posts);
+    setCommunityReports(reports);
+  };
+
+  const handleAdminTogglePin = async (post: CommunityPost) => {
+    if (post.isPinned) {
+      const res = await unpinCommunityPost(post.id);
+      if (res.success) {
+        setCommunityPosts((prev) =>
+          prev.map((p) => (p.id === post.id ? { ...p, isPinned: false, pinOrder: 0 } : p))
+        );
+      }
+    } else {
+      const order = prompt("Enter pin priority order (1 is top):", "1");
+      const num = parseInt(order || "1", 10);
+      const res = await pinCommunityPost(post.id, isNaN(num) ? 1 : num);
+      if (res.success) {
+        setCommunityPosts((prev) =>
+          prev.map((p) => (p.id === post.id ? { ...p, isPinned: true, pinOrder: isNaN(num) ? 1 : num } : p))
+        );
+      }
+    }
+  };
+
+  const handleAdminToggleHide = async (post: CommunityPost) => {
+    const nextHidden = !post.isHidden;
+    const res = await hideCommunityPost(post.id, nextHidden);
+    if (res.success) {
+      setCommunityPosts((prev) =>
+        prev.map((p) => (p.id === post.id ? { ...p, isHidden: nextHidden } : p))
+      );
+    }
+  };
+
+  const handleAdminDeletePost = async (post: CommunityPost) => {
+    if (!confirm(`Are you sure you want to permanently delete "${post.title}"?`)) return;
+    const res = await deleteCommunityPost(post.id);
+    if (res.success) {
+      setCommunityPosts((prev) => prev.filter((p) => p.id !== post.id));
+    } else {
+      alert(res.error || "Failed to delete post.");
+    }
+  };
+
+  const handleResolveReport = async (reportId: string, status: "reviewed" | "dismissed", postId?: string) => {
+    const res = await reviewCommunityPostReport(reportId, status, postId);
+    if (res.success) {
+      setCommunityReports((prev) =>
+        prev.map((r) => (r.id === reportId ? { ...r, status } : r))
+      );
+      if (postId) {
+        setCommunityPosts((prev) =>
+          prev.map((p) => (p.id === postId ? { ...p, isHidden: true } : p))
+        );
+      }
+    } else {
+      alert(res.error || "Failed to process report.");
+    }
   };
 
   const handleApproveNomination = async (nomId: string) => {
@@ -312,6 +394,7 @@ export default function AdminDashboardPage() {
   const pendingNominations = nominationsList.filter((n) => n.status === "pending");
   const approvedNominations = nominationsList.filter((n) => n.status === "approved");
   const rejectedNominations = nominationsList.filter((n) => n.status === "rejected");
+  const pendingReports = communityReports.filter((r) => r.status === "pending");
 
   const filteredNominations = nominationsList.filter((nom) => {
     if (nominationFilter !== "all" && nom.status !== nominationFilter) return false;
@@ -426,6 +509,7 @@ export default function AdminDashboardPage() {
           {[
             { id: "approvals", label: `Registration Approvals (${pendingAlumni.length})`, icon: Users },
             { id: "nominations", label: `Achiever Nominations (${pendingNominations.length})`, icon: Trophy },
+            { id: "showcase", label: `Showcase & Reports (${pendingReports.length > 0 ? `${pendingReports.length} Flagged` : communityPosts.length})`, icon: Camera },
             { id: "all_registered", label: `All Registered Alumni (${alumniList.length})`, icon: Users },
             { id: "password_resets", label: `Password Resets (${pendingPasswordResets.length})`, icon: KeyRound },
             { id: "patrons", label: `Patron Roster (${patronMembers.length})`, icon: Star },
@@ -1080,6 +1164,312 @@ export default function AdminDashboardPage() {
             </div>
           </div>
         )}
+
+        {/* TAB 8: COMMUNITY SHOWCASE & MODERATION */}
+        {activeTab === "showcase" && (
+          <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+              <div>
+                <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
+                  Community Showcase & Content Moderation
+                </h2>
+                <p className="text-xs text-slate-500">
+                  Manage alumni posts, pin high-quality contributions to top, hide/unhide posts, and review user reports.
+                </p>
+              </div>
+
+              {/* Sub-tabs: Posts vs Reports */}
+              <div className="flex items-center gap-2 bg-[#FAF7F2] p-1.5 rounded-2xl border border-slate-200 text-xs font-bold">
+                <button
+                  type="button"
+                  onClick={() => setShowcaseSubTab("posts")}
+                  className={`px-3.5 py-1.5 rounded-xl transition ${
+                    showcaseSubTab === "posts"
+                      ? "bg-[#0F172A] text-[#C5A059] shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  All Posts ({communityPosts.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setShowcaseSubTab("reports")}
+                  className={`px-3.5 py-1.5 rounded-xl transition flex items-center gap-1.5 ${
+                    showcaseSubTab === "reports"
+                      ? "bg-red-600 text-white shadow-sm"
+                      : "text-slate-600 hover:text-slate-900"
+                  }`}
+                >
+                  <Flag className="w-3.5 h-3.5" />
+                  User Reports
+                  {pendingReports.length > 0 && (
+                    <span className="px-1.5 py-0.2 bg-white text-red-700 rounded-full text-[10px] font-extrabold">
+                      {pendingReports.length}
+                    </span>
+                  )}
+                </button>
+              </div>
+            </div>
+
+            {/* SUB-VIEW 1: POSTS LIST & CONTROLS */}
+            {showcaseSubTab === "posts" && (
+              <div className="space-y-4">
+                {/* Search & Filter */}
+                <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
+                  <div className="relative flex-1">
+                    <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                    <input
+                      type="text"
+                      value={showcaseSearch}
+                      onChange={(e) => setShowcaseSearch(e.target.value)}
+                      placeholder="Search posts by title, author, category..."
+                      className="w-full pl-9 pr-4 py-2 text-xs rounded-xl bg-[#FAF7F2] border border-slate-300 outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    />
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <select
+                      value={showcaseFilter}
+                      onChange={(e) => setShowcaseFilter(e.target.value as any)}
+                      className="px-3 py-2 text-xs rounded-xl bg-[#FAF7F2] border border-slate-300 outline-none"
+                    >
+                      <option value="all">All Posts ({communityPosts.length})</option>
+                      <option value="pinned">Pinned Only ({communityPosts.filter((p) => p.isPinned).length})</option>
+                      <option value="visible">Visible Only ({communityPosts.filter((p) => !p.isHidden).length})</option>
+                      <option value="hidden">Hidden Only ({communityPosts.filter((p) => p.isHidden).length})</option>
+                    </select>
+                  </div>
+                </div>
+
+                {/* Posts Table / List */}
+                <div className="overflow-x-auto">
+                  <table className="w-full text-xs text-left">
+                    <thead className="bg-[#FAF7F2] text-slate-700 uppercase text-[10px] tracking-wider border-b">
+                      <tr>
+                        <th className="py-3 px-4">Post & Author</th>
+                        <th className="py-3 px-4">Category</th>
+                        <th className="py-3 px-4">Date</th>
+                        <th className="py-3 px-4">Status</th>
+                        <th className="py-3 px-4 text-right">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {communityPosts
+                        .filter((p) => {
+                          if (showcaseFilter === "pinned" && !p.isPinned) return false;
+                          if (showcaseFilter === "hidden" && !p.isHidden) return false;
+                          if (showcaseFilter === "visible" && p.isHidden) return false;
+                          if (!showcaseSearch.trim()) return true;
+                          const q = showcaseSearch.toLowerCase().trim();
+                          return (
+                            p.title.toLowerCase().includes(q) ||
+                            p.authorName.toLowerCase().includes(q) ||
+                            p.category.toLowerCase().includes(q)
+                          );
+                        })
+                        .map((post) => (
+                          <tr key={post.id} className="hover:bg-slate-50 transition">
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-3">
+                                {post.thumbnailUrl || post.fileUrl ? (
+                                  <img
+                                    src={post.thumbnailUrl || post.fileUrl}
+                                    alt=""
+                                    className="w-10 h-10 rounded-lg object-cover bg-slate-100 flex-shrink-0 cursor-pointer"
+                                    onClick={() => setLightboxPost(post)}
+                                  />
+                                ) : (
+                                  <div className="w-10 h-10 rounded-lg bg-amber-100 text-amber-800 flex items-center justify-center font-bold text-xs flex-shrink-0">
+                                    {post.contentType.slice(0, 2).toUpperCase()}
+                                  </div>
+                                )}
+                                <div className="min-w-0">
+                                  <p
+                                    onClick={() => setLightboxPost(post)}
+                                    className="font-bold text-slate-900 truncate max-w-xs hover:text-amber-600 cursor-pointer"
+                                  >
+                                    {post.title}
+                                  </p>
+                                  <p className="text-[11px] text-slate-500 truncate">
+                                    By {post.authorName} {post.authorBatch ? `(Batch ${post.authorBatch})` : ""}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="py-3 px-4">
+                              <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 font-medium">
+                                {post.category}
+                              </span>
+                            </td>
+                            <td className="py-3 px-4 text-slate-500 text-[11px] whitespace-nowrap">
+                              {new Date(post.createdAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" })}
+                            </td>
+                            <td className="py-3 px-4">
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {post.isPinned && (
+                                  <span className="px-2 py-0.5 rounded bg-amber-100 text-amber-800 font-bold text-[10px] flex items-center gap-1">
+                                    <Pin className="w-3 h-3 fill-amber-700" /> Pinned #{post.pinOrder || 1}
+                                  </span>
+                                )}
+                                {post.isHidden ? (
+                                  <span className="px-2 py-0.5 rounded bg-red-100 text-red-800 font-bold text-[10px] flex items-center gap-1">
+                                    <EyeOff className="w-3 h-3" /> Hidden
+                                  </span>
+                                ) : (
+                                  <span className="px-2 py-0.5 rounded bg-emerald-100 text-emerald-800 font-medium text-[10px]">
+                                    Live
+                                  </span>
+                                )}
+                              </div>
+                            </td>
+                            <td className="py-3 px-4 text-right">
+                              <div className="flex items-center justify-end gap-1">
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdminTogglePin(post)}
+                                  className={`p-1.5 rounded-lg border transition ${
+                                    post.isPinned
+                                      ? "bg-amber-100 border-amber-300 text-amber-800 hover:bg-amber-200"
+                                      : "border-slate-200 text-slate-600 hover:bg-slate-100"
+                                  }`}
+                                  title={post.isPinned ? "Unpin post" : "Pin to top"}
+                                >
+                                  <Pin className="w-3.5 h-3.5" />
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdminToggleHide(post)}
+                                  className={`p-1.5 rounded-lg border transition ${
+                                    post.isHidden
+                                      ? "bg-red-50 border-red-200 text-red-600 hover:bg-red-100"
+                                      : "border-slate-200 text-slate-600 hover:bg-slate-100"
+                                  }`}
+                                  title={post.isHidden ? "Unhide post" : "Hide post from public"}
+                                >
+                                  {post.isHidden ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleAdminDeletePost(post)}
+                                  className="p-1.5 rounded-lg border border-red-200 text-red-600 hover:bg-red-50 transition"
+                                  title="Delete post permanently"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                    </tbody>
+                  </table>
+
+                  {communityPosts.length === 0 && (
+                    <div className="text-center py-12 text-slate-400 text-xs">
+                      No posts uploaded yet in the Rishikul Community Showcase.
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* SUB-VIEW 2: USER REPORTS & MODERATION */}
+            {showcaseSubTab === "reports" && (
+              <div className="space-y-4">
+                <p className="text-xs text-slate-600">
+                  The following items have been flagged by alumni members for potential policy violations, copyright infringement, or inappropriate content:
+                </p>
+
+                {communityReports.length === 0 ? (
+                  <div className="text-center py-12 text-slate-400 text-xs">
+                    <CheckCircle2 className="w-8 h-8 text-emerald-600 mx-auto mb-2" />
+                    No user reports! The showcase is free of flagged content.
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {communityReports.map((rep) => {
+                      const relatedPost = communityPosts.find((p) => p.id === rep.postId);
+                      return (
+                        <div
+                          key={rep.id}
+                          className={`p-4 rounded-2xl border transition flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+                            rep.status === "pending"
+                              ? "bg-red-50/40 border-red-200"
+                              : "bg-slate-50 border-slate-200 opacity-70"
+                          }`}
+                        >
+                          <div className="space-y-1.5">
+                            <div className="flex items-center gap-2">
+                              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-800">
+                                {rep.reason}
+                              </span>
+                              <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold ${
+                                rep.status === "pending"
+                                  ? "bg-amber-100 text-amber-800"
+                                  : rep.status === "reviewed"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : "bg-slate-200 text-slate-700"
+                              }`}>
+                                {rep.status.toUpperCase()}
+                              </span>
+                              <span className="text-[11px] text-slate-400">
+                                {new Date(rep.createdAt).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                              </span>
+                            </div>
+
+                            <p className="text-xs font-semibold text-slate-900">
+                              Post: <span className="font-bold">"{rep.postTitle || relatedPost?.title || 'Unknown Post'}"</span>
+                            </p>
+
+                            {rep.details && (
+                              <p className="text-xs text-slate-600 italic bg-white/70 p-2 rounded-lg border border-slate-200 max-w-xl">
+                                "{rep.details}"
+                              </p>
+                            )}
+
+                            <p className="text-[11px] text-slate-500">
+                              Reported by: <span className="font-medium">{rep.reporterName}</span>
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                            {relatedPost && (
+                              <button
+                                type="button"
+                                onClick={() => setLightboxPost(relatedPost)}
+                                className="px-3 py-1.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-100 text-xs font-medium flex items-center gap-1"
+                              >
+                                <Eye className="w-3.5 h-3.5" /> View Post
+                              </button>
+                            )}
+
+                            {rep.status === "pending" && (
+                              <>
+                                <button
+                                  type="button"
+                                  onClick={() => handleResolveReport(rep.id, "reviewed", rep.postId)}
+                                  className="px-3 py-1.5 rounded-xl bg-red-600 hover:bg-red-700 text-white text-xs font-semibold shadow-sm flex items-center gap-1"
+                                >
+                                  <EyeOff className="w-3.5 h-3.5" /> Hide Post & Resolve
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => handleResolveReport(rep.id, "dismissed")}
+                                  className="px-3 py-1.5 rounded-xl bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold"
+                                >
+                                  Dismiss
+                                </button>
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Modal: MARK REGISTERED ALUMNUS AS EXPIRED / DECEASED */}
@@ -1386,6 +1776,12 @@ export default function AdminDashboardPage() {
           </div>
         </div>
       )}
+
+      {/* Media Lightbox */}
+      <MediaLightbox
+        post={lightboxPost}
+        onClose={() => setLightboxPost(null)}
+      />
     </div>
   );
 }

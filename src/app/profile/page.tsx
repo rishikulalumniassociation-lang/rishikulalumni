@@ -26,20 +26,29 @@ import {
   LogOut,
   Medal,
   Trophy,
-  CreditCard
+  CreditCard,
+  Camera
 } from "lucide-react";
-import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile } from "@/lib/store";
+import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
-import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType } from "@/types";
+import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType, CommunityPost } from "@/types";
 import AlumniSearchSelect from "@/components/Common/AlumniSearchSelect";
 import DigitalIdCard from "@/components/Membership/DigitalIdCard";
+import CreatePostModal from "@/components/Community/CreatePostModal";
+import MediaLightbox from "@/components/Community/MediaLightbox";
+import PostCard from "@/components/Community/PostCard";
 
 export default function AlumniProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<AlumniProfile | null>(null);
   const [allAlumni, setAllAlumni] = useState<AlumniProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty" | "achievements" | "idcard">("achievements");
+  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty" | "achievements" | "idcard" | "community">("achievements");
   const [savedSuccess, setSavedSuccess] = useState(false);
+  const [myPosts, setMyPosts] = useState<CommunityPost[]>([]);
+  const [loadingPosts, setLoadingPosts] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
+  const [lightboxPost, setLightboxPost] = useState<CommunityPost | null>(null);
 
   // Editable fields
   const [formData, setFormData] = useState<Partial<AlumniProfile>>({});
@@ -109,8 +118,32 @@ export default function AlumniProfilePage() {
       setFamilyRelations(freshUser.familyAlumniRelations || []);
       setTeacherIds(freshUser.teacherAlumniIds || []);
       setSpecialAchievements(freshUser.specialAchievements || []);
+      if (freshUser.id) {
+        loadMyPosts(freshUser.id);
+      }
     })();
   }, [router]);
+
+  const loadMyPosts = async (userId: string) => {
+    try {
+      setLoadingPosts(true);
+      const posts = await getCommunityPosts({ authorId: userId, includeHidden: true });
+      setMyPosts(posts);
+    } catch (err) {
+      console.error('Failed to load user community posts:', err);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  const handleDeleteMyPost = async (post: CommunityPost) => {
+    const res = await deleteCommunityPost(post.id);
+    if (res.success) {
+      setMyPosts((prev) => prev.filter((p) => p.id !== post.id));
+    } else {
+      alert(res.error || 'Failed to delete post');
+    }
+  };
 
   if (!user) return null;
 
@@ -345,6 +378,7 @@ export default function AlumniProfilePage() {
             <div className="flex items-center gap-2 overflow-x-auto pt-4 text-xs font-bold uppercase tracking-wider scrollbar-none">
               {[
                 { id: "idcard", label: "My Digital ID Card (आईडी कार्ड)", icon: CreditCard },
+                { id: "community", label: `My Contributions / प्रस्तुतियाँ (${myPosts.length})`, icon: Camera },
                 { id: "achievements", label: `Special Honors & Gold Medals (${specialAchievements.length})`, icon: Medal },
                 { id: "work", label: "Work Timeline (कार्य अनुभव)", icon: Briefcase },
                 { id: "specialty", label: "Specialty & Shishya (विशेषज्ञता व शिष्य)", icon: Sparkles },
@@ -388,6 +422,89 @@ export default function AlumniProfilePage() {
               <div className="max-w-md mx-auto">
                 <DigitalIdCard alumni={user} />
               </div>
+            </div>
+          </div>
+        )}
+
+        {/* TAB: MY COMMUNITY CONTRIBUTIONS */}
+        {activeTab === "community" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 shadow-sm">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
+                <div>
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
+                    <Camera className="w-3.5 h-3.5 text-amber-600" />
+                    Rishikul Showcase
+                  </div>
+                  <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A]">
+                    My Community Contributions (मेरी प्रस्तुतियाँ)
+                  </h3>
+                  <p className="text-xs sm:text-sm text-slate-500 mt-1">
+                    Manage the photos, videos, poems, articles, and research you have shared with the alumni fraternity.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2 flex-wrap sm:flex-nowrap">
+                  <button
+                    onClick={() => {
+                      setEditingPost(null);
+                      setIsCreateModalOpen(true);
+                    }}
+                    className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-[#C5A059] to-amber-600 text-slate-950 text-xs font-bold uppercase tracking-wider hover:opacity-90 transition flex items-center gap-2 shadow-sm"
+                  >
+                    <Plus className="w-4 h-4" />
+                    Share New Post
+                  </button>
+                  <Link
+                    href="/community"
+                    className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 hover:bg-slate-50 text-xs font-bold uppercase tracking-wider transition flex items-center gap-1.5"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                    View Gallery
+                  </Link>
+                </div>
+              </div>
+
+              {loadingPosts ? (
+                <div className="py-16 text-center">
+                  <div className="w-8 h-8 border-3 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-2" />
+                  <p className="text-xs text-slate-500">Loading your posts...</p>
+                </div>
+              ) : myPosts.length === 0 ? (
+                <div className="p-8 text-center bg-[#FAF7F2] rounded-2xl border border-[#C5A059]/30 space-y-3">
+                  <Camera className="w-10 h-10 text-amber-600/50 mx-auto" />
+                  <h4 className="font-bold text-slate-900 text-sm">No Contributions Yet</h4>
+                  <p className="text-xs text-slate-500 max-w-md mx-auto">
+                    You have not published any posts to the Rishikul Community Showcase yet. Share photos of your college batch, clinical case studies, Ayurvedic research papers, or poems!
+                  </p>
+                  <button
+                    onClick={() => {
+                      setEditingPost(null);
+                      setIsCreateModalOpen(true);
+                    }}
+                    className="px-4 py-2 rounded-xl bg-[#0F172A] text-[#C5A059] text-xs font-bold hover:bg-[#2D5A43] transition inline-flex items-center gap-1.5 mt-2"
+                  >
+                    <Plus className="w-3.5 h-3.5" /> Publish First Post
+                  </button>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {myPosts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      post={post}
+                      currentUser={user}
+                      onOpenLightbox={setLightboxPost}
+                      onReport={() => {}}
+                      onEdit={(p) => {
+                        setEditingPost(p);
+                        setIsCreateModalOpen(true);
+                      }}
+                      onDelete={handleDeleteMyPost}
+                    />
+                  ))}
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -1248,6 +1365,26 @@ export default function AlumniProfilePage() {
             </div>
           </div>
         )}
+
+        {/* Create / Edit Post Modal */}
+        <CreatePostModal
+          isOpen={isCreateModalOpen || !!editingPost}
+          currentUser={user}
+          postToEdit={editingPost || undefined}
+          onClose={() => {
+            setIsCreateModalOpen(false);
+            setEditingPost(null);
+          }}
+          onSuccess={() => {
+            if (user?.id) loadMyPosts(user.id);
+          }}
+        />
+
+        {/* Media Lightbox */}
+        <MediaLightbox
+          post={lightboxPost}
+          onClose={() => setLightboxPost(null)}
+        />
       </div>
     </div>
   );
