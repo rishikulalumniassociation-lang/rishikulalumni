@@ -27,7 +27,9 @@ import {
   Medal,
   Trophy,
   CreditCard,
-  Camera
+  Camera,
+  ArrowLeft,
+  ChevronRight
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
@@ -263,7 +265,7 @@ export default function AlumniProfilePage() {
     .filter(Boolean) as AlumniProfile[];
 
   return (
-    <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-12">
+    <div className="min-h-screen bg-[#FAF7F2] pt-8 pb-32 sm:py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Profile Cover & Header with 100% Crisp Visibility */}
         <div className="bg-white rounded-3xl overflow-hidden border-2 border-[#C5A059]/30 shadow-xl mb-8">
@@ -335,10 +337,10 @@ export default function AlumniProfilePage() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-2.5 self-start md:self-center">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
                 <Link
                   href="/membership"
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95 whitespace-nowrap"
                   title="मेरा डिजिटल आईडी कार्ड देखें"
                 >
                   <CreditCard className="w-4 h-4 text-[#C5A059]" />
@@ -347,7 +349,7 @@ export default function AlumniProfilePage() {
 
                 <button
                   onClick={handleSaveProfile}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-all shadow-md active:scale-95"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-all shadow-md active:scale-95 whitespace-nowrap"
                 >
                   <Save className="w-4 h-4 text-[#C5A059]" />
                   Save Changes
@@ -358,7 +360,7 @@ export default function AlumniProfilePage() {
                     setLoggedInAlumni(null);
                     router.push("/login");
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95"
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95 whitespace-nowrap"
                   title="लॉग आउट करें"
                 >
                   <LogOut className="w-4 h-4" />
@@ -374,32 +376,44 @@ export default function AlumniProfilePage() {
               </div>
             )}
 
-            {/* Navigation Tabs (Facebook-Style Profile Sections) */}
-            <div className="flex items-center gap-2 overflow-x-auto pt-4 text-xs font-bold uppercase tracking-wider scrollbar-none">
-              {[
-                { id: "idcard", label: "My Digital ID Card (आईडी कार्ड)", icon: CreditCard },
-                { id: "community", label: `My Contributions / प्रस्तुतियाँ (${myPosts.length})`, icon: Camera },
-                { id: "achievements", label: `Special Honors & Gold Medals (${specialAchievements.length})`, icon: Medal },
-                { id: "work", label: "Work Timeline (कार्य अनुभव)", icon: Briefcase },
-                { id: "specialty", label: "Specialty & Shishya (विशेषज्ञता व शिष्य)", icon: Sparkles },
-                { id: "family", label: `Alumni Family (${familyRelations.length})`, icon: Heart },
-                { id: "teachers", label: `My Teachers (${teacherIds.length})`, icon: GraduationCap },
-                { id: "friends", label: `Friends / Batchmates (${connectedFriends.length})`, icon: Users2 },
-                { id: "about", label: "Basic Info & Bio", icon: User },
-              ].map(({ id, label, icon: Icon }) => (
-                <button
-                  key={id}
-                  onClick={() => setActiveTab(id as any)}
-                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap ${
-                    activeTab === id
-                      ? "bg-[#0F172A] text-[#C5A059] shadow-sm font-bold"
-                      : "text-slate-600 hover:bg-[#FAF7F2]"
-                  }`}
-                >
-                  <Icon className="w-3.5 h-3.5" />
-                  {label}
-                </button>
-              ))}
+            {/* Navigation Tabs - Enhanced Horizontal Scroll with subtle background & prompt indicator */}
+            <div className="pt-4">
+              <div className="flex items-center justify-between pb-2 text-[11px] font-semibold text-slate-500">
+                <span className="flex items-center gap-1 text-[#2D5A43]">
+                  <Sparkles className="w-3 h-3 text-[#C5A059]" />
+                  Profile Sections / प्रोफाइल विभाग
+                </span>
+                <span className="text-[10px] text-slate-400 sm:hidden">
+                  (Swipe horizontally →)
+                </span>
+              </div>
+
+              <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs font-bold uppercase tracking-wider scroll-smooth">
+                {[
+                  { id: "idcard", label: "My Digital ID (आईडी कार्ड)", icon: CreditCard },
+                  { id: "community", label: `Contributions (${myPosts.length})`, icon: Camera },
+                  { id: "achievements", label: `Honors & Awards (${specialAchievements.length})`, icon: Medal },
+                  { id: "work", label: "Work Timeline", icon: Briefcase },
+                  { id: "specialty", label: "Specialty & Shishya", icon: Sparkles },
+                  { id: "family", label: `Family (${familyRelations.length})`, icon: Heart },
+                  { id: "teachers", label: `Teachers (${teacherIds.length})`, icon: GraduationCap },
+                  { id: "friends", label: `Batchmates (${connectedFriends.length})`, icon: Users2 },
+                  { id: "about", label: "Bio & Details", icon: User },
+                ].map(({ id, label, icon: Icon }) => (
+                  <button
+                    key={id}
+                    onClick={() => setActiveTab(id as any)}
+                    className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-all whitespace-nowrap shrink-0 ${
+                      activeTab === id
+                        ? "bg-[#0F172A] text-[#C5A059] shadow-md font-bold ring-2 ring-[#C5A059]/40 scale-100"
+                        : "bg-slate-50 hover:bg-[#FAF7F2] text-slate-700 border border-slate-200/80"
+                    }`}
+                  >
+                    <Icon className="w-3.5 h-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
         </div>
@@ -1385,6 +1399,55 @@ export default function AlumniProfilePage() {
           post={lightboxPost}
           onClose={() => setLightboxPost(null)}
         />
+      </div>
+
+      {/* Sticky Mobile Profile Navigation Bar with Back Button */}
+      <div className="lg:hidden fixed bottom-16 left-0 right-0 z-40 bg-[#0F172A]/95 backdrop-blur-md border-t border-[#C5A059]/40 py-2 px-3 shadow-2xl">
+        <div className="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-smooth">
+          {/* Extreme Left: Back to Home / Main Portal button */}
+          <Link
+            href="/"
+            className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-amber-200 border border-amber-300/30 text-xs font-bold shrink-0 transition-colors"
+            title="होमपेज पर वापस जाएं"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-[#C5A059]" />
+            <span>Home</span>
+          </Link>
+
+          <span className="h-5 w-[1px] bg-slate-700 shrink-0" />
+
+          {/* Quick-Access Profile Tabs */}
+          {[
+            { id: "idcard", label: "My Digital ID", icon: CreditCard },
+            { id: "community", label: `Showcase (${myPosts.length})`, icon: Camera },
+            { id: "achievements", label: `Honors (${specialAchievements.length})`, icon: Medal },
+            { id: "work", label: "Timeline", icon: Briefcase },
+            { id: "specialty", label: "Specialty", icon: Sparkles },
+            { id: "family", label: `Family (${familyRelations.length})`, icon: Heart },
+            { id: "teachers", label: `Teachers (${teacherIds.length})`, icon: GraduationCap },
+            { id: "friends", label: `Friends (${connectedFriends.length})`, icon: Users2 },
+            { id: "about", label: "Bio", icon: User },
+          ].map(({ id, label, icon: Icon }) => {
+            const isSelected = activeTab === id;
+            return (
+              <button
+                key={id}
+                onClick={() => {
+                  setActiveTab(id as any);
+                  window.scrollTo({ top: 0, behavior: "smooth" });
+                }}
+                className={`flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-bold uppercase tracking-wider shrink-0 transition-all ${
+                  isSelected
+                    ? "bg-[#C5A059] text-[#0F172A] shadow-md"
+                    : "bg-slate-800/80 text-slate-300 hover:text-white border border-slate-700/60"
+                }`}
+              >
+                <Icon className="w-3 h-3" />
+                <span>{label}</span>
+              </button>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

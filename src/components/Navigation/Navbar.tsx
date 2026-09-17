@@ -117,19 +117,19 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Dual-Script Name: RISHIKUL SANGAM */}
-          <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#C5A059] overflow-hidden shadow-md group-hover:scale-105 transition-transform flex-shrink-0 bg-white">
+          <Link href="/" className="flex items-center gap-2 sm:gap-3 group min-w-0 mr-2">
+            <div className="w-10 h-10 sm:w-14 sm:h-14 rounded-full border-2 border-[#C5A059] overflow-hidden shadow-md group-hover:scale-105 transition-transform shrink-0 bg-white">
               <img
                 src="/images/rishikul-sangam-logo.jpg"
                 alt="RISHIKUL SANGAM"
                 className="w-full h-full object-cover"
               />
             </div>
-            <div className="flex flex-col">
-              <span className="font-serif-heading text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A] leading-none group-hover:text-[#2D5A43] transition-colors">
+            <div className="flex flex-col min-w-0">
+              <span className="font-serif-heading text-lg sm:text-2xl font-bold tracking-tight text-[#0F172A] leading-none group-hover:text-[#2D5A43] transition-colors truncate">
                 RISHIKUL SANGAM
               </span>
-              <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B] tracking-normal mt-0.5">
+              <span className="text-[9px] sm:text-[11px] font-semibold text-[#64748B] tracking-normal mt-0.5 truncate hidden xs:inline">
                 Official Alumni Network • Haridwar
               </span>
             </div>
@@ -208,23 +208,24 @@ export default function Navbar() {
           </div>
 
           {/* Mobile hamburger menu */}
-          <div className="flex lg:hidden items-center gap-2">
+          <div className="flex lg:hidden items-center gap-1.5 shrink-0">
             {loggedInUser ? (
-              <div className="flex items-center gap-1.5">
+              <div className="flex items-center gap-1">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-[#FAF7F2] border-2 border-[#C5A059] rounded-lg text-[#0F172A]"
+                  className="flex items-center gap-1.5 px-2 py-1 text-xs font-bold bg-[#FAF7F2] hover:bg-amber-50 border-2 border-[#C5A059] rounded-lg text-[#0F172A] shrink-0"
+                  title="Profile"
                 >
                   <img
                     src={loggedInUser.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
                     alt={loggedInUser.fullName}
-                    className="w-5 h-5 rounded-full object-cover"
+                    className="w-5 h-5 rounded-full object-cover shrink-0"
                   />
-                  <span>Profile</span>
+                  <span className="text-xs font-bold leading-none">Profile</span>
                 </Link>
                 <button
                   onClick={handleLogout}
-                  className="p-1.5 text-rose-700 bg-rose-50 border border-rose-200 rounded-lg text-xs"
+                  className="p-1.5 text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 rounded-lg text-xs shrink-0"
                   title="Logout"
                 >
                   <LogOut className="w-4 h-4" />
@@ -234,13 +235,13 @@ export default function Navbar() {
               <>
                 <Link
                   href="/login"
-                  className="px-2.5 py-1 text-xs font-bold uppercase bg-white border border-slate-300 rounded-md text-[#0F172A]"
+                  className="px-2 py-1 text-xs font-bold uppercase bg-white border border-slate-300 rounded-md text-[#0F172A] shrink-0"
                 >
                   Login
                 </Link>
                 <Link
                   href="/register"
-                  className="px-2.5 py-1 text-xs font-bold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40"
+                  className="px-2 py-1 text-xs font-bold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40 shrink-0"
                 >
                   Join
                 </Link>
@@ -248,7 +249,7 @@ export default function Navbar() {
             )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="p-2 rounded-lg text-[#0F172A] hover:bg-[#F3ECE2] transition-colors"
+              className="p-1.5 rounded-lg text-[#0F172A] hover:bg-[#F3ECE2] transition-colors shrink-0"
               aria-label="Toggle navigation menu"
             >
               {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
