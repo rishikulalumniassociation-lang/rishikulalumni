@@ -37,7 +37,6 @@ export default function RegisterPage() {
   const [formData, setFormData] = useState({
     // Step 1: Basic Personal & Credentials
     fullName: "",
-    fullNameHindi: "",
     username: "",
     password: "",
     confirmPassword: "",
@@ -110,8 +109,7 @@ export default function RegisterPage() {
 
     const newProfile: AlumniProfile = {
       id: `alumni-${Date.now()}`,
-      fullName: formData.fullName,
-      fullNameHindi: formData.fullNameHindi,
+      fullName: formData.fullName.trim(),
       username: formData.username.trim().toLowerCase(),
       passwordHash: formData.password,
       email: formData.email,
@@ -264,7 +262,7 @@ export default function RegisterPage() {
 
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Full Name (पूरा नाम) *
+                      Full Name (in English) *
                     </label>
                     <input
                       type="text"
