@@ -86,7 +86,7 @@ CREATE TABLE IF NOT EXISTS public.lifetime_achievers (
     title TEXT NOT NULL,
     citation TEXT NOT NULL,
     awards TEXT[] DEFAULT '{}',
-    current_role TEXT NOT NULL,
+    "current_role" TEXT NOT NULL,
     order_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
