@@ -64,6 +64,14 @@ export function generateCloudinaryUploadSignature(
     );
   }
 
+  // Ensure cloudinary instance is updated with current active credentials
+  cloudinary.config({
+    cloud_name: cloudName,
+    api_key: apiKey,
+    api_secret: apiSecret,
+    secure: true,
+  });
+
   // Use official Cloudinary SDK to sign the request parameters
   const signature = cloudinary.utils.api_sign_request(paramsToSign, apiSecret);
 
