@@ -1,6 +1,6 @@
 "use client";
 
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest, CommunityAchievement } from "@/types";
 import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI } from "./mockData";
 
 const STORAGE_KEYS = {
@@ -10,6 +10,7 @@ const STORAGE_KEYS = {
   ADMIN_AUTH: "rishikul_admin_logged_in_v4",
   RESET_REQUESTS: "rishikul_password_reset_requests_v4",
   LOGGED_IN_USER: "rishikul_logged_in_user_v5",
+  COMMUNITY_ACHIEVEMENTS: "rishikul_community_achievements_v1",
 };
 
 export function getAlumniList(): AlumniProfile[] {
@@ -223,4 +224,33 @@ export function toggleAlumniConnection(fromId: string, toId: string) {
     const freshMe = updated.find((a) => a.id === currentUser.id);
     if (freshMe) setLoggedInAlumni(freshMe);
   }
+}
+
+export function getCommunityAchievements(): CommunityAchievement[] {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem(STORAGE_KEYS.COMMUNITY_ACHIEVEMENTS);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveCommunityAchievements(list: CommunityAchievement[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.COMMUNITY_ACHIEVEMENTS, JSON.stringify(list));
+  window.dispatchEvent(new Event("achievements_updated"));
+}
+
+export function addCommunityAchievement(item: Omit<CommunityAchievement, "id" | "datePosted">): CommunityAchievement {
+  const newItem: CommunityAchievement = {
+    ...item,
+    id: `achieve-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    datePosted: new Date().toISOString().split("T")[0],
+    likesCount: 0,
+  };
+  const list = getCommunityAchievements();
+  saveCommunityAchievements([newItem, ...list]);
+  return newItem;
 }

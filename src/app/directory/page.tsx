@@ -85,7 +85,8 @@ export default function DirectoryPage() {
           alumni.designation.toLowerCase().includes(q) ||
           alumni.workplace.toLowerCase().includes(q) ||
           alumni.city.toLowerCase().includes(q) ||
-          alumni.specialization.toLowerCase().includes(q) ||
+          (alumni.specialization && alumni.specialization.toLowerCase().includes(q)) ||
+          (alumni.diseaseSpecialty && alumni.diseaseSpecialty.toLowerCase().includes(q)) ||
           (alumni.ugBatchYear && alumni.ugBatchYear.toString().includes(q)) ||
           (alumni.pgBatchYear && alumni.pgBatchYear.toString().includes(q));
 

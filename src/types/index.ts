@@ -59,7 +59,13 @@ export interface AlumniProfile {
   ugDegree?: string;
   pgDegree?: string;
   degree?: string; // helper
-  specialization: Specialization;
+  specialization?: Specialization;
+  
+  // Ayurveda Clinical Specialization & Guru-Shishya Mentorship
+  diseaseSpecialty?: string; // e.g. "Arsha, Bhagandara & Fistula-in-Ano", "Sandhivata / Rheumatoid Arthritis", "Psoriasis / Kushta Roga"
+  specialtyDescription?: string; // Detailed clinical protocol / experience
+  acceptingShishya?: boolean; // If they want to teach their clinical specialty to juniors
+  shishyaRequirement?: string; // Guidance note for prospective shishyas
   
   // Job & Professional Details
   jobType: JobType;
@@ -176,4 +182,18 @@ export interface DirectoryFilterState {
   state: string;
   city: string;
   membershipTier: string;
+}
+
+export interface CommunityAchievement {
+  id: string;
+  authorId: string;
+  authorName: string;
+  authorBatchText: string;
+  authorAvatar?: string;
+  authorCity: string;
+  title: string;
+  details: string;
+  category: 'Award & Honor' | 'Clinical Breakthrough' | 'Research Publication' | 'Social & Community Service' | 'Book / Literature' | 'Other';
+  datePosted: string;
+  likesCount?: number;
 }

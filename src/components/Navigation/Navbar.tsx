@@ -18,7 +18,9 @@ import {
   ShieldAlert,
   Lock,
   LogOut,
-  LogIn
+  LogIn,
+  Stethoscope,
+  Sparkles
 } from "lucide-react";
 import { isAdminAuthenticated, setAdminAuthenticated, getLoggedInAlumni, setLoggedInAlumni } from "@/lib/store";
 import { AlumniProfile } from "@/types";
@@ -46,11 +48,12 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/", icon: GraduationCap },
-    { name: "Alumni Directory", href: "/directory", icon: Users },
-    { name: "Lifetime Achievers", href: "/achievers", icon: Award },
+    { name: "Directory", href: "/directory", icon: Users },
+    { name: "Ayurveda Experts", href: "/experts", icon: Stethoscope },
+    { name: "Achievements", href: "/achievements", icon: Sparkles },
+    { name: "Hall of Fame", href: "/achievers", icon: Award },
     { name: "Shradhanjali", href: "/shradhanjali", icon: Heart },
     { name: "Birthdays", href: "/birthdays", icon: Cake },
-    { name: "Digital ID", href: "/membership", icon: CreditCard },
     { name: "Events", href: "/events", icon: Calendar },
   ];
 

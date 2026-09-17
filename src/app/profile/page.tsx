@@ -19,7 +19,10 @@ import {
   Upload,
   ExternalLink,
   ShieldCheck,
-  Award
+  Award,
+  Sparkles,
+  Stethoscope,
+  BookOpen
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
@@ -29,7 +32,7 @@ export default function AlumniProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<AlumniProfile | null>(null);
   const [allAlumni, setAllAlumni] = useState<AlumniProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends">("work");
+  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty">("work");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Editable fields
@@ -229,6 +232,7 @@ export default function AlumniProfilePage() {
             <div className="flex items-center gap-2 overflow-x-auto border-t border-slate-100 pt-3 text-xs font-bold uppercase tracking-wider">
               {[
                 { id: "work", label: "Work Timeline (कार्य अनुभव)", icon: Briefcase },
+                { id: "specialty", label: "Specialty & Shishya (विशेषज्ञता व शिष्य)", icon: Sparkles },
                 { id: "family", label: `Alumni Family (${familyRelations.length})`, icon: Heart },
                 { id: "teachers", label: `My Teachers (${teacherIds.length})`, icon: GraduationCap },
                 { id: "friends", label: `Friends / Batchmates (${connectedFriends.length})`, icon: Users2 },
@@ -716,6 +720,143 @@ export default function AlumniProfilePage() {
               >
                 Save Bio & Info
               </button>
+            </div>
+          </div>
+        )}
+
+        {/* TAB 6: AYURVEDA CLINICAL SPECIALTY & GURU-SHISHYA MENTORSHIP */}
+        {activeTab === "specialty" && (
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2D5A43]/10 text-[#2D5A43] text-xs font-bold uppercase tracking-wider mb-2">
+                <Sparkles className="w-3.5 h-3.5 text-[#C5A059]" />
+                Ayurveda Clinical Mastery & Guru-Shishya Parampara
+              </div>
+              <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A]">
+                Clinical Disease Specialty & Shishya Mentorship (रोग विशेषज्ञता व शिष्य)
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                ऋषिकुल एलुमनाई समुदाय में अपनी विशिष्ट रोग चिकित्सा (Disease-Specific Speciality) घोषित करें और यदि आप कनिष्ठ वैद्यों/छात्रों को अपनी क्लिनिकल विधा सिखाना चाहते हैं, तो "Join me as a Shishya" विकल्प चालू करें।
+              </p>
+            </div>
+
+            {/* Disease Specialty Field */}
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <Stethoscope className="w-4 h-4 text-[#2D5A43]" />
+                Disease-Specific Specialty / रोग विशेषज्ञता *
+              </label>
+              <input
+                type="text"
+                placeholder="उदा. अर्श, भगंदर व क्षारसूत्र (Anorectal / Ksharasutra) / सोरायसिस / संधिवात"
+                value={formData.diseaseSpecialty || ""}
+                onChange={(e) => setFormData({ ...formData, diseaseSpecialty: e.target.value })}
+                className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+              />
+
+              {/* Quick Suggestion Pills */}
+              <div className="mt-2.5 flex flex-wrap gap-1.5">
+                <span className="text-[11px] text-slate-400 self-center mr-1">त्वरित चयन:</span>
+                {[
+                  "अर्श, भगंदर व क्षारसूत्र (Ksharasutra)",
+                  "संधिवात व आमवात (Arthritis)",
+                  "सोरायसिस व चर्म रोग (Skin)",
+                  "मधुमेह एवं जीवनशैली रोग (Diabetes)",
+                  "स्त्री रोग व वंध्यत्व (Infertility)",
+                  "पंचकर्म एवं शोधन (Panchakarma)",
+                  "यकृत एवं उदर विकार (Gastro/Liver)",
+                  "श्वास एवं कास (Asthma/Respiratory)",
+                  "शलाक्य तंत्र (Eye/ENT)",
+                  "बालरोग एवं स्वर्णप्राशन (Pediatrics)",
+                ].map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    onClick={() => setFormData({ ...formData, diseaseSpecialty: s })}
+                    className="text-[11px] px-2.5 py-1 rounded-lg bg-slate-100 hover:bg-[#C5A059]/20 hover:text-[#0F172A] text-slate-600 transition-colors"
+                  >
+                    + {s}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Specialty Details / Protocol */}
+            <div>
+              <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-1.5">
+                <BookOpen className="w-4 h-4 text-[#2D5A43]" />
+                Clinical Approach & Protocol / क्लिनिकल अनुभव व उपचार पद्धति
+              </label>
+              <textarea
+                rows={3}
+                placeholder="उदा. 20+ वर्षों से जटिल अर्श-भगंदर का सफल क्षारसूत्र उपचार। विशेष आयुर्वेदिक रस-औषधि एवं शोधन चिकित्सा द्वारा उपचार..."
+                value={formData.specialtyDescription || ""}
+                onChange={(e) => setFormData({ ...formData, specialtyDescription: e.target.value })}
+                className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+              />
+            </div>
+
+            {/* Join me as a Shishya Section */}
+            <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/80 to-[#FAF7F2] border-2 border-[#C5A059]/40 space-y-4">
+              <div className="flex items-start gap-3">
+                <input
+                  type="checkbox"
+                  id="acceptingShishyaCheck"
+                  checked={!!formData.acceptingShishya}
+                  onChange={(e) => setFormData({ ...formData, acceptingShishya: e.target.checked })}
+                  className="w-5 h-5 mt-0.5 rounded text-[#2D5A43] focus:ring-[#2D5A43] cursor-pointer"
+                />
+                <label htmlFor="acceptingShishyaCheck" className="cursor-pointer">
+                  <div className="text-sm font-bold text-[#0F172A] flex items-center gap-2">
+                    <span>🌟 Join me as a Shishya (शिष्य स्वीकार्य)</span>
+                    <span className="text-[10px] bg-[#2D5A43] text-white px-2 py-0.5 rounded-full uppercase">
+                      गुरु-शिष्य परंपरा
+                    </span>
+                  </div>
+                  <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                    हाँ, मैं अपनी इस क्लिनिकल विशेषता को ऋषिकुल के कनिष्ठ वैद्यों एवं नए स्नातकों को सिखाने के लिए तैयार हूँ। मेरा प्रोफाइल "Ayurveda Experts & Mentors" डायरेक्टरी में <strong>शिष्य स्वीकार्य</strong> बैज के साथ दिखेगा।
+                  </p>
+                </label>
+              </div>
+
+              {formData.acceptingShishya && (
+                <div className="pt-2 pl-8 space-y-3 animate-in fade-in">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      शिष्य हेतु नियम व पात्रता (Mentorship Requirements & Guidance)
+                    </label>
+                    <textarea
+                      rows={3}
+                      placeholder="उदा. BAMS फ्रेश ग्रेजुएट / इंटर्न। न्यूनतम 6 माह का समय अनिवार्य। ओपीडी समय प्रातः 10:00 से 2:00 बजे तक। संपर्क हेतु नीचे व्हाट्सएप पर संदेश भेजें..."
+                      value={formData.shishyaRequirement || ""}
+                      onChange={(e) => setFormData({ ...formData, shishyaRequirement: e.target.value })}
+                      className="w-full bg-white border border-[#C5A059]/50 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    />
+                  </div>
+                  <div className="text-[11px] text-amber-800 bg-amber-100/60 p-2.5 rounded-xl border border-amber-200">
+                    💡 कनिष्ठ छात्र आपके प्रोफाइल पर दिए गए व्हाट्सएप नंबर पर सीधे आपसे संपर्क कर शिष्य बनने का अनुरोध कर सकेंगे।
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={handleSaveProfile}
+                className="px-6 py-3 rounded-xl bg-[#0F172A] text-[#C5A059] text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] hover:text-white transition-colors flex items-center gap-2 shadow-sm"
+              >
+                <Save className="w-4 h-4" />
+                Save Specialty & Shishya Settings
+              </button>
+
+              <Link
+                href="/experts"
+                className="px-5 py-3 rounded-xl bg-white border border-slate-300 text-slate-700 text-xs font-bold uppercase tracking-wider hover:bg-slate-50 transition-colors flex items-center gap-1.5"
+              >
+                <ExternalLink className="w-3.5 h-3.5" />
+                View Experts Directory
+              </Link>
             </div>
           </div>
         )}

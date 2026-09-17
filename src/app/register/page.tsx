@@ -100,6 +100,16 @@ export default function RegisterPage() {
         return;
       }
     }
+    if (step === 2) {
+      if ((formData.rishikulEducation === "UG" || formData.rishikulEducation === "BOTH") && !formData.ugBatchYear) {
+        alert("कृपया अपना UG (BAMS) प्रवेश बैच वर्ष दर्ज करें।");
+        return;
+      }
+      if ((formData.rishikulEducation === "PG" || formData.rishikulEducation === "BOTH") && !formData.pgBatchYear) {
+        alert("कृपया अपना PG (MD/MS) प्रवेश बैच वर्ष दर्ज करें।");
+        return;
+      }
+    }
     setStep((s) => Math.min(s + 1, 3));
   };
 
@@ -129,7 +139,7 @@ export default function RegisterPage() {
       ugDegree: formData.rishikulEducation === "PG" ? undefined : formData.ugDegree,
       pgBatchYear: formData.rishikulEducation === "UG" ? undefined : Number(formData.pgBatchYear),
       pgDegree: formData.rishikulEducation === "UG" ? undefined : formData.pgDegree,
-      specialization: formData.specialization,
+      specialization: formData.rishikulEducation === "UG" ? undefined : formData.specialization,
 
       // Job & Address
       jobType: formData.jobType,
@@ -527,21 +537,31 @@ export default function RegisterPage() {
                     </div>
                   )}
 
-                  <div>
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                      Primary Clinical Specialty *
-                    </label>
-                    <select
-                      name="specialization"
-                      value={formData.specialization}
-                      onChange={handleChange}
-                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                    >
-                      {SPECIALIZATION_OPTIONS.filter((s) => s !== "All Specializations").map((spec) => (
-                        <option key={spec} value={spec}>{spec}</option>
-                      ))}
-                    </select>
-                  </div>
+                  {/* Clinical Specialty: In Ayurveda, UG (BAMS) has no clinical specialty. Specialty exists only in PG (MD/MS) */}
+                  {(formData.rishikulEducation === "PG" || formData.rishikulEducation === "BOTH") ? (
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        PG Specialization / क्लिनिकल विशेषता (MD/MS) *
+                      </label>
+                      <select
+                        name="specialization"
+                        value={formData.specialization}
+                        onChange={handleChange}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                      >
+                        {SPECIALIZATION_OPTIONS.filter((s) => s !== "All Specializations").map((spec) => (
+                          <option key={spec} value={spec}>{spec}</option>
+                        ))}
+                      </select>
+                    </div>
+                  ) : (
+                    <div className="p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-600 flex items-start gap-2.5">
+                      <div className="w-2 h-2 rounded-full bg-[#2D5A43] mt-1.5 shrink-0" />
+                      <div>
+                        <strong className="text-[#0F172A]">स्नातक (UG / BAMS):</strong> BAMS सामान्य आयुर्वेद चिकित्सा की उपाधि है जिसमें औपचारिक क्लिनिकल स्पेशलाइजेशन नहीं होता। लॉग-इन के बाद आप अपनी क्लिनिकल प्रैक्टिस एवं रोग-विशेषज्ञता (Disease Specialty) प्रोफाइल में जोड़ सकते हैं।
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 
