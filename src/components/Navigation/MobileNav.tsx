@@ -9,7 +9,8 @@ import {
   Award,
   Cake,
   Heart,
-  UserPlus
+  UserPlus,
+  Camera
 } from "lucide-react";
 
 export default function MobileNav() {
@@ -18,6 +19,7 @@ export default function MobileNav() {
   const tabs = [
     { label: "Home", href: "/", icon: Home },
     { label: "Directory", href: "/directory", icon: Users },
+    { label: "Gallery", href: "/community", icon: Camera },
     { label: "Join", href: "/register", icon: UserPlus, highlight: true },
     { label: "Birthdays", href: "/birthdays", icon: Cake },
     { label: "Memorials", href: "/shradhanjali", icon: Heart },

@@ -6,7 +6,7 @@ import EditorialHero from "@/components/Hero/EditorialHero";
 import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import { EXECUTIVE_MEMBERS } from "@/lib/mockData";
-import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents } from "@/lib/store";
+import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents, getCommunityPosts } from "@/lib/store";
 import {
   Search,
   ArrowRight,
@@ -21,15 +21,19 @@ import {
   Star,
   Users2,
   ChevronRight,
-  Flag
+  Flag,
+  Camera,
+  Play,
+  FileText
 } from "lucide-react";
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, AssociationEvent } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, AssociationEvent, CommunityPost } from "@/types";
 
 export default function HomePage() {
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
   const [achievers, setAchievers] = useState<LifetimeAchiever[]>([]);
   const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
   const [eventsList, setEventsList] = useState<AssociationEvent[]>([]);
+  const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
 
   useEffect(() => {
     Promise.all([
@@ -37,11 +41,13 @@ export default function HomePage() {
       getLifetimeAchievers(),
       getShradhanjaliList(),
       getEvents(),
-    ]).then(([alumni, achieversData, shradhanjaliData, eventsData]) => {
+      getCommunityPosts(),
+    ]).then(([alumni, achieversData, shradhanjaliData, eventsData, postsData]) => {
       setAlumniList(alumni);
       setAchievers(achieversData);
       setShradhanjali(shradhanjaliData);
       setEventsList(eventsData);
+      setCommunityPosts(postsData);
     });
   }, []);
 
@@ -75,7 +81,15 @@ export default function HomePage() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-3 sm:gap-4">
+            <Link
+              href="/community"
+              className="font-bold text-[#C5A059] bg-[#0F172A] px-2.5 py-1 rounded-full hover:bg-[#2D5A43] hover:text-white transition-colors flex items-center gap-1.5 shadow-sm"
+            >
+              <Camera className="w-3.5 h-3.5" />
+              <span>ऋषिकुल गैलरी (Gallery)</span>
+            </Link>
+            <span className="text-slate-300 hidden sm:inline">|</span>
             <Link
               href="/birthdays"
               className="font-bold text-[#2D5A43] hover:underline flex items-center gap-1"
@@ -327,7 +341,144 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 7. Upcoming Reunions & Conclaves */}
+      {/* 7. RISHIKUL COMMUNITY SHOWCASE & GALLERY (Cloudinary Powered) */}
+      <section className="py-16 md:py-20 bg-gradient-to-b from-[#FAF7F2] to-white border-b border-[#C5A059]/20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+            <div>
+              <span className="text-xs font-bold tracking-wider uppercase text-[#C5A059] flex items-center gap-1.5">
+                <Camera className="w-3.5 h-3.5" />
+                स्मृति पटल एवं रचनात्मक संगम
+              </span>
+              <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] mt-1">
+                Rishikul Community Gallery & Showcase
+              </h2>
+              <p className="text-xs sm:text-sm text-[#64748B] mt-1 max-w-xl">
+                Alumni memories, historical photographs, clinical research, Ayurvedic poetry, artwork, and articles shared directly by our verified community.
+              </p>
+            </div>
+
+            <div className="flex items-center gap-3">
+              <Link
+                href="/community?action=new"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#2D5A43] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#234734] transition-colors shadow-sm"
+              >
+                <span>+ Share Post / अपलोड करें</span>
+              </Link>
+              <Link
+                href="/community"
+                className="inline-flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#FAF7F2] border border-[#C5A059]/40 text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-[#C5A059] transition-colors"
+              >
+                <span>Explore Gallery ({communityPosts.length})</span>
+                <ArrowRight className="w-3.5 h-3.5 text-[#C5A059]" />
+              </Link>
+            </div>
+          </div>
+
+          {communityPosts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {communityPosts.slice(0, 4).map((post) => (
+                <Link
+                  key={post.id}
+                  href={`/community?post=${post.id}`}
+                  className="group bg-white rounded-2xl overflow-hidden border border-slate-200/80 shadow-sm hover:shadow-xl hover:border-[#C5A059] transition-all flex flex-col"
+                >
+                  <div className="relative aspect-[4/3] bg-slate-900 overflow-hidden">
+                    {post.fileUrl && (post.contentType === "photo" || post.contentType === "artwork") ? (
+                      <img
+                        src={post.thumbnailUrl || post.fileUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                        loading="lazy"
+                      />
+                    ) : post.fileUrl && post.contentType === "video" ? (
+                      <div className="relative w-full h-full">
+                        {post.thumbnailUrl ? (
+                          <img
+                            src={post.thumbnailUrl}
+                            alt={post.title}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                            loading="lazy"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-800 flex items-center justify-center">
+                            <Play className="w-10 h-10 text-[#C5A059]" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                          <div className="w-10 h-10 rounded-full bg-[#C5A059] text-[#0F172A] flex items-center justify-center shadow-lg">
+                            <Play className="w-5 h-5 fill-current ml-0.5" />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="w-full h-full bg-gradient-to-br from-[#FAF7F2] to-amber-100/50 flex flex-col items-center justify-center p-4 text-center">
+                        <FileText className="w-10 h-10 text-[#C5A059] mb-2" />
+                        <span className="text-[11px] font-bold text-[#0F172A] uppercase tracking-wider">
+                          {post.contentType}
+                        </span>
+                      </div>
+                    )}
+                    <span className="absolute top-2.5 left-2.5 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase bg-black/60 backdrop-blur-md text-white border border-white/20">
+                      {post.category || post.contentType}
+                    </span>
+                  </div>
+
+                  <div className="p-4 flex-1 flex flex-col justify-between">
+                    <div>
+                      <h4 className="font-serif-heading text-base font-bold text-[#0F172A] group-hover:text-[#2D5A43] transition-colors line-clamp-1">
+                        {post.title}
+                      </h4>
+                      {post.description && (
+                        <p className="text-xs text-slate-500 line-clamp-2 mt-1 font-light">
+                          {post.description}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="pt-3 mt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
+                      <span className="font-medium truncate max-w-[120px]">
+                        {post.authorName}
+                      </span>
+                      {post.authorBatch && (
+                        <span className="text-[#C5A059] font-bold text-[10px]">
+                          Batch {post.authorBatch}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#FAF7F2] rounded-3xl p-8 sm:p-10 border border-[#C5A059]/30 text-center max-w-xl mx-auto">
+              <Camera className="w-10 h-10 text-[#C5A059] mx-auto mb-3" />
+              <h3 className="font-serif-heading text-lg font-bold text-[#0F172A] mb-1">
+                ऋषिकुल गैलरी में अपनी यादें व रचनाएं साझा करें
+              </h3>
+              <p className="text-xs text-slate-600 mb-5">
+                पुरातन तस्वीरें, कॉलेज जीवन की यादें, शोध पत्र, कविताएं एवं लेख सीधे क्लाउडिनरी स्टोरेज पर अपलोड करें।
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/community?action=new"
+                  className="px-5 py-2 rounded-xl bg-[#2D5A43] text-white text-xs font-bold hover:bg-[#234734] transition-colors"
+                >
+                  Share with Rishikul (+ पोस्ट करें)
+                </Link>
+                <Link
+                  href="/community"
+                  className="px-5 py-2 rounded-xl bg-white border border-[#C5A059] text-[#0F172A] text-xs font-bold hover:bg-amber-50"
+                >
+                  गैलरी देखें
+                </Link>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* 8. Upcoming Reunions & Conclaves */}
       <section className="py-16 bg-[#0F172A] text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">

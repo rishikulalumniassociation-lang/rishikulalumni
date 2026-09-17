@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Search, ShieldCheck, Award, Sparkles, HeartHandshake, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowRight, Search, ShieldCheck, Award, Sparkles, HeartHandshake, ChevronLeft, ChevronRight, Camera } from "lucide-react";
 
 const heroSlides = [
   {
@@ -145,22 +145,30 @@ export default function EditorialHero() {
           </button>
         </div>
 
-        {/* Primary and Secondary CTA Buttons */}
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full max-w-md sm:max-w-lg mb-12">
+        {/* Primary, Gallery and Directory CTA Buttons */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 w-full max-w-2xl mb-12">
           <Link
             href="/register"
-            className="inline-flex items-center justify-center gap-2.5 px-7 py-4 rounded-full bg-[#C5A059] text-[#0F172A] font-bold text-sm sm:text-base tracking-wide uppercase shadow-xl shadow-[#C5A059]/25 hover:bg-[#dfbe7b] hover:scale-[1.02] active:scale-[0.98] transition-all"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-[#C5A059] text-[#0F172A] font-bold text-sm sm:text-base tracking-wide uppercase shadow-xl shadow-[#C5A059]/25 hover:bg-[#dfbe7b] hover:scale-[1.02] active:scale-[0.98] transition-all"
           >
-            <span>Join the Alumni Network</span>
+            <span>Join Alumni</span>
             <ArrowRight className="w-4 h-4" />
           </Link>
 
           <Link
+            href="/community"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-bold text-sm sm:text-base shadow-xl hover:from-amber-400 hover:to-amber-500 hover:scale-[1.02] active:scale-[0.98] transition-all"
+          >
+            <Camera className="w-4 h-4" />
+            <span>ऋषिकुल गैलरी (Gallery)</span>
+          </Link>
+
+          <Link
             href="/directory"
-            className="inline-flex items-center justify-center gap-2 px-7 py-4 rounded-full bg-white/15 text-white font-medium text-sm sm:text-base backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 active:scale-[0.98] transition-all shadow-lg"
+            className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-full bg-white/15 text-white font-medium text-sm sm:text-base backdrop-blur-md border border-white/30 hover:bg-white/25 hover:border-white/50 active:scale-[0.98] transition-all shadow-lg"
           >
             <Search className="w-4 h-4 text-[#C5A059]" />
-            <span>Find Your Batchmates</span>
+            <span>Find Batchmates</span>
           </Link>
         </div>
 
