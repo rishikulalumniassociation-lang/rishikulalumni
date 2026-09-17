@@ -88,6 +88,10 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_deceased BOOLEAN DEFAULT
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_demise DATE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS demise_tribute TEXT;
 
+-- Drop NOT NULL constraint on specialization (for UG alumni who do not have PG specialization)
+ALTER TABLE public.profiles ALTER COLUMN specialization DROP NOT NULL;
+ALTER TABLE public.profiles ALTER COLUMN specialization SET DEFAULT 'General Ayurvedic Practice';
+
 -- Indexes for lightning fast lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
 CREATE INDEX IF NOT EXISTS idx_profiles_mobile ON public.profiles(mobile);
