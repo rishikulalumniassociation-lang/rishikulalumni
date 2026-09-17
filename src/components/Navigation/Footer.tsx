@@ -6,7 +6,7 @@ export default function Footer() {
   return (
     <footer className="bg-[#0F172A] text-[#FAF7F2] border-t border-[#C5A059]/30 pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Column 1: Brand & Alumni Fraternity */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
@@ -62,21 +62,7 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 3: Association Chapters */}
-          <div>
-            <h4 className="font-serif-heading text-base font-semibold text-[#C5A059] mb-4 tracking-wider uppercase">
-              Alumni Chapters
-            </h4>
-            <ul className="space-y-2 text-xs text-slate-300">
-              <li>• Haridwar Central Chapter (HQ)</li>
-              <li>• Dehradun & Garhwal Chapter</li>
-              <li>• Delhi NCR Chapter</li>
-              <li>• Lucknow & UP Chapter</li>
-              <li>• International Chapter (UK, US, Gulf)</li>
-            </ul>
-          </div>
-
-          {/* Column 4: Association Secretariat & Admin */}
+          {/* Column 3: Association Secretariat & Admin */}
           <div className="space-y-3">
             <h4 className="font-serif-heading text-base font-semibold text-[#C5A059] mb-4 tracking-wider uppercase">
               Secretariat
