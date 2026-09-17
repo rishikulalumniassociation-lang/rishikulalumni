@@ -25,18 +25,20 @@ import {
   BookOpen,
   LogOut,
   Medal,
-  Trophy
+  Trophy,
+  CreditCard
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
 import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType } from "@/types";
 import AlumniSearchSelect from "@/components/Common/AlumniSearchSelect";
+import DigitalIdCard from "@/components/Membership/DigitalIdCard";
 
 export default function AlumniProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<AlumniProfile | null>(null);
   const [allAlumni, setAllAlumni] = useState<AlumniProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty" | "achievements">("achievements");
+  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty" | "achievements" | "idcard">("achievements");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Editable fields
@@ -299,6 +301,15 @@ export default function AlumniProfilePage() {
               </div>
 
               <div className="flex items-center gap-2.5 self-start md:self-center">
+                <Link
+                  href="/membership"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95"
+                  title="मेरा डिजिटल आईडी कार्ड देखें"
+                >
+                  <CreditCard className="w-4 h-4 text-[#C5A059]" />
+                  <span>My Digital ID</span>
+                </Link>
+
                 <button
                   onClick={handleSaveProfile}
                   className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-all shadow-md active:scale-95"
@@ -331,6 +342,7 @@ export default function AlumniProfilePage() {
             {/* Navigation Tabs (Facebook-Style Profile Sections) */}
             <div className="flex items-center gap-2 overflow-x-auto pt-4 text-xs font-bold uppercase tracking-wider scrollbar-none">
               {[
+                { id: "idcard", label: "My Digital ID Card (आईडी कार्ड)", icon: CreditCard },
                 { id: "achievements", label: `Special Honors & Gold Medals (${specialAchievements.length})`, icon: Medal },
                 { id: "work", label: "Work Timeline (कार्य अनुभव)", icon: Briefcase },
                 { id: "specialty", label: "Specialty & Shishya (विशेषज्ञता व शिष्य)", icon: Sparkles },
@@ -355,6 +367,28 @@ export default function AlumniProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* TAB: MY DIGITAL ID CARD */}
+        {activeTab === "idcard" && (
+          <div className="space-y-6">
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 shadow-sm text-center">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2D5A43]/10 text-[#2D5A43] text-xs font-bold uppercase tracking-wider mb-2">
+                <CreditCard className="w-3.5 h-3.5 text-[#C5A059]" />
+                Official Verified Digital Credential
+              </div>
+              <h3 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A] mb-2">
+                My Official Rishikul Sangam Digital ID
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 max-w-xl mx-auto mb-8 leading-relaxed">
+                यह आपका आधिकारिक डिजिटल पहचान पत्र है। इसमें आपका नाम, बैच, पद, कार्यस्थल और सत्यापन हेतु क्यूआर कोड (QR Code) अंकित है। इसे आप सीधे डाउनलोड भी कर सकते हैं।
+              </p>
+
+              <div className="max-w-md mx-auto">
+                <DigitalIdCard alumni={user} />
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* TAB: SPECIAL ACHIEVEMENTS (Gold Medals in UG/PG Subjects, Ranks & Honors) */}
         {activeTab === "achievements" && (

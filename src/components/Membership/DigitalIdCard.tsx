@@ -77,18 +77,22 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
           <div className="absolute -right-12 -bottom-12 w-48 h-48 rounded-full border-[12px] border-[#C5A059]/10 pointer-events-none" />
           <div className="absolute -right-6 -bottom-6 w-36 h-36 rounded-full border-[6px] border-[#C5A059]/15 pointer-events-none" />
 
-          {/* Card Top Header */}
+          {/* Card Top Header: RISHIKUL SANGAM */}
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex items-center gap-2.5">
-              <div className="w-10 h-10 rounded-full border border-[#C5A059] bg-white/10 flex items-center justify-center font-serif-heading text-lg font-bold text-[#C5A059]">
-                ऋ
+              <div className="w-10 h-10 rounded-full border border-[#C5A059] bg-white overflow-hidden flex items-center justify-center shadow-sm shrink-0">
+                <img
+                  src="/images/rishikul-sangam-logo.jpg"
+                  alt="RISHIKUL SANGAM"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h4 className="font-serif-heading text-sm font-bold tracking-tight text-white leading-tight">
-                  RISHIKUL
+                  RISHIKUL SANGAM
                 </h4>
-                <p className="text-[9px] uppercase tracking-wider text-[#C5A059]">
-                  Snatak Evam Snatkottar Association
+                <p className="text-[9px] uppercase tracking-wider text-[#C5A059] font-medium">
+                  Official Alumni Network
                 </p>
                 <p className="text-[8px] text-slate-300">
                   Govt Ayurvedic College, Haridwar
@@ -106,8 +110,8 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
             </div>
           </div>
 
-          {/* Card Middle: Photo, Name, Degree, Batch */}
-          <div className="relative z-10 flex items-center gap-4 my-2">
+          {/* Card Middle: Photo, Full Name (up to 2 lines), Degree, Batch */}
+          <div className="relative z-10 flex items-center gap-3 sm:gap-4 my-2">
             <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 border-[#C5A059] flex-shrink-0 bg-slate-800 shadow-md">
               <img
                 src={alumni.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop"}
@@ -116,21 +120,28 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
               />
             </div>
 
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5">
-                <h3 className="font-serif-heading text-lg sm:text-xl font-bold text-white truncate">
+            <div className="flex-1 min-w-0 pr-1">
+              <div className="flex items-start gap-1">
+                <h3 className="font-serif-heading text-base sm:text-lg font-bold text-white leading-tight break-words line-clamp-2">
                   {alumni.fullName}
                 </h3>
                 {alumni.isVerified && (
-                  <ShieldCheck className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
+                  <ShieldCheck className="w-4 h-4 text-[#C5A059] flex-shrink-0 mt-0.5" />
                 )}
               </div>
-              <p className="text-xs text-amber-200/90 font-medium">
+              {alumni.fullNameHindi && (
+                <p className="text-[11px] text-amber-200/90 font-medium truncate">
+                  {alumni.fullNameHindi}
+                </p>
+              )}
+              <p className="text-xs text-amber-200 font-semibold mt-0.5">
                 {batchLabel}
               </p>
-              <p className="text-[11px] text-slate-300 truncate mt-0.5">
-                {alumni.specialization}
-              </p>
+              {alumni.specialization && (
+                <p className="text-[11px] text-slate-300 truncate">
+                  {alumni.specialization}
+                </p>
+              )}
               <p className="text-[10px] text-slate-400 truncate">
                 {alumni.workplace}, {alumni.city}
               </p>
