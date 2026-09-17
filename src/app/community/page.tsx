@@ -262,7 +262,7 @@ export default function CommunityShowcasePage() {
           </div>
 
           <h1 className="font-serif text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-tight text-white leading-tight">
-            ऋषिकुल गैलरी एवं सिर्जनशीलता
+            Gallery
           </h1>
 
           <p className="max-w-2xl mx-auto text-sm sm:text-base text-stone-300 leading-relaxed font-light">
