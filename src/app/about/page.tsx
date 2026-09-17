@@ -21,6 +21,24 @@ export default function AboutPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Editorial Heritage Header */}
         <div className="max-w-3xl mb-12">
+          <div className="flex items-center gap-4 mb-4">
+            <div className="w-20 h-20 rounded-full border-2 border-[#C5A059] overflow-hidden flex items-center justify-center shadow-md bg-white shrink-0">
+              <img
+                src="/images/rishikul-sangam-logo.jpg"
+                alt="RISHIKUL SANGAM"
+                className="w-full h-full object-cover"
+              />
+            </div>
+            <div>
+              <span className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A] block">
+                RISHIKUL SANGAM
+              </span>
+              <span className="text-xs sm:text-sm font-semibold text-[#2D5A43]">
+                एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+              </span>
+            </div>
+          </div>
+
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
             <span>महाविद्यालय एवं एसोसिएशन का गौरवशाली इतिहास</span>
             <span>•</span>

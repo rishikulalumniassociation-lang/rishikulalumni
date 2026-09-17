@@ -114,19 +114,21 @@ export default function Navbar() {
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
-          {/* Logo & Dual-Script Name */}
+          {/* Logo & Dual-Script Name: RISHIKUL SANGAM */}
           <Link href="/" className="flex items-center gap-3 group">
-            <div className="w-12 h-12 rounded-full border-2 border-[#C5A059] bg-[#0F172A] flex items-center justify-center text-[#FAF7F2] shadow-sm group-hover:scale-105 transition-transform flex-shrink-0">
-              <span className="font-serif-heading text-2xl text-[#C5A059] font-bold">
-                ऋ
-              </span>
+            <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-[#C5A059] overflow-hidden shadow-md group-hover:scale-105 transition-transform flex-shrink-0 bg-white">
+              <img
+                src="/images/rishikul-sangam-logo.jpg"
+                alt="RISHIKUL SANGAM"
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="flex flex-col">
               <span className="font-serif-heading text-xl sm:text-2xl font-bold tracking-tight text-[#0F172A] leading-none group-hover:text-[#2D5A43] transition-colors">
-                RISHIKUL
+                RISHIKUL SANGAM
               </span>
-              <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B] tracking-wider uppercase mt-0.5">
-                Snatak Evam Snatkottar Association
+              <span className="text-[10px] sm:text-[11px] font-semibold text-[#64748B] tracking-normal mt-0.5">
+                Official Alumni Network • Haridwar
               </span>
             </div>
           </Link>

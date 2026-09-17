@@ -66,30 +66,38 @@ export default function EditorialHero() {
 
       {/* Hero Content Container */}
       <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 py-16 md:py-24 text-center flex flex-col items-center">
-        {/* Heritage Pill Tag */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF7F2]/15 border border-[#C5A059]/50 backdrop-blur-md mb-6 shadow-md">
+        {/* Centenary Heritage Tag */}
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-[#FAF7F2]/15 border border-[#C5A059]/50 backdrop-blur-md mb-5 shadow-md">
           <span className="w-2 h-2 rounded-full bg-[#C5A059] animate-ping" />
           <span className="text-xs sm:text-sm font-semibold tracking-wider uppercase text-amber-200">
             Centenary Heritage • Haridwar Since 1919
           </span>
         </div>
 
-        {/* Dual Script Editorial Branding */}
-        <div className="space-y-2 mb-4">
+        {/* Official Emblem & Dual Script Editorial Branding */}
+        <div className="flex flex-col items-center mb-4">
+          <div className="w-24 h-24 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-full border-3 border-[#C5A059] shadow-2xl overflow-hidden bg-white mb-4 p-1">
+            <img
+              src="/images/rishikul-sangam-logo.jpg"
+              alt="RISHIKUL SANGAM Emblem"
+              className="w-full h-full object-cover rounded-full"
+            />
+          </div>
+
           <h2 className="text-sm sm:text-base md:text-lg font-semibold tracking-widest text-[#C5A059] uppercase font-sans drop-shadow-md">
             ऋषिकुल राजकीय आयुर्वेद महाविद्यालय एवं चिकित्सालय
           </h2>
-          <h1 className="font-serif-heading text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-normal tracking-tight text-[#FAF7F2] leading-[0.95] drop-shadow-lg">
-            RISHIKUL
+          <h1 className="font-serif-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-[#FAF7F2] leading-[0.95] drop-shadow-lg mt-1">
+            RISHIKUL SANGAM
           </h1>
-          <p className="text-lg sm:text-xl md:text-2xl font-light text-slate-100 tracking-wide drop-shadow-md">
-            Snatak Evam Snatkottar Association
+          <p className="text-base sm:text-lg md:text-xl font-medium text-amber-200 tracking-wide drop-shadow-md mt-2">
+            Official Alumni Network of Rishikul Government Ayurvedic College, Haridwar
           </p>
         </div>
 
-        {/* Editorial Statement */}
-        <p className="font-serif-heading text-2xl sm:text-3xl text-amber-100 italic font-normal max-w-2xl mt-2 mb-4 drop-shadow-md">
-          “Connecting generations of Rishikul.”
+        {/* Sacred Motto */}
+        <p className="font-serif-heading text-xl sm:text-2xl md:text-3xl text-amber-100 font-semibold max-w-2xl mt-1 mb-3 drop-shadow-md tracking-wide">
+          एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
         </p>
 
         {/* Supporting Narrative */}

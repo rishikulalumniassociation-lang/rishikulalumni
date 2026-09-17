@@ -36,15 +36,19 @@ export default function AdminLoginPage() {
     <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8 bg-white p-8 sm:p-10 rounded-3xl border-2 border-[#C5A059]/40 shadow-2xl">
         <div className="text-center">
-          <div className="w-16 h-16 rounded-2xl bg-[#0F172A] border-2 border-[#C5A059] flex items-center justify-center mx-auto mb-4 text-[#C5A059] shadow-md">
-            <Lock className="w-8 h-8" />
+          <div className="w-20 h-20 rounded-full border-2 border-[#C5A059] overflow-hidden flex items-center justify-center mx-auto mb-3 shadow-md bg-white">
+            <img
+              src="/images/rishikul-sangam-logo.jpg"
+              alt="RISHIKUL SANGAM"
+              className="w-full h-full object-cover"
+            />
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 text-[11px] font-bold uppercase tracking-wider mb-2">
             <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
             Executive Association Portal
           </div>
           <h2 className="font-serif-heading text-3xl font-bold text-[#0F172A]">
-            Admin Control Center
+            RISHIKUL SANGAM Admin
           </h2>
           <p className="mt-1 text-xs text-slate-500">
             Authorized access to approve alumni registrations, manage Lifetime Achievers, Patrons, and Shradhanjali tributes.

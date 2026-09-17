@@ -7,24 +7,28 @@ export default function Footer() {
     <footer className="bg-[#0F172A] text-[#FAF7F2] border-t border-[#C5A059]/30 pt-16 pb-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {/* Column 1: Brand & Alumni Fraternity */}
+          {/* Column 1: Brand & Alumni Fraternity: RISHIKUL SANGAM */}
           <div className="space-y-4">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-full border border-[#C5A059] bg-[#FAF7F2]/10 flex items-center justify-center text-[#C5A059] font-serif-heading font-bold text-xl">
-                ऋ
+              <div className="w-12 h-12 rounded-full border border-[#C5A059] overflow-hidden flex items-center justify-center bg-white shadow-md flex-shrink-0">
+                <img
+                  src="/images/rishikul-sangam-logo.jpg"
+                  alt="RISHIKUL SANGAM"
+                  className="w-full h-full object-cover"
+                />
               </div>
               <div>
                 <h3 className="font-serif-heading text-lg font-bold tracking-tight text-white">
-                  RISHIKUL
+                  RISHIKUL SANGAM
                 </h3>
-                <p className="text-xs text-[#C5A059]">Snatak Evam Snatkottar Association</p>
+                <p className="text-xs text-[#C5A059]">Official Alumni Network of Rishikul</p>
               </div>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              The official alumni fraternity platform uniting thousands of BAMS, MD, and MS graduates of Rishikul Government Ayurvedic College, Haridwar across India and abroad.
+              Official Alumni Network of Rishikul Government Ayurvedic College, Haridwar. Connecting generations of Ayurvedic doctors, vaidyas, and scholars across India and abroad.
             </p>
-            <div className="text-[11px] text-amber-200/80 font-medium">
-              ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन • हरिद्वार (उत्तराखंड)
+            <div className="text-[11px] text-amber-200/90 font-medium italic">
+              एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
             </div>
           </div>
 
