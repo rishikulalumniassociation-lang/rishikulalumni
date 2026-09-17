@@ -282,6 +282,7 @@ export async function updateAlumniProfile(id: string, updates: Partial<AlumniPro
   if (updates.pgDegree !== undefined) snakeUpdates.pg_degree = updates.pgDegree;
   if (updates.specialization !== undefined) snakeUpdates.specialization = updates.specialization;
   if (updates.achievements !== undefined) snakeUpdates.achievements = updates.achievements;
+  if (updates.username !== undefined) snakeUpdates.username = updates.username;
   if (updates.passwordHash !== undefined) snakeUpdates.password_hash = updates.passwordHash;
   snakeUpdates.updated_at = new Date().toISOString();
 

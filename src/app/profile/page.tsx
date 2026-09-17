@@ -149,22 +149,33 @@ export default function AlumniProfilePage() {
 
   if (!user) return null;
 
-  const handleSaveProfile = () => {
+  const handleSaveProfile = async () => {
     const hasExpertise = Boolean(
       formData.isExpert ||
       (formData.diseaseSpecialty && formData.diseaseSpecialty.trim().length > 0) ||
       formData.acceptingShishya
     );
+
+    // If mobile number is changed, keep mobile and whatsappNumber unified,
+    // and also update login username to this new mobile number
+    const updatedMobile = formData.mobile ? formData.mobile.trim() : user.mobile;
+    const newUsername = updatedMobile ? updatedMobile.replace(/\D/g, "") : user.username;
+
     const updates: Partial<AlumniProfile> = {
       ...formData,
+      mobile: updatedMobile,
+      whatsappNumber: updatedMobile,
+      username: newUsername || user.username,
       isExpert: hasExpertise,
       workHistory,
       familyAlumniRelations: familyRelations,
       teacherAlumniIds: teacherIds,
       specialAchievements,
     };
-    void updateAlumniProfile(user.id, updates);
+
+    await updateAlumniProfile(user.id, updates);
     setUser({ ...user, ...updates });
+    setFormData((prev) => ({ ...prev, ...updates }));
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
     window.dispatchEvent(new Event("alumni_updated"));
@@ -1169,30 +1180,48 @@ export default function AlumniProfilePage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Mobile Number
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center justify-between">
+                  <span>WhatsApp Mobile (Login)</span>
+                  <span className="text-[10px] text-[#2D5A43] font-bold lowercase">(@{user.username})</span>
                 </label>
                 <input
-                  type="text"
+                  type="tel"
+                  placeholder="10 digit mobile"
                   value={formData.mobile || ""}
-                  onChange={(e) => setFormData({ ...formData, mobile: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
+                  onChange={(e) => {
+                    const val = e.target.value;
+                    setFormData({
+                      ...formData,
+                      mobile: val,
+                      whatsappNumber: val,
+                    });
+                  }}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#2D5A43]"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  यही आपका लॉगिन यूज़रनेम भी है।
+                </p>
               </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  WhatsApp Number
+                  Email ID (ईमेल)
                 </label>
                 <input
-                  type="text"
-                  value={formData.whatsappNumber || ""}
-                  onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
+                  type="email"
+                  placeholder="doctor@example.com"
+                  value={formData.email || ""}
+                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
                 />
+                <p className="text-[10px] text-slate-500 mt-1">
+                  महत्वपूर्ण संचार एवं सूचनाओं हेतु।
+                </p>
               </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
-                  <span className="text-rose-600 font-bold">🩸</span> Blood Group
+                  <span className="text-rose-600 font-bold">🩸</span> Blood Group (रक्त समूह)
                 </label>
                 <select
                   value={formData.bloodGroup || "O+"}
@@ -1209,6 +1238,9 @@ export default function AlumniProfilePage() {
                   <option value="O-">O- (Negative)</option>
                   <option value="Unknown">Unknown / ज्ञात नहीं</option>
                 </select>
+                <p className="text-[10px] text-slate-500 mt-1">
+                  डिजिटल आईडी कार्ड पर भी अपडेट होगा।
+                </p>
               </div>
             </div>
 
