@@ -3,6 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import EditorialHero from "@/components/Hero/EditorialHero";
+import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import { MOCK_EVENTS, EXECUTIVE_MEMBERS } from "@/lib/mockData";
 import { getAlumniList, getLifetimeAchievers, getShradhanjaliList } from "@/lib/store";
@@ -19,7 +20,8 @@ import {
   Flower,
   Star,
   Users2,
-  ChevronRight
+  ChevronRight,
+  Flag
 } from "lucide-react";
 import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord } from "@/types";
 
@@ -84,66 +86,8 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 3. Association Fraternity Mission Statement */}
-      <section className="py-14 md:py-20 bg-[#FAF7F2] border-b border-[#C5A059]/20">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
-            {/* Left Statement */}
-            <div className="lg:col-span-7 space-y-5">
-              <div className="inline-flex items-center gap-2 text-xs font-bold tracking-wider uppercase text-[#2D5A43] bg-[#2D5A43]/10 px-3 py-1 rounded-full">
-                <Users2 className="w-3.5 h-3.5 text-[#C5A059]" />
-                Independent Alumni Guild • Estd. by Rishikul Graduates
-              </div>
-
-              <h2 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold tracking-tight text-[#0F172A] leading-tight">
-                Uniting Thousands of Rishikul Vaidyas, Surgeons & Scholars Across the Globe.
-              </h2>
-
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-light">
-                The <strong className="font-medium text-[#0F172A]">Rishikul Snatak Evam Snatkottar Association</strong> is the dedicated alumni brotherhood uniting graduates of Rishikul Government Ayurvedic College, Haridwar. 
-              </p>
-
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed font-light">
-                From mutual clinical referrals, emergency doctors welfare funds, and birthday greetings to grand Kumbh reunions and honoring departed mentors, this platform belongs solely to the Rishikul alumni fraternity.
-              </p>
-
-              <div className="pt-2 flex flex-wrap gap-4">
-                <Link
-                  href="/directory"
-                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#0F172A] hover:text-[#2D5A43] border-b-2 border-[#C5A059] pb-1 transition-colors"
-                >
-                  <span>Search Alumni Directory & Mutual Connections</span>
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
-                <Link
-                  href="/achievers"
-                  className="inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[#2D5A43] hover:text-[#0F172A] border-b-2 border-[#2D5A43] pb-1 transition-colors"
-                >
-                  <span>Lifetime Achievers Hall of Fame</span>
-                  <ChevronRight className="w-4 h-4" />
-                </Link>
-              </div>
-            </div>
-
-            {/* Right Card: Alumni Fraternity Oath */}
-            <div className="lg:col-span-5">
-              <div className="relative p-7 rounded-3xl bg-white border-2 border-[#C5A059]/30 shadow-xl">
-                <span className="text-5xl font-serif-heading text-[#C5A059] block -mb-3">“</span>
-                <blockquote className="font-serif-heading text-lg sm:text-xl text-[#0F172A] italic leading-snug mb-4">
-                  परस्परं भावयन्तः श्रेयः परमवाप्स्यथ।<br />
-                  <span className="text-xs not-italic font-sans text-[#64748B] block mt-2">
-                    "By supporting and uplifting one another with fellowship, we all attain the highest mutual prosperity."
-                  </span>
-                </blockquote>
-                <div className="pt-4 border-t border-slate-100 flex items-center justify-between text-xs text-[#0F172A] font-bold">
-                  <span>Alumni Brotherhood & Mutual Welfare</span>
-                  <span className="text-[#C5A059] font-mono">1919 – 2026</span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      {/* 3. FOUNDER & MARTYR STUDENT HERITAGE PILLARS (Malaviya Ji & Shaheed Jagdish Vats) */}
+      <FounderHeritageSection />
 
       {/* 4. LIFETIME ACHIEVERS (Admin Updated Section) */}
       <section className="py-16 md:py-20 bg-white border-b border-[#C5A059]/20">
@@ -275,7 +219,7 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 6. SHRADHANJALI SECTION (Admin Updated Memorial) */}
+      {/* 6. SHRADHANJALI SECTION (Admin Updated Memorial including Amar Shaheed Jagdish Vats) */}
       <section className="py-16 md:py-20 bg-[#FAF7F2] border-b border-[#C5A059]/20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
@@ -288,7 +232,7 @@ export default function HomePage() {
                 Shradhanjali: Departed Souls of Rishikul
               </h2>
               <p className="text-xs sm:text-sm text-[#64748B] mt-1 max-w-xl">
-                Dedicated memorial page updated by the Association Administration remembering our departed professors, vaidyas, and classmates.
+                Dedicated memorial page updated by the Association Administration remembering our departed mentors, late batchmates, and martyr Jagdish Vats.
               </p>
             </div>
 

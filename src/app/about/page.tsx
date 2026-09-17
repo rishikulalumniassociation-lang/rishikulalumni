@@ -1,5 +1,6 @@
 import React from "react";
 import Link from "next/link";
+import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
 import { EXECUTIVE_MEMBERS } from "@/lib/mockData";
 import {
   Building2,
@@ -9,7 +10,9 @@ import {
   Sparkles,
   MapPin,
   CheckCircle2,
-  ArrowRight
+  ArrowRight,
+  Flag,
+  Heart
 } from "lucide-react";
 
 export default function AboutPage() {
@@ -17,43 +20,48 @@ export default function AboutPage() {
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-16">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Editorial Heritage Header */}
-        <div className="max-w-3xl mb-16">
+        <div className="max-w-3xl mb-12">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
-            <span>महाविद्यालय का गौरवशाली इतिहास</span>
+            <span>महाविद्यालय एवं एसोसिएशन का गौरवशाली इतिहास</span>
             <span>•</span>
             <span>Estd. 1919</span>
           </div>
           <h1 className="font-serif-heading text-4xl sm:text-5xl md:text-6xl font-bold text-[#0F172A] tracking-tight leading-tight">
-            A Century of Ayurvedic Mastery & Fellowship
+            A Century of Ayurvedic Mastery, Patriotism & Fellowship
           </h1>
           <p className="text-sm sm:text-base text-slate-700 mt-4 leading-relaxed font-light">
-            Founded during the Indian freedom movement by revered scholars and visionaries including Mahamana Pandit Madan Mohan Malaviya, Rishikul Ayurvedic College in Haridwar emerged as a beacon preserving Dhanvantari's eternal science against colonial suppression.
+            Founded during the Indian freedom movement by revered scholars and visionaries led by Bharat Ratna Mahamana Pandit Madan Mohan Malaviya, Rishikul Ayurvedic College emerged as an immortal seat preserving Dhanvantari's eternal science.
           </p>
         </div>
 
-        {/* Historical Milestones Carousel / Cards */}
+        {/* FOUNDER & MARTYR STUDENT HERO COMPONENT */}
+        <div className="mb-16 -mx-4 sm:mx-0">
+          <FounderHeritageSection />
+        </div>
+
+        {/* Historical Milestones */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-20">
           <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#C5A059]/30 shadow-md">
             <div className="text-[#C5A059] font-serif-heading text-4xl font-bold mb-2">1919</div>
             <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-2">Sacred Genesis</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light">
-              Established in Haridwar as a traditional Gurukula-style Ayurvedic learning seat under the patronship of Indian reformers and saints.
+              Established in Haridwar under the patronship of Mahamana Pandit Madan Mohan Malaviya ji to revive pure classical Ayurveda in a traditional Gurukula ambiance.
             </p>
           </div>
 
-          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#2D5A43]/40 shadow-md">
-            <div className="text-[#2D5A43] font-serif-heading text-4xl font-bold mb-2">1974</div>
-            <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-2">State Governance & PG</h3>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-red-500/40 shadow-md">
+            <div className="text-red-600 font-serif-heading text-4xl font-bold mb-2">1942</div>
+            <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-2">Supreme Martyrdom</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light">
-              Taken over by the Government, modernizing the hospital infrastructure and inaugurating postgraduate MD/MS research disciplines.
+              17-year-old student Jagdish Vats sacrificed his life hoisting the Tricolor at Haridwar during the Quit India movement, becoming Haridwar's first freedom martyr.
             </p>
           </div>
 
           <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#0F172A]/40 shadow-md">
             <div className="text-[#0F172A] font-serif-heading text-4xl font-bold mb-2">Present</div>
-            <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-2">Global Association</h3>
+            <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-2">Global Alumni Guild</h3>
             <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light">
-              Uniting over 12,000 alumni across 35 countries leading hospitals, AYUSH directorates, pharmacology firms, and wellness centers.
+              Uniting over 12,000 alumni across 35 countries leading research institutes, super-specialty surgical centers, and healthcare directorates.
             </p>
           </div>
         </div>
@@ -68,7 +76,7 @@ export default function AboutPage() {
               The Executive Council
             </h2>
             <p className="text-xs sm:text-sm text-slate-600 mt-2">
-              The governing committee dedicated to alumni welfare, educational symposiums, and student scholarship mentorship.
+              The governing committee dedicated to alumni welfare, educational symposiums, and mutual fellowship.
             </p>
           </div>
 
