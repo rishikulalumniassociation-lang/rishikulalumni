@@ -87,12 +87,16 @@ export default function RegisterPage() {
 
   const nextStep = () => {
     if (step === 1) {
-      if (!formData.fullName || !formData.username || !formData.password || !formData.mobile || !formData.dateOfBirth) {
-        alert("कृपया सभी आवश्यक फ़ील्ड (नाम, यूज़रनेम, पासवर्ड, मोबाइल, वास्तविक जन्मतिथि) भरें।");
+      if (!formData.fullName || !formData.password || !formData.mobile || !formData.dateOfBirth) {
+        alert("कृपया सभी आवश्यक फ़ील्ड (नाम, व्हाट्सएप मोबाइल नंबर, पासवर्ड, वास्तविक जन्मतिथि) भरें।");
         return;
       }
       if (formData.password !== formData.confirmPassword) {
         alert("पासवर्ड और कन्फर्म पासवर्ड मेल नहीं खाते। कृपया पुनः जांचें।");
+        return;
+      }
+      if (formData.mobile.replace(/\D/g, "").length < 10) {
+        alert("कृपया एक मान्य 10 अंकों का व्हाट्सएप मोबाइल नंबर दर्ज करें।");
         return;
       }
     }
@@ -107,14 +111,15 @@ export default function RegisterPage() {
     const memId = `RISHI-PEN-${randomNum}`;
     setGeneratedMembershipId(memId);
 
+    const cleanMobile = formData.mobile.trim();
     const newProfile: AlumniProfile = {
       id: `alumni-${Date.now()}`,
       fullName: formData.fullName.trim(),
-      username: formData.username.trim().toLowerCase(),
+      username: cleanMobile, // Mobile number is the login username
       passwordHash: formData.password,
       email: formData.email,
-      mobile: formData.mobile,
-      whatsappNumber: formData.whatsappNumber || formData.mobile,
+      mobile: cleanMobile,
+      whatsappNumber: cleanMobile, // Unified WhatsApp mobile
       dateOfBirth: formData.dateOfBirth,
       avatarUrl: photoDataUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop",
       
@@ -231,7 +236,7 @@ export default function RegisterPage() {
               </div>
 
               <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#C5A059]/40 max-w-sm mx-auto text-left space-y-1 text-xs">
-                <div><strong>Username:</strong> {formData.username}</div>
+                <div><strong>Login ID (WhatsApp Mobile):</strong> <span className="font-mono font-bold text-[#0F172A]">{formData.mobile}</span></div>
                 <div><strong>Education:</strong> {formData.rishikulEducation} ({formData.rishikulEducation === "PG" ? `PG: ${formData.pgBatchYear}` : formData.rishikulEducation === "UG" ? `UG: ${formData.ugBatchYear}` : `UG: ${formData.ugBatchYear}, PG: ${formData.pgBatchYear}`})</div>
                 <div><strong>Status:</strong> <span className="text-amber-700 font-bold">Pending Admin Approval & Tier Assignment</span></div>
               </div>
@@ -275,83 +280,62 @@ export default function RegisterPage() {
                     />
                   </div>
 
-                  {/* Username & Password Creation */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 p-4 rounded-2xl bg-amber-50/70 border border-amber-200">
+                  {/* WhatsApp Mobile Number (Used as Login Username) */}
+                  <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-3">
                     <div>
-                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
-                        Create Username *
+                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1 flex items-center justify-between">
+                        <span>WhatsApp Mobile Number (यही आपका लॉगिन यूज़रनेम होगा) *</span>
+                        <span className="text-[11px] font-semibold text-[#2D5A43] normal-case bg-emerald-100/70 px-2 py-0.5 rounded">
+                          Login Username
+                        </span>
                       </label>
-                      <input
-                        type="text"
-                        name="username"
-                        required
-                        placeholder="e.g. rajesh.sharma"
-                        value={formData.username}
-                        onChange={handleChange}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
+                      <div className="relative">
+                        <Phone className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                        <input
+                          type="tel"
+                          name="mobile"
+                          required
+                          placeholder="e.g. 9897123456"
+                          value={formData.mobile}
+                          onChange={handleChange}
+                          className="w-full pl-10 pr-4 py-2.5 text-sm bg-white border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
+                        />
+                      </div>
+                      <p className="text-[11px] text-slate-500 mt-1">
+                        कृपया अपना 10 अंकों का सक्रिय व्हाट्सएप मोबाइल नंबर दर्ज करें। इसी नंबर से आप बाद में लॉगिन करेंगे।
+                      </p>
                     </div>
 
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
-                        Create Password *
-                      </label>
-                      <input
-                        type="password"
-                        name="password"
-                        required
-                        placeholder="••••••••"
-                        value={formData.password}
-                        onChange={handleChange}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1">
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
+                          Create Password (पासवर्ड बनाएं) *
+                        </label>
+                        <input
+                          type="password"
+                          name="password"
+                          required
+                          placeholder="••••••••"
+                          value={formData.password}
+                          onChange={handleChange}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        />
+                      </div>
 
-                    <div className="sm:col-span-2">
-                      <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
-                        Confirm Password *
-                      </label>
-                      <input
-                        type="password"
-                        name="confirmPassword"
-                        required
-                        placeholder="••••••••"
-                        value={formData.confirmPassword}
-                        onChange={handleChange}
-                        className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Mobile & WhatsApp */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Mobile Number *
-                      </label>
-                      <input
-                        type="tel"
-                        name="mobile"
-                        required
-                        placeholder="+91 98971 00000"
-                        value={formData.mobile}
-                        onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        WhatsApp Number *
-                      </label>
-                      <input
-                        type="tel"
-                        name="whatsappNumber"
-                        placeholder="919897100000"
-                        value={formData.whatsappNumber}
-                        onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
-                      />
+                      <div>
+                        <label className="block text-xs font-bold uppercase text-slate-800 mb-1">
+                          Confirm Password (पुष्टि करें) *
+                        </label>
+                        <input
+                          type="password"
+                          name="confirmPassword"
+                          required
+                          placeholder="••••••••"
+                          value={formData.confirmPassword}
+                          onChange={handleChange}
+                          className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        />
+                      </div>
                     </div>
                   </div>
 

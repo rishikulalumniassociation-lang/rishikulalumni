@@ -96,7 +96,7 @@ export default function AlumniLoginPage() {
         <form className="mt-8 space-y-5" onSubmit={handleLogin}>
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-700 mb-1">
-              Username, Email or Mobile
+              Registered WhatsApp Mobile Number (या Username / Email)
             </label>
             <div className="relative">
               <User className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -105,7 +105,7 @@ export default function AlumniLoginPage() {
                 required
                 value={username}
                 onChange={(e) => setUsername(e.target.value)}
-                placeholder="e.g. rcjoshi or doctor@example.com"
+                placeholder="उदा. 9897123456 या rcjoshi"
                 className="w-full pl-10 pr-4 py-3 text-sm bg-[#FAF7F2] border border-slate-300 rounded-xl focus:ring-2 focus:ring-[#2D5A43] outline-none"
               />
             </div>
@@ -141,7 +141,7 @@ export default function AlumniLoginPage() {
           </div>
 
           <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
-            <strong>Approved Demo Account:</strong> Username: <code className="bg-white px-1.5 py-0.5 rounded border font-bold">rcjoshi</code> | Password: <code className="bg-white px-1.5 py-0.5 rounded border font-bold">pass123</code>
+            <strong>Approved Demo Account:</strong> WhatsApp Mobile / Username: <code className="bg-white px-1.5 py-0.5 rounded border font-bold">rcjoshi</code> (या <code className="bg-white px-1.5 py-0.5 rounded border font-bold">9897123456</code>) | Password: <code className="bg-white px-1.5 py-0.5 rounded border font-bold">pass123</code>
           </div>
 
           <button
