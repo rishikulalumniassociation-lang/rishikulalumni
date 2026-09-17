@@ -62,6 +62,7 @@ export interface AlumniProfile {
   specialization?: Specialization;
   
   // Ayurveda Clinical Specialization & Guru-Shishya Mentorship
+  isExpert?: boolean; // explicitly registered as an Ayurveda clinical expert/guru
   diseaseSpecialty?: string; // e.g. "Arsha, Bhagandara & Fistula-in-Ano", "Sandhivata / Rheumatoid Arthritis", "Psoriasis / Kushta Roga"
   specialtyDescription?: string; // Detailed clinical protocol / experience
   acceptingShishya?: boolean; // If they want to teach their clinical specialty to juniors

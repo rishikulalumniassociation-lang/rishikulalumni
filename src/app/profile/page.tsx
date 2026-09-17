@@ -90,8 +90,14 @@ export default function AlumniProfilePage() {
   if (!user) return null;
 
   const handleSaveProfile = () => {
+    const hasExpertise = Boolean(
+      formData.isExpert ||
+      (formData.diseaseSpecialty && formData.diseaseSpecialty.trim().length > 0) ||
+      formData.acceptingShishya
+    );
     const updates: Partial<AlumniProfile> = {
       ...formData,
+      isExpert: hasExpertise,
       workHistory,
       familyAlumniRelations: familyRelations,
       teacherAlumniIds: teacherIds,
@@ -100,6 +106,7 @@ export default function AlumniProfilePage() {
     setUser({ ...user, ...updates });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
+    window.dispatchEvent(new Event("alumni_updated"));
   };
 
   const handleAddWork = (e: React.FormEvent) => {
@@ -214,8 +221,8 @@ export default function AlumniProfilePage() {
                       </span>
                     )}
                     {user.specialization && (
-                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                        {user.specialization}
+                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
+                        PG Specialization: {user.specialization}
                       </span>
                     )}
                   </div>
@@ -733,6 +740,42 @@ export default function AlumniProfilePage() {
               </div>
             </div>
 
+            {(user.rishikulEducation === "PG" || user.rishikulEducation === "BOTH") && (
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  PG Specialization / स्नातकोत्तर विशेषता (MD/MS)
+                </label>
+                <select
+                  value={formData.specialization || ""}
+                  onChange={(e) => setFormData({ ...formData, specialization: e.target.value as any })}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                >
+                  <option value="">Select PG Specialization</option>
+                  {[
+                    "Kayachikitsa (Internal Medicine)",
+                    "Panchakarma",
+                    "Shalya Tantra (Surgery)",
+                    "Shalakya Tantra (ENT & Ophthalmology)",
+                    "Prasuti & Stri Roga (Obstetrics & Gynecology)",
+                    "Kaumarbhritya (Pediatrics)",
+                    "Dravyaguna (Pharmacology)",
+                    "Rasa Shastra & Bhaishajya Kalpana",
+                    "Sharir Kriya (Physiology)",
+                    "Sharir Rachana (Anatomy)",
+                    "Samhita & Siddhanta",
+                    "Swasthavritta & Yoga",
+                    "Agada Tantra (Toxicology)",
+                    "General Ayurvedic Practice"
+                  ].map((spec) => (
+                    <option key={spec} value={spec}>{spec}</option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500 mt-1">
+                  यह वह विषय है जिसमें आपने स्नातकोत्तर (MD/MS) किया है।
+                </p>
+              </div>
+            )}
+
             <div className="pt-2">
               <button
                 type="button"
@@ -754,18 +797,21 @@ export default function AlumniProfilePage() {
                 Ayurveda Clinical Mastery & Guru-Shishya Parampara
               </div>
               <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A]">
-                Clinical Disease Specialty & Shishya Mentorship (रोग विशेषज्ञता व शिष्य)
+                Clinical Disease Specialty & Shishya Mentorship (रोग विशिष्टता व शिष्य)
               </h3>
               <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
-                ऋषिकुल एलुमनाई समुदाय में अपनी विशिष्ट रोग चिकित्सा (Disease-Specific Speciality) घोषित करें और यदि आप कनिष्ठ वैद्यों/छात्रों को अपनी क्लिनिकल विधा सिखाना चाहते हैं, तो "Join me as a Shishya" विकल्प चालू करें।
+                ऋषिकुल एलुमनाई समुदाय में अपनी क्लिनिकल रोग-चिकित्सा घोषित करें। 
               </p>
+              <div className="mt-2.5 p-3 rounded-xl bg-amber-50/70 border border-amber-200 text-xs text-amber-900 leading-relaxed">
+                💡 <strong>अंतर समझें:</strong> PG Specialization आपकी स्नातकोत्तर उपाधि (MD/MS) का विषय है (उदा. कायचिकित्सा), जबकि Clinical Disease Specialty वह विशिष्ट रोग अथवा प्रक्रिया है जिसमें आपकी क्लिनिकल प्रैक्टिस व महारत है (उदा. अर्श-भगंदर क्षारसूत्र, सोरायसिस, संधिवात आदि)। इसे भरने पर आप 'Ayurveda Clinical Experts' डायरेक्टरी में सूचीबद्ध होंगे।
+              </div>
             </div>
 
             {/* Disease Specialty Field */}
             <div>
               <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-1.5">
                 <Stethoscope className="w-4 h-4 text-[#2D5A43]" />
-                Disease-Specific Specialty / रोग विशेषज्ञता *
+                Clinical Disease Specialty / रोग विशिष्टता (क्लिनिकल प्रैक्टिस) *
               </label>
               <input
                 type="text"

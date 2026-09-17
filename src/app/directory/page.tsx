@@ -425,8 +425,8 @@ export default function DirectoryPage() {
                       </span>
                     )}
                     {selectedProfile.specialization && (
-                      <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
-                        {selectedProfile.specialization}
+                      <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200">
+                        PG Specialization: {selectedProfile.specialization}
                       </span>
                     )}
                   </div>

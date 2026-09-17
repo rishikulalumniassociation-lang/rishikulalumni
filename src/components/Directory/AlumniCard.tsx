@@ -138,9 +138,11 @@ export default function AlumniCard({
               ? "PG (MD/MS)"
               : "UG (BAMS)"}
           </span>
-          <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43] line-clamp-1">
-            {alumni.specialization}
-          </span>
+          {alumni.specialization && (
+            <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43] line-clamp-1">
+              PG: {alumni.specialization}
+            </span>
+          )}
         </div>
 
         {/* Job Type, Workplace & Designation */}
