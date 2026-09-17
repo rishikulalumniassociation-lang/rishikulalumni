@@ -542,15 +542,26 @@ export default function DirectoryPage() {
                         <span className="font-bold text-rose-700">{selectedProfile.bloodGroup}</span>
                       </div>
                     )}
-                    {selectedProfile.dateOfBirth && (
-                      <div>
-                        <strong className="text-slate-800 block text-[11px] uppercase font-bold">Date of Birth</strong>
-                        <span className="flex items-center gap-1 text-amber-800 font-medium">
-                          <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
-                          {selectedProfile.dateOfBirth}
-                        </span>
-                      </div>
-                    )}
+                    {selectedProfile.dateOfBirth && (() => {
+                      const isSelf = Boolean(currentUser && currentUser.id === selectedProfile.id);
+                      let dobFormatted = selectedProfile.dateOfBirth;
+                      if (!isSelf) {
+                        const parts = selectedProfile.dateOfBirth.split("-");
+                        if (parts.length >= 3) {
+                          const dateObj = new Date(2000, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                          dobFormatted = dateObj.toLocaleDateString("en-US", { month: "long", day: "numeric" });
+                        }
+                      }
+                      return (
+                        <div>
+                          <strong className="text-slate-800 block text-[11px] uppercase font-bold">Date of Birth</strong>
+                          <span className="flex items-center gap-1 text-amber-800 font-medium">
+                            <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
+                            {dobFormatted}
+                          </span>
+                        </div>
+                      );
+                    })()}
                     {selectedProfile.address && (
                       <div>
                         <strong className="text-slate-800 block text-[11px] uppercase font-bold">Address</strong>

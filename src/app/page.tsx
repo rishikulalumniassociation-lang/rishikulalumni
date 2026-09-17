@@ -6,7 +6,7 @@ import EditorialHero from "@/components/Hero/EditorialHero";
 import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import { EXECUTIVE_MEMBERS } from "@/lib/mockData";
-import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents, getCommunityPosts } from "@/lib/store";
+import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents, getCommunityPosts, getLoggedInAlumni } from "@/lib/store";
 import {
   Search,
   ArrowRight,
@@ -34,8 +34,10 @@ export default function HomePage() {
   const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
   const [eventsList, setEventsList] = useState<AssociationEvent[]>([]);
   const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
+  const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
 
   useEffect(() => {
+    setCurrentUser(getLoggedInAlumni());
     Promise.all([
       getAlumniList(),
       getLifetimeAchievers(),
@@ -49,6 +51,12 @@ export default function HomePage() {
       setEventsList(eventsData);
       setCommunityPosts(postsData);
     });
+
+    const handleAuthChange = () => {
+      setCurrentUser(getLoggedInAlumni());
+    };
+    window.addEventListener("user_auth_changed", handleAuthChange);
+    return () => window.removeEventListener("user_auth_changed", handleAuthChange);
   }, []);
 
   // Compute Today's Birthday count
@@ -233,47 +241,65 @@ export default function HomePage() {
             </Link>
           </div>
 
-          {alumniList.length > 0 ? (
+          {todaysBirthdays.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {alumniList.slice(0, 3).map((alumnus) => (
-                <div
-                  key={alumnus.id}
-                  className="bg-slate-900/80 rounded-2xl p-5 border border-[#C5A059]/30 flex items-center justify-between"
-                >
-                  <div className="flex items-center gap-3">
-                    <img
-                      src={alumnus.avatarUrl}
-                      alt={alumnus.fullName}
-                      className="w-14 h-14 rounded-xl object-cover border border-[#C5A059]"
-                    />
-                    <div>
-                      <h4 className="font-serif-heading text-lg font-bold text-white">
-                        {alumnus.fullName}
-                      </h4>
-                      <p className="text-xs text-amber-200">
-                        {alumnus.ugBatchYear ? `UG:${alumnus.ugBatchYear} ` : ""}{alumnus.pgBatchYear ? `PG:${alumnus.pgBatchYear}` : ""} • {alumnus.city}
-                      </p>
-                      <span className="text-[10px] text-slate-400">
-                        DOB: {alumnus.dateOfBirth || "Recorded"}
-                      </span>
-                    </div>
-                  </div>
+              {todaysBirthdays.map((alumnus) => {
+                const isSelf = Boolean(currentUser && currentUser.id === alumnus.id);
+                // Format DOB: show full YYYY-MM-DD only to self, show only Date & Month (e.g. 17 September) to others
+                let dobDisplay = "Today";
+                if (alumnus.dateOfBirth) {
+                  if (isSelf) {
+                    dobDisplay = alumnus.dateOfBirth;
+                  } else {
+                    const parts = alumnus.dateOfBirth.split("-");
+                    if (parts.length >= 3) {
+                      const dateObj = new Date(2000, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                      dobDisplay = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                    }
+                  }
+                }
 
-                  <Link
-                    href="/birthdays"
-                    className="p-2 rounded-xl bg-white/10 text-white hover:bg-[#C5A059] hover:text-[#0F172A] transition-colors"
-                    title="Wish Happy Birthday"
+                return (
+                  <div
+                    key={alumnus.id}
+                    className="bg-slate-900/80 rounded-2xl p-5 border border-[#C5A059]/30 flex items-center justify-between"
                   >
-                    <Cake className="w-4 h-4" />
-                  </Link>
-                </div>
-              ))}
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={alumnus.avatarUrl}
+                        alt={alumnus.fullName}
+                        className="w-14 h-14 rounded-xl object-cover border border-[#C5A059]"
+                      />
+                      <div>
+                        <h4 className="font-serif-heading text-lg font-bold text-white">
+                          {alumnus.fullName}
+                        </h4>
+                        <p className="text-xs text-amber-200">
+                          {alumnus.ugBatchYear ? `UG:${alumnus.ugBatchYear} ` : ""}{alumnus.pgBatchYear ? `PG:${alumnus.pgBatchYear}` : ""} • {alumnus.city}
+                        </p>
+                        <span className="text-[10px] text-[#C5A059] font-medium flex items-center gap-1 mt-0.5">
+                          <Cake className="w-3 h-3 text-[#C5A059]" />
+                          Birthday: {dobDisplay}
+                        </span>
+                      </div>
+                    </div>
+
+                    <Link
+                      href="/birthdays"
+                      className="p-2 rounded-xl bg-white/10 text-white hover:bg-[#C5A059] hover:text-[#0F172A] transition-colors"
+                      title="Wish Happy Birthday"
+                    >
+                      <Cake className="w-4 h-4" />
+                    </Link>
+                  </div>
+                );
+              })}
             </div>
           ) : (
             <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 text-center max-w-md mx-auto">
               <Cake className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
               <p className="text-xs text-slate-300">
-                Newly registered alumni dates of birth will appear here on their birthdays.
+                No alumni birthdays recorded for today. Click below to explore upcoming birthdays this week!
               </p>
             </div>
           )}
