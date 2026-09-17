@@ -4,7 +4,8 @@ import React, { useState, useEffect, useMemo } from "react";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import FilterDrawer from "@/components/Directory/FilterDrawer";
 import { SPECIALIZATION_OPTIONS, BATCH_YEARS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
-import { getAlumniList } from "@/lib/store";
+import { getAlumniList, getLoggedInAlumni, toggleAlumniConnection } from "@/lib/store";
+import { useRouter } from "next/navigation";
 import { AlumniProfile, DirectoryFilterState } from "@/types";
 import {
   Search,
@@ -25,17 +26,26 @@ import {
 } from "lucide-react";
 
 export default function DirectoryPage() {
+  const router = useRouter();
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AlumniProfile | null>(null);
-
-  const currentAlumniId = "alumni-001";
+  const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
 
   useEffect(() => {
     setAlumniList(getAlumniList());
-    const handleUpdate = () => setAlumniList(getAlumniList());
+    setCurrentUser(getLoggedInAlumni());
+
+    const handleUpdate = () => {
+      setAlumniList(getAlumniList());
+      setCurrentUser(getLoggedInAlumni());
+    };
     window.addEventListener("alumni_updated", handleUpdate);
-    return () => window.removeEventListener("alumni_updated", handleUpdate);
+    window.addEventListener("user_auth_changed", handleUpdate);
+    return () => {
+      window.removeEventListener("alumni_updated", handleUpdate);
+      window.removeEventListener("user_auth_changed", handleUpdate);
+    };
   }, []);
 
   const [filters, setFilters] = useState<DirectoryFilterState>({
@@ -293,9 +303,12 @@ export default function DirectoryPage() {
                 key={alumni.id}
                 alumni={alumni}
                 allAlumni={alumniList}
-                currentAlumniId={currentAlumniId}
+                currentAlumniId={currentUser?.id}
                 onSelect={(selected) => setSelectedProfile(selected)}
-                onConnectionToggle={() => setAlumniList(getAlumniList())}
+                onConnectionToggle={() => {
+                  setAlumniList(getAlumniList());
+                  setCurrentUser(getLoggedInAlumni());
+                }}
               />
             ))}
           </div>
@@ -410,20 +423,55 @@ export default function DirectoryPage() {
               )}
             </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-3">
+              {currentUser && selectedProfile.id !== currentUser.id && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    toggleAlumniConnection(currentUser.id, selectedProfile.id);
+                    const freshList = getAlumniList();
+                    setAlumniList(freshList);
+                    const freshProfile = freshList.find((a) => a.id === selectedProfile.id);
+                    if (freshProfile) setSelectedProfile(freshProfile);
+                    setCurrentUser(getLoggedInAlumni());
+                  }}
+                  className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
+                    (selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
+                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                      : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
+                  }`}
+                >
+                  <Users2 className="w-4 h-4" />
+                  <span>
+                    {(selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
+                      ? "Connected ✓"
+                      : "Connect"}
+                  </span>
+                </button>
+              )}
+              {!currentUser && (
+                <button
+                  type="button"
+                  onClick={() => router.push("/login?redirect=/directory")}
+                  className="w-full sm:flex-1 py-3 text-center rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                >
+                  <Users2 className="w-4 h-4 text-[#C5A059]" />
+                  <span>Login to Connect</span>
+                </button>
+              )}
               {selectedProfile.whatsappNumber && (
                 <a
                   href={`https://wa.me/${selectedProfile.whatsappNumber}`}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors"
+                  className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs"
                 >
                   WhatsApp Connect
                 </a>
               )}
               <button
                 onClick={() => setSelectedProfile(null)}
-                className="flex-1 py-3 text-center rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider hover:bg-slate-200 transition-colors"
+                className="w-full sm:w-28 py-3 text-center rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider hover:bg-slate-200 transition-colors"
               >
                 Close
               </button>

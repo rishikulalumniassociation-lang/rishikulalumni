@@ -28,6 +28,7 @@ import {
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
 import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType } from "@/types";
+import AlumniSearchSelect from "@/components/Common/AlumniSearchSelect";
 
 export default function AlumniProfilePage() {
   const router = useRouter();
@@ -163,60 +164,70 @@ export default function AlumniProfilePage() {
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-12">
       <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-        {/* Profile Facebook-Style Cover & Header */}
+        {/* Profile Cover & Header with 100% Crisp Visibility */}
         <div className="bg-white rounded-3xl overflow-hidden border-2 border-[#C5A059]/30 shadow-xl mb-8">
           {/* Top Banner / Cover */}
-          <div className="h-40 sm:h-52 bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#2D5A43] relative">
+          <div className="h-36 sm:h-44 bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#2D5A43] relative">
             <div className="absolute top-4 right-4 flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full bg-white/10 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase">
+              <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-xs font-bold uppercase shadow-sm">
                 {user.membershipTier}
               </span>
-              <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase flex items-center gap-1">
+              <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-xs font-bold uppercase flex items-center gap-1 shadow-sm">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Verified
               </span>
             </div>
           </div>
 
-          {/* Profile Identity Bar */}
-          <div className="px-6 sm:px-10 pb-6 relative pt-0">
-            <div className="flex flex-col sm:flex-row sm:items-end justify-between -mt-16 sm:-mt-20 gap-4 mb-6">
-              <div className="flex items-end gap-5">
-                <div className="w-28 h-28 sm:w-36 sm:h-36 rounded-3xl overflow-hidden border-4 border-white shadow-xl bg-slate-900 flex-shrink-0">
+          {/* Profile Identity Bar - Strictly on Pure White Surface for High Contrast */}
+          <div className="px-6 sm:px-10 pb-6 relative bg-white">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 pb-6 border-b border-slate-100">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-5 -mt-14 sm:-mt-16">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl overflow-hidden border-4 border-white shadow-xl bg-slate-900 flex-shrink-0 relative">
                   <img
                     src={user.avatarUrl}
                     alt={user.fullName}
                     className="w-full h-full object-cover"
                   />
                 </div>
-                <div className="mb-2">
-                  <h1 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
+                <div className="pt-2 sm:pt-14">
+                  <h1 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A] tracking-tight">
                     {user.fullName}
                   </h1>
-                  <p className="text-xs text-slate-500 font-medium">
+                  {user.fullNameHindi && (
+                    <p className="text-xs sm:text-sm text-[#C5A059] font-semibold mt-0.5">
+                      {user.fullNameHindi}
+                    </p>
+                  )}
+                  <p className="text-xs text-slate-600 font-medium mt-0.5">
                     @{user.username} • {user.city}, {user.state}
                   </p>
-                  <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                     {user.ugBatchYear && (
-                      <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#FAF7F2] text-[#0F172A] border border-[#C5A059]">
+                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
                         UG Batch: {user.ugBatchYear}
                       </span>
                     )}
                     {user.pgBatchYear && (
-                      <span className="px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30">
+                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30 shadow-xs">
                         PG Batch: {user.pgBatchYear} ({user.pgDegree || "MD"})
+                      </span>
+                    )}
+                    {user.specialization && (
+                      <span className="px-2.5 py-0.5 rounded-md text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                        {user.specialization}
                       </span>
                     )}
                   </div>
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2.5 self-start md:self-center mt-2 md:mt-0">
                 <button
                   onClick={handleSaveProfile}
-                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors shadow-md"
+                  className="flex items-center gap-1.5 px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-all shadow-md active:scale-95"
                 >
-                  <Save className="w-3.5 h-3.5 text-[#C5A059]" />
+                  <Save className="w-4 h-4 text-[#C5A059]" />
                   Save Changes
                 </button>
 
@@ -225,24 +236,24 @@ export default function AlumniProfilePage() {
                     setLoggedInAlumni(null);
                     router.push("/login");
                   }}
-                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95"
                   title="लॉग आउट करें"
                 >
-                  <LogOut className="w-3.5 h-3.5" />
+                  <LogOut className="w-4 h-4" />
                   Logout
                 </button>
               </div>
             </div>
 
             {savedSuccess && (
-              <div className="mb-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
+              <div className="my-4 p-3 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs flex items-center gap-2">
                 <CheckCircle2 className="w-4 h-4 text-emerald-600" />
                 <span>आपकी प्रोफाइल जानकारी सफलतापूर्वक सुरक्षित (Update) हो गई है!</span>
               </div>
             )}
 
             {/* Navigation Tabs (Facebook-Style Profile Sections) */}
-            <div className="flex items-center gap-2 overflow-x-auto border-t border-slate-100 pt-3 text-xs font-bold uppercase tracking-wider">
+            <div className="flex items-center gap-2 overflow-x-auto pt-4 text-xs font-bold uppercase tracking-wider scrollbar-none">
               {[
                 { id: "work", label: "Work Timeline (कार्य अनुभव)", icon: Briefcase },
                 { id: "specialty", label: "Specialty & Shishya (विशेषज्ञता व शिष्य)", icon: Sparkles },
@@ -254,9 +265,9 @@ export default function AlumniProfilePage() {
                 <button
                   key={id}
                   onClick={() => setActiveTab(id as any)}
-                  className={`flex items-center gap-1.5 px-4 py-2 rounded-xl transition-colors whitespace-nowrap ${
+                  className={`flex items-center gap-1.5 px-4 py-2.5 rounded-xl transition-colors whitespace-nowrap ${
                     activeTab === id
-                      ? "bg-[#0F172A] text-[#C5A059] shadow-sm"
+                      ? "bg-[#0F172A] text-[#C5A059] shadow-sm font-bold"
                       : "text-slate-600 hover:bg-[#FAF7F2]"
                   }`}
                 >
@@ -432,54 +443,50 @@ export default function AlumniProfilePage() {
                 यदि आपके पति/पत्नी, भाई, बहन, माता-पिता, बेटा या बेटी भी ऋषिकुल से पढ़े हैं, तो उन्हें यहाँ अपने रिश्ते के साथ मार्क करें:
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3 p-4 rounded-2xl bg-[#FAF7F2] border border-slate-300">
-                <div className="flex-1 w-full">
-                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
-                    Select Family Member (from Alumni Directory)
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-slate-300 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Search & Select Family Member (पूर्व छात्र परिवार के सदस्य को खोजें)
                   </label>
-                  <select
-                    value={selectedFamilyAlumniId}
-                    onChange={(e) => setSelectedFamilyAlumniId(e.target.value)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="">-- Choose Registered Alumnus --</option>
-                    {allAlumni
-                      .filter((a) => a.id !== user.id)
-                      .map((a) => (
-                        <option key={a.id} value={a.id}>
-                          Dr. {a.fullName} ({a.ugBatchYear ? `UG:${a.ugBatchYear}` : `PG:${a.pgBatchYear}`})
-                        </option>
-                      ))}
-                  </select>
+                  <AlumniSearchSelect
+                    alumniList={allAlumni}
+                    excludeIds={[user.id, ...familyRelations.map((r) => r.relatedAlumniId)]}
+                    selectedId={selectedFamilyAlumniId}
+                    onSelect={setSelectedFamilyAlumniId}
+                    placeholder="परिवार के सदस्य का नाम, बैच या शहर टाइप करके खोजें..."
+                  />
                 </div>
 
-                <div className="w-full sm:w-48">
-                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
-                    Relationship Type (रिश्ता)
-                  </label>
-                  <select
-                    value={selectedFamilyRelation}
-                    onChange={(e) => setSelectedFamilyRelation(e.target.value as FamilyRelationType)}
-                    className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none"
-                  >
-                    <option value="Spouse">Spouse (पति / पत्नी)</option>
-                    <option value="Brother">Brother (भाई)</option>
-                    <option value="Sister">Sister (बहन)</option>
-                    <option value="Son">Son (बेटा)</option>
-                    <option value="Daughter">Daughter (बेटी)</option>
-                    <option value="Father">Father (पिताजी)</option>
-                    <option value="Mother">Mother (माताजी)</option>
-                    <option value="Relative">Relative (रिश्तेदार)</option>
-                  </select>
-                </div>
+                <div className="flex flex-col sm:flex-row items-center gap-3 pt-1">
+                  <div className="w-full sm:w-64">
+                    <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                      Relationship Type (रिश्ता)
+                    </label>
+                    <select
+                      value={selectedFamilyRelation}
+                      onChange={(e) => setSelectedFamilyRelation(e.target.value as FamilyRelationType)}
+                      className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:border-[#C5A059]"
+                    >
+                      <option value="Spouse">Spouse (पति / पत्नी)</option>
+                      <option value="Brother">Brother (भाई)</option>
+                      <option value="Sister">Sister (बहन)</option>
+                      <option value="Son">Son (बेटा)</option>
+                      <option value="Daughter">Daughter (बेटी)</option>
+                      <option value="Father">Father (पिताजी)</option>
+                      <option value="Mother">Mother (माताजी)</option>
+                      <option value="Relative">Relative (रिश्तेदार)</option>
+                    </select>
+                  </div>
 
-                <button
-                  type="button"
-                  onClick={handleAddFamilyRelation}
-                  className="w-full sm:w-auto mt-auto px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase hover:bg-[#2D5A43] transition-colors"
-                >
-                  Link Family
-                </button>
+                  <button
+                    type="button"
+                    onClick={handleAddFamilyRelation}
+                    disabled={!selectedFamilyAlumniId}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#0F172A] disabled:bg-slate-300 text-white text-xs font-bold uppercase hover:bg-[#2D5A43] transition-colors self-end mt-1 sm:mt-0 shadow-sm"
+                  >
+                    Link Family
+                  </button>
+                </div>
               </div>
             </div>
 
@@ -550,29 +557,30 @@ export default function AlumniProfilePage() {
                 ऋषिकुल में आपके अध्ययन के दौरान जो प्रोफेसर/गुरुजन रहे, उन्हें यहाँ मार्क करें। वे आपकी प्रोफाइल में श्रद्धापूर्वक प्रदर्शित होंगे:
               </p>
 
-              <div className="flex flex-col sm:flex-row items-center gap-3 p-4 rounded-2xl bg-[#FAF7F2] border border-slate-300">
-                <select
-                  value={selectedTeacherId}
-                  onChange={(e) => setSelectedTeacherId(e.target.value)}
-                  className="flex-1 w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
-                >
-                  <option value="">-- Choose Professor / Senior Alumnus --</option>
-                  {allAlumni
-                    .filter((a) => a.id !== user.id)
-                    .map((a) => (
-                      <option key={a.id} value={a.id}>
-                        Vaidya Dr. {a.fullName} ({a.designation})
-                      </option>
-                    ))}
-                </select>
+              <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-slate-300 space-y-4">
+                <div>
+                  <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
+                    Search & Select Teacher / Professor (गुरुजन / प्रोफेसर खोजें)
+                  </label>
+                  <AlumniSearchSelect
+                    alumniList={allAlumni}
+                    excludeIds={[user.id, ...teacherIds]}
+                    selectedId={selectedTeacherId}
+                    onSelect={setSelectedTeacherId}
+                    placeholder="प्रोफेसर या गुरुजन का नाम, पद या शहर टाइप करके खोजें..."
+                  />
+                </div>
 
-                <button
-                  type="button"
-                  onClick={handleAddTeacher}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase hover:bg-[#2D5A43] transition-colors"
-                >
-                  Add Teacher
-                </button>
+                <div className="flex justify-end">
+                  <button
+                    type="button"
+                    onClick={handleAddTeacher}
+                    disabled={!selectedTeacherId}
+                    className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-[#0F172A] disabled:bg-slate-300 text-white text-xs font-bold uppercase hover:bg-[#2D5A43] transition-colors shadow-sm"
+                  >
+                    Add Teacher
+                  </button>
+                </div>
               </div>
             </div>
 

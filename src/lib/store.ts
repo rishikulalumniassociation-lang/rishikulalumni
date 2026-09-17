@@ -203,6 +203,7 @@ export function setLoggedInAlumni(user: AlumniProfile | null) {
 }
 
 export function toggleAlumniConnection(fromId: string, toId: string) {
+  if (!fromId || !toId || fromId === toId) return;
   const list = getAlumniList();
   const updated = list.map((a) => {
     if (a.id === fromId) {

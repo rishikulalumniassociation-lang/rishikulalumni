@@ -59,7 +59,6 @@ export default function Navbar() {
 
   const navLinks = [
     { name: "Home", href: "/", icon: GraduationCap },
-    ...(loggedInUser ? [{ name: "My Profile (प्रोफाइल)", href: "/profile", icon: UserCheck }] : []),
     { name: "Directory", href: "/directory", icon: Users },
     { name: "Ayurveda Experts", href: "/experts", icon: Stethoscope },
     { name: "Achievements", href: "/achievements", icon: Sparkles },
