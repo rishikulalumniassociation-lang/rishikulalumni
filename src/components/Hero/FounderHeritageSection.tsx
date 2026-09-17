@@ -38,9 +38,9 @@ export default function FounderHeritageSection() {
                 {/* Photo with Gold Ring */}
                 <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-[#C5A059] shadow-lg flex-shrink-0 bg-slate-900 relative">
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Madan_Mohan_Malviya.jpg/480px-Madan_Mohan_Malviya.jpg"
+                    src="/images/madan-mohan-malviya.webp"
                     alt="Mahamana Pandit Madan Mohan Malaviya"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="w-full h-full object-cover object-top group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent" />
                   <span className="absolute bottom-1 left-2 text-[10px] font-bold text-amber-200">

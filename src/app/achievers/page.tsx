@@ -413,7 +413,7 @@ export default function AchieversPage() {
               <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#C5A059] shadow-xl flex flex-col md:flex-row items-center gap-8 relative overflow-hidden">
                 <div className="w-48 h-56 sm:w-56 sm:h-64 rounded-2xl overflow-hidden border-2 border-[#C5A059] flex-shrink-0 shadow-md bg-amber-50">
                   <img
-                    src="https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Madan_Mohan_Malaviya.jpg/440px-Madan_Mohan_Malaviya.jpg"
+                    src="/images/madan-mohan-malviya.webp"
                     alt="Mahamana Pandit Madan Mohan Malaviya"
                     className="w-full h-full object-cover object-top"
                   />

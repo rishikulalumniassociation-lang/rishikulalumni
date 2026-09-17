@@ -26,7 +26,8 @@ import {
   Briefcase,
   Flower,
   Trophy,
-  Medal
+  Medal,
+  RefreshCw
 } from "lucide-react";
 import {
   getAlumniList,
@@ -109,15 +110,30 @@ export default function AdminDashboardPage() {
     }
     loadAllData();
 
+    // Listen for new registrations and profile updates
+    const handleAlumniUpdate = () => {
+      setAlumniList(getAlumniList());
+    };
+
     const handleNomUpdate = () => {
       setNominationsList(getAchieverNominations());
       setAchieversList(getLifetimeAchievers());
     };
+
+    const handleResetUpdate = () => {
+      setResetRequests(getPasswordResetRequests());
+    };
+
+    window.addEventListener("alumni_updated", handleAlumniUpdate);
     window.addEventListener("nominations_updated", handleNomUpdate);
     window.addEventListener("achievers_updated", handleNomUpdate);
+    window.addEventListener("password_reset_updated", handleResetUpdate);
+
     return () => {
+      window.removeEventListener("alumni_updated", handleAlumniUpdate);
       window.removeEventListener("nominations_updated", handleNomUpdate);
       window.removeEventListener("achievers_updated", handleNomUpdate);
+      window.removeEventListener("password_reset_updated", handleResetUpdate);
     };
   }, [router]);
 
@@ -342,6 +358,19 @@ export default function AdminDashboardPage() {
           </div>
 
           <div className="flex items-center gap-3">
+            <button
+              onClick={loadAllData}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-[#C5A059]/40 text-[#2D5A43] text-xs font-bold uppercase tracking-wider hover:bg-[#F3ECE2] transition-colors shadow-sm relative"
+              title="Refresh data from localStorage"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Refresh Data
+              {pendingAlumni.length > 0 && (
+                <span className="absolute -top-1.5 -right-1.5 w-4 h-4 rounded-full bg-amber-500 text-white text-[9px] font-bold flex items-center justify-center">
+                  {pendingAlumni.length}
+                </span>
+              )}
+            </button>
             <button
               onClick={handleLogout}
               className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white border border-red-200 text-red-700 text-xs font-bold uppercase tracking-wider hover:bg-red-50 transition-colors shadow-sm"
