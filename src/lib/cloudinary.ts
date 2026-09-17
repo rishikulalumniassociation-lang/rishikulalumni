@@ -1,27 +1,47 @@
 import { v2 as cloudinary } from "cloudinary";
 
+function getCredentials() {
+  let cloudName = process.env.CLOUDINARY_CLOUD_NAME || "";
+  let apiKey = process.env.CLOUDINARY_API_KEY || "";
+  let apiSecret = process.env.CLOUDINARY_API_SECRET || "";
+
+  if ((!cloudName || !apiKey || !apiSecret) && process.env.CLOUDINARY_URL) {
+    const match = process.env.CLOUDINARY_URL.match(/^cloudinary:\/\/([^:]+):([^@]+)@(.+)$/);
+    if (match) {
+      apiKey = apiKey || match[1];
+      apiSecret = apiSecret || match[2];
+      cloudName = cloudName || match[3];
+    }
+  }
+
+  return {
+    cloudName: cloudName.trim(),
+    apiKey: apiKey.trim(),
+    apiSecret: apiSecret.trim(),
+  };
+}
+
+const creds = getCredentials();
+
 // Configure Cloudinary with environment variables
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME || "",
-  api_key: process.env.CLOUDINARY_API_KEY || "",
-  api_secret: process.env.CLOUDINARY_API_SECRET || "",
+  cloud_name: creds.cloudName,
+  api_key: creds.apiKey,
+  api_secret: creds.apiSecret,
   secure: true,
 });
 
 export function isCloudinaryConfigured(): boolean {
-  return Boolean(
-    process.env.CLOUDINARY_CLOUD_NAME &&
-    process.env.CLOUDINARY_API_KEY &&
-    process.env.CLOUDINARY_API_SECRET
-  );
+  const { cloudName, apiKey, apiSecret } = getCredentials();
+  return Boolean(cloudName && apiKey && apiSecret);
 }
 
 export function getCloudinaryCloudName(): string {
-  return process.env.CLOUDINARY_CLOUD_NAME || "";
+  return getCredentials().cloudName;
 }
 
 export function getCloudinaryApiKey(): string {
-  return process.env.CLOUDINARY_API_KEY || "";
+  return getCredentials().apiKey;
 }
 
 /**
@@ -36,9 +56,7 @@ export function generateCloudinaryUploadSignature(
   apiKey: string;
   cloudName: string;
 } {
-  const apiSecret = process.env.CLOUDINARY_API_SECRET;
-  const apiKey = process.env.CLOUDINARY_API_KEY;
-  const cloudName = process.env.CLOUDINARY_CLOUD_NAME;
+  const { cloudName, apiKey, apiSecret } = getCredentials();
 
   if (!apiSecret || !apiKey || !cloudName) {
     throw new Error(
