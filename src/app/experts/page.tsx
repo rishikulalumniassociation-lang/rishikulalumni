@@ -437,7 +437,11 @@ export default function AyurvedaExpertsPage() {
 
                   {/* Actions */}
                   <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
-                    {waLink ? (
+                    {currentUser && exp.id === currentUser.id ? (
+                      <div className="flex-1 text-center py-2 text-[11px] font-bold text-slate-500 bg-slate-100 rounded-xl">
+                        Your Expert Profile (स्वयं)
+                      </div>
+                    ) : waLink ? (
                       currentUser ? (
                         <a
                           href={waLink}

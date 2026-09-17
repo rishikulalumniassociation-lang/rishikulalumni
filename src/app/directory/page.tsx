@@ -906,7 +906,7 @@ export default function DirectoryPage() {
                           <span>{selectedProfile.shishyaRequirement}</span>
                         </div>
                       )}
-                      {selectedProfile.whatsappNumber && (
+                      {selectedProfile.whatsappNumber && (!currentUser || selectedProfile.id !== currentUser.id) && (
                         currentUser ? (
                           <a
                             href={`https://wa.me/${selectedProfile.whatsappNumber}?text=${encodeURIComponent(`सादर प्रणाम वैद्य जी, मैंने ऋषिकुल एल्युमनाई पोर्टल पर आपकी विशेषज्ञता देखी और आपके मार्गदर्शन में शिष्य रूप में आयुर्वेद सीखना चाहता हूँ।`)}`}
@@ -998,7 +998,7 @@ export default function DirectoryPage() {
                     <span>Login to Connect</span>
                   </button>
                 )}
-                {selectedProfile.whatsappNumber && (
+                {selectedProfile.whatsappNumber && (!currentUser || selectedProfile.id !== currentUser.id) && (
                   currentUser ? (
                     <a
                       href={`https://wa.me/${selectedProfile.whatsappNumber}`}

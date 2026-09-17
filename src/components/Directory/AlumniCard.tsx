@@ -14,7 +14,8 @@ import {
   Cake,
   Building,
   Medal,
-  Lock
+  Lock,
+  Heart
 } from "lucide-react";
 import { toggleAlumniConnection } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -44,6 +45,14 @@ export default function AlumniCard({
   const connectedPeople = (alumni.connectedAlumniIds || [])
     .map((id) => allAlumni.find((a) => a.id === id))
     .filter(Boolean) as AlumniProfile[];
+
+  // Linked family alumni members
+  const familyPeople = (alumni.familyAlumniRelations || [])
+    .map((rel) => {
+      const person = allAlumni.find((a) => a.id === rel.relatedAlumniId);
+      return person ? { relationType: rel.relationType, person } : null;
+    })
+    .filter(Boolean) as { relationType: string; person: AlumniProfile }[];
 
   const handleShare = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -177,6 +186,25 @@ export default function AlumniCard({
           </div>
         </div>
 
+        {/* Linked Family Relations (Visible to logged-in users / community) */}
+        {familyPeople.length > 0 && (
+          <div className="mb-3 p-2 rounded-xl bg-rose-50/70 border border-rose-200/80 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-1.5 min-w-0">
+              <Heart className="w-3.5 h-3.5 text-rose-600 shrink-0 fill-rose-500/20" />
+              <span className="text-[11px] font-medium text-rose-950 truncate">
+                <strong className="font-bold">
+                  {familyPeople[0].relationType}:
+                </strong>{" "}
+                Dr. {familyPeople[0].person.fullName}
+                {familyPeople.length > 1 && ` (+${familyPeople.length - 1} more)`}
+              </span>
+            </div>
+            <span className="text-[9px] font-bold uppercase tracking-wider px-1.5 py-0.5 rounded bg-rose-100 text-rose-700 shrink-0">
+              Family
+            </span>
+          </div>
+        )}
+
         {/* Mutual Alumni Network indicator */}
         <div className="pt-2.5 pb-3 border-t border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2">
@@ -240,7 +268,7 @@ export default function AlumniCard({
         </span>
 
         <div className="flex items-center gap-1.5">
-          {alumni.whatsappNumber && (
+          {!isSelf && alumni.whatsappNumber && (
             currentAlumniId ? (
               <a
                 href={`https://wa.me/${alumni.whatsappNumber}`}

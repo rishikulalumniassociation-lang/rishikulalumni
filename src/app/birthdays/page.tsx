@@ -150,7 +150,7 @@ export default function BirthdaysPage() {
                         <span>{hasWished ? "Wished! 🎉" : "Send Birthday Blessings"}</span>
                       </button>
 
-                      {alumnus.whatsappNumber && (
+                      {alumnus.whatsappNumber && (!currentUser || alumnus.id !== currentUser.id) && (
                         currentUser ? (
                           <a
                             href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
