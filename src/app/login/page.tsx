@@ -140,10 +140,6 @@ export default function AlumniLoginPage() {
             </div>
           </div>
 
-          <div className="p-3 bg-amber-50 rounded-xl border border-amber-200 text-[11px] text-amber-900 leading-relaxed">
-            <strong>Approved Demo Account:</strong> WhatsApp Mobile / Username: <code className="bg-white px-1.5 py-0.5 rounded border font-bold">rcjoshi</code> (या <code className="bg-white px-1.5 py-0.5 rounded border font-bold">9897123456</code>) | Password: <code className="bg-white px-1.5 py-0.5 rounded border font-bold">pass123</code>
-          </div>
-
           <button
             type="submit"
             disabled={loading}

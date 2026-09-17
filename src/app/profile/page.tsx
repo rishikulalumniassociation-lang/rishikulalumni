@@ -79,7 +79,7 @@ export default function AlumniProfilePage() {
       }
     ]);
     setFamilyRelations(freshUser.familyAlumniRelations || []);
-    setTeacherIds(freshUser.teacherAlumniIds || ["alumni-001"]);
+    setTeacherIds(freshUser.teacherAlumniIds || []);
   }, [router]);
 
   if (!user) return null;

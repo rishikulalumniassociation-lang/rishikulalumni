@@ -4,12 +4,12 @@ import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetReque
 import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI } from "./mockData";
 
 const STORAGE_KEYS = {
-  ALUMNI: "rishikul_alumni_list_v4",
+  ALUMNI: "rishikul_alumni_list_v5",
   ACHIEVERS: "rishikul_lifetime_achievers_v4",
   SHRADHANJALI: "rishikul_shradhanjali_v4",
   ADMIN_AUTH: "rishikul_admin_logged_in_v4",
   RESET_REQUESTS: "rishikul_password_reset_requests_v4",
-  LOGGED_IN_USER: "rishikul_logged_in_user_v4",
+  LOGGED_IN_USER: "rishikul_logged_in_user_v5",
 };
 
 export function getAlumniList(): AlumniProfile[] {
@@ -172,13 +172,7 @@ export function setAdminAuthenticated(val: boolean) {
 export function getLoggedInAlumni(): AlumniProfile | null {
   if (typeof window === "undefined") return null;
   const stored = localStorage.getItem(STORAGE_KEYS.LOGGED_IN_USER);
-  if (!stored) {
-    // Demo auto-login as Dr. Ramesh Chandra Joshi if none set
-    const list = getAlumniList();
-    const demo = list[0] || null;
-    if (demo) localStorage.setItem(STORAGE_KEYS.LOGGED_IN_USER, JSON.stringify(demo));
-    return demo;
-  }
+  if (!stored) return null;
   try {
     return JSON.parse(stored);
   } catch (e) {

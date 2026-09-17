@@ -1,8 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Link from "next/link";
 import DigitalIdCard from "@/components/Membership/DigitalIdCard";
-import { MOCK_ALUMNI } from "@/lib/mockData";
+import { getAlumniList, getLoggedInAlumni } from "@/lib/store";
 import { AlumniProfile } from "@/types";
 import {
   CreditCard,
@@ -12,11 +13,52 @@ import {
   Download,
   CheckCircle2,
   Check,
+  UserCheck,
   HelpCircle
 } from "lucide-react";
 
+const SAMPLE_FALLBACK_CARD: AlumniProfile = {
+  id: "sample-id",
+  fullName: "Dr. Member Name",
+  username: "9897100000",
+  email: "alumni@rishikul.org",
+  mobile: "9897100000",
+  whatsappNumber: "9897100000",
+  dateOfBirth: "1990-01-01",
+  avatarUrl: "https://images.unsplash.com/photo-1537368910025-700350fe46c7?w=400&auto=format&fit=crop",
+  rishikulEducation: "BOTH",
+  ugBatchYear: 1995,
+  ugDegree: "BAMS",
+  pgBatchYear: 2000,
+  pgDegree: "MD (Kayachikitsa)",
+  specialization: "Kayachikitsa (Internal Medicine)",
+  jobType: "Private Practice",
+  designation: "Senior Ayurvedic Consultant",
+  workplace: "Rishikul Alumni Network",
+  city: "Haridwar",
+  state: "Uttarakhand",
+  country: "India",
+  membershipId: "RISHI-LM-SAMPLE",
+  membershipTier: "Life Member",
+  isVerified: true,
+  approvalStatus: "approved",
+  joinedDate: "2026-01-01"
+};
+
 export default function MembershipPage() {
-  const [activeAlumni, setActiveAlumni] = useState<AlumniProfile>(MOCK_ALUMNI[0]);
+  const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
+  const [activeAlumni, setActiveAlumni] = useState<AlumniProfile>(SAMPLE_FALLBACK_CARD);
+
+  useEffect(() => {
+    const list = getAlumniList();
+    const current = getLoggedInAlumni();
+    setAlumniList(list);
+    if (current) {
+      setActiveAlumni(current);
+    } else if (list.length > 0) {
+      setActiveAlumni(list[0]);
+    }
+  }, []);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-16">
@@ -36,27 +78,29 @@ export default function MembershipPage() {
           </p>
         </div>
 
-        {/* Demo Switcher */}
-        <div className="bg-white rounded-2xl p-4 border border-[#C5A059]/30 mb-10 max-w-xl mx-auto shadow-sm">
-          <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 text-center">
-            Interactive Preview: Select Alumni Profile
-          </label>
-          <div className="grid grid-cols-3 gap-2">
-            {MOCK_ALUMNI.slice(0, 3).map((alumnus) => (
-              <button
-                key={alumnus.id}
-                onClick={() => setActiveAlumni(alumnus)}
-                className={`p-2 rounded-xl text-xs font-semibold text-center transition-all truncate ${
-                  activeAlumni.id === alumnus.id
-                    ? "bg-[#0F172A] text-[#C5A059] shadow-sm"
-                    : "bg-[#FAF7F2] text-slate-700 hover:bg-slate-100"
-                }`}
-              >
-                {alumnus.fullName.split(" ")[1] || alumnus.fullName} ({alumnus.ugBatchYear ? `UG:${alumnus.ugBatchYear}` : `PG:${alumnus.pgBatchYear}`})
-              </button>
-            ))}
+        {/* Member Selector if multiple alumni registered */}
+        {alumniList.length > 1 && (
+          <div className="bg-white rounded-2xl p-4 border border-[#C5A059]/30 mb-10 max-w-xl mx-auto shadow-sm">
+            <label className="block text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2 text-center">
+              Select Alumni Member:
+            </label>
+            <div className="flex flex-wrap gap-2 justify-center">
+              {alumniList.slice(0, 5).map((alumnus) => (
+                <button
+                  key={alumnus.id}
+                  onClick={() => setActiveAlumni(alumnus)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-semibold text-center transition-all truncate ${
+                    activeAlumni.id === alumnus.id
+                      ? "bg-[#0F172A] text-[#C5A059] shadow-sm"
+                      : "bg-[#FAF7F2] text-slate-700 hover:bg-slate-100"
+                  }`}
+                >
+                  {alumnus.fullName}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Main Grid: Card & Privileges */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-start mb-16">
