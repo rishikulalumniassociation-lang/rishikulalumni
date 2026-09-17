@@ -3,7 +3,7 @@
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, ShieldCheck, ArrowRight, AlertCircle, Sparkles } from "lucide-react";
-import { setAdminAuthenticated } from "@/lib/store";
+import { setAdminAuthenticated, verifyAdminCredentials } from "@/lib/store";
 
 export default function AdminLoginPage() {
   const router = useRouter();
@@ -12,24 +12,24 @@ export default function AdminLoginPage() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    // Default admin credential validation
-    setTimeout(() => {
-      if (
-        (username === "admin" && password === "rishikul1919") ||
-        (username === "secretary" && password === "admin123")
-      ) {
+    try {
+      const isValid = await verifyAdminCredentials(username, password);
+      if (isValid) {
         setAdminAuthenticated(true);
         router.push("/admin");
       } else {
-        setError("Invalid administrative credentials. Use admin / rishikul1919 for demo access.");
+        setError("अमान्य एडमिन क्रेडेंशियल्स (Invalid administrative credentials)। कृपया पुनः प्रयास करें।");
         setLoading(false);
       }
-    }, 600);
+    } catch (err) {
+      setError("लॉगिन सत्यापन में त्रुटि हुई। कृपया पुनः प्रयास करें।");
+      setLoading(false);
+    }
   };
 
   return (

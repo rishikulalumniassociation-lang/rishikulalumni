@@ -230,7 +230,18 @@ CREATE TABLE IF NOT EXISTS public.events (
 );
 
 -- ==============================================================================
--- 10. Row Level Security (RLS) & Access Policies
+-- 10. Admin Users Table (सुरक्षित एडमिन क्रेडेंशियल्स)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.admin_users (
+    id TEXT PRIMARY KEY DEFAULT ('admin-' || floor(extract(epoch from now()) * 1000)::text),
+    username TEXT UNIQUE NOT NULL,
+    password_hash TEXT NOT NULL,
+    role TEXT DEFAULT 'Super Admin',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- ==============================================================================
+-- 11. Row Level Security (RLS) & Access Policies
 -- ==============================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lifetime_achievers ENABLE ROW LEVEL SECURITY;
@@ -241,6 +252,7 @@ ALTER TABLE public.nominations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievement_likes ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.admin_users ENABLE ROW LEVEL SECURITY;
 
 -- Drop existing policies if re-running script to avoid conflicts
 DO $$
@@ -307,12 +319,16 @@ CREATE POLICY "Enable all achievements" ON public.community_achievements FOR ALL
 CREATE POLICY "Public read likes" ON public.achievement_likes FOR SELECT USING (true);
 CREATE POLICY "Enable all likes" ON public.achievement_likes FOR ALL USING (true);
 
+-- Admin Users Policies
+CREATE POLICY "Public read admin_users" ON public.admin_users FOR SELECT USING (true);
+CREATE POLICY "Enable all admin_users" ON public.admin_users FOR ALL USING (true);
+
 -- Events Policies
 CREATE POLICY "Public can read events" ON public.events FOR SELECT USING (true);
 CREATE POLICY "Enable all events" ON public.events FOR ALL USING (true);
 
 -- ==============================================================================
--- 11. Helper RPC: increment condolences count atomically
+-- 12. Helper RPC: increment condolences count atomically
 -- ==============================================================================
 CREATE OR REPLACE FUNCTION public.increment_condolences(record_id TEXT)
 RETURNS void LANGUAGE plpgsql AS $$
@@ -324,7 +340,7 @@ END;
 $$;
 
 -- ==============================================================================
--- 12. Seed Data: Jagdish Vats Shradhanjali (अमर शहीद जगदीश वत्स)
+-- 13. Seed Data: Jagdish Vats Shradhanjali (अमर शहीद जगदीश वत्स) & Default Admin
 -- ==============================================================================
 INSERT INTO public.shradhanjali (id, name, name_hindi, batch_year, degree, photo_url, date_of_demise, tribute, condolences_count, posted_by)
 VALUES (
@@ -339,3 +355,12 @@ VALUES (
     0,
     'ऋषिकुल एल्युमनाई एसोसिएशन एवं संपूर्ण पुरातन छात्र परिवार'
 ) ON CONFLICT (id) DO NOTHING;
+
+-- Seed default Admin credentials with SHA-256 encrypted passwords
+-- "admin" password "rishikul1919" -> a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84
+-- "secretary" password "admin123" -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
+INSERT INTO public.admin_users (id, username, password_hash, role)
+VALUES 
+    ('admin-1', 'admin', 'a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84', 'Super Admin'),
+    ('admin-2', 'secretary', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'General Secretary')
+ON CONFLICT (username) DO NOTHING;

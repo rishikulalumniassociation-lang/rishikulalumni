@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, User, ArrowRight, AlertCircle, HelpCircle, CheckCircle2, ShieldAlert } from "lucide-react";
-import { getAlumniList, getAlumniByUsername, setLoggedInAlumni, addPasswordResetRequest } from "@/lib/store";
+import { getAlumniList, getAlumniByUsername, setLoggedInAlumni, addPasswordResetRequest, hashPassword } from "@/lib/store";
 
 export default function AlumniLoginPage() {
   const router = useRouter();
@@ -24,8 +24,14 @@ export default function AlumniLoginPage() {
     setLoading(true);
 
     const user = await getAlumniByUsername(username);
+    const hashedInput = await hashPassword(password);
 
-    if (!user || (user.passwordHash !== password && password !== "pass123")) {
+    if (
+      !user ||
+      (user.passwordHash !== hashedInput &&
+        user.passwordHash !== password &&
+        password !== "pass123")
+    ) {
       setError("Invalid username or password. If you forgot your password, please submit a reset request for Admin.");
       setLoading(false);
       return;

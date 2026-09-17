@@ -44,7 +44,8 @@ import {
   setAdminAuthenticated,
   getAchieverNominations,
   approveAchieverNomination,
-  rejectAchieverNomination
+  rejectAchieverNomination,
+  hashPassword
 } from "@/lib/store";
 import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest, AchieverNomination } from "@/types";
 
@@ -208,11 +209,12 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     if (!activeResetModalReq || !newPasswordToAssign) return;
 
+    const hashedNewPassword = await hashPassword(newPasswordToAssign);
     const updatedAlumni = alumniList.map((a) => {
       if (a.id === activeResetModalReq.alumniId || a.username === activeResetModalReq.username) {
         return {
           ...a,
-          passwordHash: newPasswordToAssign,
+          passwordHash: hashedNewPassword,
         };
       }
       return a;

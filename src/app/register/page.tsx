@@ -20,7 +20,7 @@ import {
   MapPin
 } from "lucide-react";
 import { SPECIALIZATION_OPTIONS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
-import { registerAlumni } from "@/lib/store";
+import { registerAlumni, hashPassword } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
 import { AlumniProfile, RishikulEducationType, JobType } from "@/types";
 
@@ -122,11 +122,12 @@ export default function RegisterPage() {
     setGeneratedMembershipId(memId);
 
     const cleanMobile = formData.mobile.trim();
+    const hashedPassword = await hashPassword(formData.password);
     const newProfile: AlumniProfile = {
       id: `alumni-${Date.now()}`,
       fullName: formData.fullName.trim(),
       username: cleanMobile, // Mobile number is the login username
-      passwordHash: formData.password,
+      passwordHash: hashedPassword,
       email: formData.email,
       mobile: cleanMobile,
       whatsappNumber: cleanMobile, // Unified WhatsApp mobile

@@ -387,6 +387,61 @@ export function setAdminAuthenticated(val: boolean) {
   window.dispatchEvent(new Event("admin_auth_changed"));
 }
 
+export async function hashPassword(password: string): Promise<string> {
+  if (!password) return "";
+  try {
+    if (typeof window !== "undefined" && window.crypto && window.crypto.subtle) {
+      const msgUint8 = new TextEncoder().encode(password);
+      const hashBuffer = await window.crypto.subtle.digest("SHA-256", msgUint8);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      return hashArray.map((b) => b.toString(16).padStart(2, "0")).join("");
+    }
+  } catch (e) {
+    console.error("hashPassword error:", e);
+  }
+  return password;
+}
+
+export async function verifyAdminCredentials(username: string, passwordInput: string): Promise<boolean> {
+  const cleanUsername = username.trim();
+  const hashedInput = await hashPassword(passwordInput);
+
+  // 1. Check admin_users table in Supabase
+  try {
+    const { data } = await supabase
+      .from("admin_users")
+      .select("password_hash")
+      .eq("username", cleanUsername)
+      .maybeSingle();
+
+    if (data) {
+      if (data.password_hash === hashedInput || data.password_hash === passwordInput) {
+        return true;
+      }
+    }
+  } catch (e) {
+    console.error("verifyAdminCredentials database query error:", e);
+  }
+
+  // 2. Verified fallback check using precomputed SHA-256 hashes
+  // admin: "rishikul1919" -> a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84
+  // secretary: "admin123" -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
+  if (
+    cleanUsername === "admin" &&
+    (hashedInput === "a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84" || passwordInput === "rishikul1919")
+  ) {
+    return true;
+  }
+  if (
+    cleanUsername === "secretary" &&
+    (hashedInput === "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9" || passwordInput === "admin123")
+  ) {
+    return true;
+  }
+
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // PASSWORD RESET REQUESTS
 // ---------------------------------------------------------------------------
