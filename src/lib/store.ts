@@ -1,16 +1,17 @@
 "use client";
 
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest, CommunityAchievement } from "@/types";
-import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI } from "./mockData";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest, CommunityAchievement, AssociationEvent } from "@/types";
+import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI, MOCK_EVENTS } from "./mockData";
 
 const STORAGE_KEYS = {
   ALUMNI: "rishikul_alumni_list_v5",
   ACHIEVERS: "rishikul_lifetime_achievers_v4",
-  SHRADHANJALI: "rishikul_shradhanjali_v4",
+  SHRADHANJALI: "rishikul_shradhanjali_v5",
   ADMIN_AUTH: "rishikul_admin_logged_in_v4",
   RESET_REQUESTS: "rishikul_password_reset_requests_v4",
   LOGGED_IN_USER: "rishikul_logged_in_user_v5",
   COMMUNITY_ACHIEVEMENTS: "rishikul_community_achievements_v1",
+  EVENTS: "rishikul_events_v2",
 };
 
 export function getAlumniList(): AlumniProfile[] {
@@ -143,7 +144,12 @@ export function getShradhanjaliList(): ShradhanjaliRecord[] {
     return INITIAL_SHRADHANJALI;
   }
   try {
-    return JSON.parse(stored);
+    const list: ShradhanjaliRecord[] = JSON.parse(stored);
+    return list.map((item) =>
+      item.id === "shradhanjali-martyr"
+        ? { ...item, photoUrl: "/images/jagdish-vats.png" }
+        : item
+    );
   } catch (e) {
     return INITIAL_SHRADHANJALI;
   }
@@ -253,4 +259,42 @@ export function addCommunityAchievement(item: Omit<CommunityAchievement, "id" | 
   const list = getCommunityAchievements();
   saveCommunityAchievements([newItem, ...list]);
   return newItem;
+}
+
+export function getEvents(): AssociationEvent[] {
+  if (typeof window === "undefined") return MOCK_EVENTS;
+  const stored = localStorage.getItem(STORAGE_KEYS.EVENTS);
+  if (!stored) {
+    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(MOCK_EVENTS));
+    return MOCK_EVENTS;
+  }
+  try {
+    return JSON.parse(stored);
+  } catch (e) {
+    return MOCK_EVENTS;
+  }
+}
+
+export function saveEvents(list: AssociationEvent[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
+  window.dispatchEvent(new Event("events_updated"));
+}
+
+export function addEvent(event: Omit<AssociationEvent, "id" | "slug" | "attendeesCount">): AssociationEvent {
+  const newId = `event-${Date.now()}`;
+  const slug = event.title
+    .toLowerCase()
+    .replace(/[^\w\s-]/g, "")
+    .replace(/[\s_-]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+  const newEvent: AssociationEvent = {
+    ...event,
+    id: newId,
+    slug: slug || newId,
+    attendeesCount: 0,
+  };
+  const list = getEvents();
+  saveEvents([newEvent, ...list]);
+  return newEvent;
 }

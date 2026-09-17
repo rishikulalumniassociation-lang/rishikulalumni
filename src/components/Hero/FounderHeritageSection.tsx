@@ -95,9 +95,9 @@ export default function FounderHeritageSection() {
                 {/* Memorial Photo / Badge */}
                 <div className="w-32 h-32 sm:w-36 sm:h-36 rounded-2xl overflow-hidden border-2 border-red-500 shadow-lg flex-shrink-0 bg-slate-800 relative">
                   <img
-                    src="https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop"
-                    alt="Martyr Jagdish Vats Statue & Memorial Haridwar"
-                    className="w-full h-full object-cover grayscale group-hover:scale-105 transition-transform duration-500"
+                    src="/images/jagdish-vats.png"
+                    alt="Martyr Jagdish Vats - Student of Rishikul 1942"
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                   <span className="absolute bottom-1 left-2 text-[10px] font-bold text-red-300 flex items-center gap-1">

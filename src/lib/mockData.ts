@@ -52,7 +52,7 @@ export const INITIAL_SHRADHANJALI: ShradhanjaliRecord[] = [
     nameHindi: "अमर शहीद जगदीश वत्स",
     batchYear: 1942,
     degree: "छात्र, ऋषिकुल आयुर्वेदिक कॉलेज (1942)",
-    photoUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=400&auto=format&fit=crop",
+    photoUrl: "/images/jagdish-vats.png",
     dateOfDemise: "1942-08-14",
     tribute: "17 वर्षीय तेजस्वी छात्र जगदीश वत्स ने 14 अगस्त 1942 को भारत छोड़ो आंदोलन के दौरान हरिद्वार रेलवे स्टेशन और सुभाष घाट पर ब्रिटिश यूनियन जैक उतारकर तिरंगा फहराया। अंग्रेजी पुलिस की गोलियाँ लगने के बाद भी धोती से हाथ बाँधकर डाकघर पर तिरंगा फहराया और सीने पर गोली खाकर वीरगति को प्राप्त हुए। वे हरिद्वार के प्रथम अमर शहीद हैं।",
     condolencesCount: 540,
