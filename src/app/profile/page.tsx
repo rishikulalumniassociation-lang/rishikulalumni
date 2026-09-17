@@ -1167,7 +1167,7 @@ export default function AlumniProfilePage() {
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
                   Mobile Number
@@ -1189,6 +1189,26 @@ export default function AlumniProfilePage() {
                   onChange={(e) => setFormData({ ...formData, whatsappNumber: e.target.value })}
                   className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
                 />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
+                  <span className="text-rose-600 font-bold">🩸</span> Blood Group
+                </label>
+                <select
+                  value={formData.bloodGroup || "O+"}
+                  onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                >
+                  <option value="A+">A+ (Positive)</option>
+                  <option value="A-">A- (Negative)</option>
+                  <option value="B+">B+ (Positive)</option>
+                  <option value="B-">B- (Negative)</option>
+                  <option value="AB+">AB+ (Positive)</option>
+                  <option value="AB-">AB- (Negative)</option>
+                  <option value="O+">O+ (Positive)</option>
+                  <option value="O-">O- (Negative)</option>
+                  <option value="Unknown">Unknown / ज्ञात नहीं</option>
+                </select>
               </div>
             </div>
 

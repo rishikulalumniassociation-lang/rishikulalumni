@@ -364,8 +364,8 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Email & Date of Birth */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {/* Email, Date of Birth & Blood Group */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
                         Email ID *
@@ -377,14 +377,14 @@ export default function RegisterPage() {
                         placeholder="doctor@example.com"
                         value={formData.email}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-3.5 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none"
                       />
                     </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
                         <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
-                        Actual Date of Birth *
+                        Date of Birth *
                       </label>
                       <input
                         type="date"
@@ -392,8 +392,32 @@ export default function RegisterPage() {
                         required
                         value={formData.dateOfBirth}
                         onChange={handleChange}
-                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
+                        <span className="text-rose-600 font-black">🩸</span>
+                        Blood Group *
+                      </label>
+                      <select
+                        name="bloodGroup"
+                        required
+                        value={formData.bloodGroup}
+                        onChange={handleChange}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-bold text-slate-800"
+                      >
+                        <option value="A+">A+ (Positive)</option>
+                        <option value="A-">A- (Negative)</option>
+                        <option value="B+">B+ (Positive)</option>
+                        <option value="B-">B- (Negative)</option>
+                        <option value="AB+">AB+ (Positive)</option>
+                        <option value="AB-">AB- (Negative)</option>
+                        <option value="O+">O+ (Positive)</option>
+                        <option value="O-">O- (Negative)</option>
+                        <option value="Unknown">Unknown / ज्ञात नहीं</option>
+                      </select>
                     </div>
                   </div>
 
