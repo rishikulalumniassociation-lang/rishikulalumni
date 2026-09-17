@@ -272,6 +272,14 @@ export async function updateAlumniProfile(id: string, updates: Partial<AlumniPro
   if (updates.isDeceased !== undefined) snakeUpdates.is_deceased = updates.isDeceased;
   if (updates.dateOfDemise !== undefined) snakeUpdates.date_of_demise = updates.dateOfDemise;
   if (updates.demiseTribute !== undefined) snakeUpdates.demise_tribute = updates.demiseTribute;
+  if (updates.dateOfBirth !== undefined) snakeUpdates.date_of_birth = updates.dateOfBirth;
+  if (updates.rishikulEducation !== undefined) snakeUpdates.rishikul_education = updates.rishikulEducation;
+  if (updates.ugBatchYear !== undefined) snakeUpdates.ug_batch_year = updates.ugBatchYear;
+  if (updates.ugDegree !== undefined) snakeUpdates.ug_degree = updates.ugDegree;
+  if (updates.pgBatchYear !== undefined) snakeUpdates.pg_batch_year = updates.pgBatchYear;
+  if (updates.pgDegree !== undefined) snakeUpdates.pg_degree = updates.pgDegree;
+  if (updates.specialization !== undefined) snakeUpdates.specialization = updates.specialization;
+  if (updates.achievements !== undefined) snakeUpdates.achievements = updates.achievements;
   if (updates.passwordHash !== undefined) snakeUpdates.password_hash = updates.passwordHash;
   snakeUpdates.updated_at = new Date().toISOString();
 
