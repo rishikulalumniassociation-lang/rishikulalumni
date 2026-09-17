@@ -298,6 +298,7 @@ export interface CommunityPost {
   pinnedAt?: string;
   pinnedBy?: string;
   isHidden: boolean;
+  cloudinaryPublicId?: string;
   likesCount?: number;
   reportsCount?: number;
 }

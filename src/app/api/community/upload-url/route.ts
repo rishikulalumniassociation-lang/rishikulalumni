@@ -1,11 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import { PutObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-import { getR2Client, getR2BucketName, getR2PublicUrl, isR2Configured } from "@/lib/r2";
 import { supabase } from "@/lib/supabase";
+import {
+  generateCloudinaryUploadSignature,
+  isCloudinaryConfigured,
+  getCloudinaryCloudName,
+} from "@/lib/cloudinary";
 
 // Max file sizes (bytes)
-const MAX_VIDEO_SIZE = 250 * 1024 * 1024; // 250MB
+const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100MB
 const MAX_GENERAL_SIZE = 50 * 1024 * 1024; // 50MB
 
 const ALLOWED_MIME_PREFIXES = [
@@ -49,7 +51,18 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 2. Server-side Authorization: Verify user is an approved alumni
+    // 2. Check if Cloudinary is configured
+    if (!isCloudinaryConfigured()) {
+      return NextResponse.json(
+        {
+          error:
+            "Cloudinary storage is not configured yet. Please configure CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET in environment variables.",
+        },
+        { status: 503 }
+      );
+    }
+
+    // 3. Server-side Authorization: Verify user is an approved alumni in Supabase
     const { data: profile, error: profileError } = await supabase
       .from("profiles")
       .select("id, is_verified, approval_status, is_deceased")
@@ -80,7 +93,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 3. MIME type & extension validation
+    // 4. MIME type & extension validation
     const lowerType = String(contentType).toLowerCase();
     const lowerName = String(fileName).toLowerCase();
 
@@ -102,66 +115,44 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // 4. File size validation
-    const size = Number(fileSize) || 0;
+    // 5. File size limits
     const isVideo = lowerType.startsWith("video/");
-    const maxSize = isVideo ? MAX_VIDEO_SIZE : MAX_GENERAL_SIZE;
+    const maxAllowedSize = isVideo ? MAX_VIDEO_SIZE : MAX_GENERAL_SIZE;
 
-    if (size > maxSize) {
-      const limitMb = maxSize / (1024 * 1024);
+    if (fileSize && fileSize > maxAllowedSize) {
+      const maxMb = Math.round(maxAllowedSize / (1024 * 1024));
       return NextResponse.json(
         {
-          error: `File size exceeds the limit of ${limitMb}MB for this content type.`,
+          error: `File size exceeds the maximum permitted limit of ${maxMb}MB.`,
         },
         { status: 400 }
       );
     }
 
-    // 5. Cloudflare R2 check
-    if (!isR2Configured()) {
-      return NextResponse.json(
-        {
-          error:
-            "Cloudflare R2 storage credentials are not configured on the server. Please set R2_ACCOUNT_ID, R2_ACCESS_KEY_ID, R2_SECRET_ACCESS_KEY, R2_BUCKET_NAME, and R2_PUBLIC_URL.",
-        },
-        { status: 503 }
-      );
-    }
+    // 6. Generate Cloudinary signed upload parameters
+    const timestamp = Math.round(new Date().getTime() / 1000);
+    const folder = `rishikul_community/${userId}`;
 
-    // 6. Generate clean unique key
-    const s3 = getR2Client();
-    const bucket = getR2BucketName();
-    const publicBase = getR2PublicUrl();
-
-    const sanitizedBase = fileName
-      .replace(/[^a-zA-Z0-9.-]/g, "_")
-      .replace(/_{2,}/g, "_");
-    const randomSuffix = Math.random().toString(36).substring(2, 9);
-    const objectKey = `community/${userId}/${Date.now()}-${randomSuffix}-${sanitizedBase}`;
-
-    // 7. Create Presigned PUT URL (valid for 60 minutes)
-    const command = new PutObjectCommand({
-      Bucket: bucket,
-      Key: objectKey,
-      ContentType: contentType,
+    // Sign the parameters using server-side CLOUDINARY_API_SECRET
+    const { signature, apiKey, cloudName } = generateCloudinaryUploadSignature({
+      folder,
+      timestamp,
     });
 
-    const uploadUrl = await getSignedUrl(s3, command, { expiresIn: 3600 });
-    const publicUrl = `${publicBase}/${objectKey}`;
+    const uploadUrl = `https://api.cloudinary.com/v1_1/${cloudName}/auto/upload`;
 
     return NextResponse.json({
-      success: true,
       uploadUrl,
-      publicUrl,
-      key: objectKey,
-      fileName,
-      mimeType: contentType,
-      fileSize: size,
+      cloudName,
+      apiKey,
+      timestamp,
+      signature,
+      folder,
     });
   } catch (err: any) {
-    console.error("Error generating presigned upload URL:", err);
+    console.error("Cloudinary upload-signature error:", err);
     return NextResponse.json(
-      { error: err.message || "Failed to generate presigned upload URL." },
+      { error: err?.message || "Failed to generate upload signature." },
       { status: 500 }
     );
   }

@@ -384,6 +384,7 @@ CREATE TABLE IF NOT EXISTS public.community_posts (
     category TEXT NOT NULL DEFAULT 'Photos',
     file_url TEXT,
     thumbnail_url TEXT,
+    cloudinary_public_id TEXT,
     external_url TEXT,
     file_name TEXT,
     mime_type TEXT,

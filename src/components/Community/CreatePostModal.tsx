@@ -134,10 +134,10 @@ export default function CreatePostModal({
     }
   };
 
-  const uploadFileToR2 = async (file: File): Promise<{ publicUrl: string; key: string }> => {
+  const uploadFileToCloudinary = async (file: File): Promise<{ publicUrl: string; thumbnailUrl?: string; cloudinaryPublicId: string }> => {
     if (!currentUser) throw new Error("User not authenticated.");
 
-    // 1. Request presigned upload URL from server API
+    // 1. Request signed Cloudinary upload parameters from server API
     const res = await fetch("/api/community/upload-url", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -154,11 +154,18 @@ export default function CreatePostModal({
       throw new Error(data.error || "Failed to obtain upload authorization.");
     }
 
-    // 2. Upload file directly to Cloudflare R2 via presigned PUT URL
+    // 2. Prepare multipart FormData for direct Cloudinary upload
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("api_key", data.apiKey);
+    formData.append("timestamp", String(data.timestamp));
+    formData.append("signature", data.signature);
+    formData.append("folder", data.folder);
+
+    // 3. Upload file directly to Cloudinary with live progress tracking
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      xhr.open("PUT", data.uploadUrl, true);
-      xhr.setRequestHeader("Content-Type", file.type || "application/octet-stream");
+      xhr.open("POST", data.uploadUrl, true);
 
       xhr.upload.onprogress = (evt) => {
         if (evt.lengthComputable) {
@@ -169,17 +176,37 @@ export default function CreatePostModal({
 
       xhr.onload = () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve({ publicUrl: data.publicUrl, key: data.key });
+          try {
+            const resJson = JSON.parse(xhr.responseText);
+            const secureUrl = resJson.secure_url || resJson.url;
+            const isVideo = resJson.resource_type === "video";
+            const thumbnailUrl = isVideo
+              ? secureUrl.replace(/\.[^/.]+$/, ".jpg")
+              : secureUrl;
+
+            resolve({
+              publicUrl: secureUrl,
+              thumbnailUrl,
+              cloudinaryPublicId: resJson.public_id,
+            });
+          } catch (e: any) {
+            reject(new Error("Failed to parse Cloudinary response."));
+          }
         } else {
-          reject(new Error(`Storage upload failed with status ${xhr.status}`));
+          try {
+            const errJson = JSON.parse(xhr.responseText);
+            reject(new Error(errJson?.error?.message || `Cloudinary upload failed with status ${xhr.status}`));
+          } catch {
+            reject(new Error(`Storage upload failed with status ${xhr.status}`));
+          }
         }
       };
 
       xhr.onerror = () => {
-        reject(new Error("Network error during file upload to storage."));
+        reject(new Error("Network error during file upload to Cloudinary."));
       };
 
-      xhr.send(file);
+      xhr.send(formData);
     });
   };
 
@@ -218,18 +245,22 @@ export default function CreatePostModal({
 
     try {
       let fileUrl: string | undefined = postToEdit?.fileUrl;
+      let thumbnailUrl: string | undefined = postToEdit?.thumbnailUrl;
+      let cloudinaryPublicId: string | undefined = postToEdit?.cloudinaryPublicId;
       let fileName: string | undefined = postToEdit?.fileName;
       let mimeType: string | undefined = postToEdit?.mimeType;
       let fileSize: number | undefined = postToEdit?.fileSize;
 
-      // Upload file to R2 if selected
+      // Upload file to Cloudinary if selected
       if (selectedFile) {
         fileName = selectedFile.name;
         mimeType = selectedFile.type;
         fileSize = selectedFile.size;
 
-        const uploadResult = await uploadFileToR2(selectedFile);
+        const uploadResult = await uploadFileToCloudinary(selectedFile);
         fileUrl = uploadResult.publicUrl;
+        thumbnailUrl = uploadResult.thumbnailUrl;
+        cloudinaryPublicId = uploadResult.cloudinaryPublicId;
       }
 
       setUploadProgress(90);
@@ -256,6 +287,8 @@ export default function CreatePostModal({
           contentType,
           category,
           fileUrl,
+          thumbnailUrl,
+          cloudinaryPublicId,
           fileName,
           mimeType,
           fileSize,
@@ -280,6 +313,8 @@ export default function CreatePostModal({
         contentType,
         category,
         fileUrl,
+        thumbnailUrl,
+        cloudinaryPublicId,
         fileName,
         mimeType,
         fileSize,

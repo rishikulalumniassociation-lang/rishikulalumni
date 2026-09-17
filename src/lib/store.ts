@@ -857,6 +857,7 @@ function rowToCommunityPost(row: Record<string, unknown>): CommunityPost {
     pinnedAt: row.pinned_at as string | undefined,
     pinnedBy: row.pinned_by as string | undefined,
     isHidden: Boolean(row.is_hidden),
+    cloudinaryPublicId: row.cloudinary_public_id as string | undefined,
     likesCount: Number(row.likes_count) || 0,
     reportsCount: Number(row.reports_count) || 0,
     createdAt: row.created_at as string,
@@ -877,6 +878,7 @@ function communityPostToRow(post: Omit<CommunityPost, "createdAt" | "updatedAt" 
     category: post.category,
     file_url: post.fileUrl ?? null,
     thumbnail_url: post.thumbnailUrl ?? null,
+    cloudinary_public_id: post.cloudinaryPublicId ?? null,
     external_url: post.externalUrl ?? null,
     file_name: post.fileName ?? null,
     mime_type: post.mimeType ?? null,
@@ -974,6 +976,7 @@ export async function updateCommunityPost(
   if (updates.externalUrl !== undefined) snakeUpdates.external_url = updates.externalUrl;
   if (updates.fileUrl !== undefined) snakeUpdates.file_url = updates.fileUrl;
   if (updates.thumbnailUrl !== undefined) snakeUpdates.thumbnail_url = updates.thumbnailUrl;
+  if (updates.cloudinaryPublicId !== undefined) snakeUpdates.cloudinary_public_id = updates.cloudinaryPublicId;
   if (updates.tags !== undefined) snakeUpdates.tags = updates.tags;
   if (updates.relatedBatch !== undefined) snakeUpdates.related_batch = updates.relatedBatch;
   if (updates.isPinned !== undefined) snakeUpdates.is_pinned = updates.isPinned;
