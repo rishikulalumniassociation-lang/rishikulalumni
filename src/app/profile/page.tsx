@@ -22,7 +22,8 @@ import {
   Award,
   Sparkles,
   Stethoscope,
-  BookOpen
+  BookOpen,
+  LogOut
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
@@ -217,6 +218,18 @@ export default function AlumniProfilePage() {
                 >
                   <Save className="w-3.5 h-3.5 text-[#C5A059]" />
                   Save Changes
+                </button>
+
+                <button
+                  onClick={() => {
+                    setLoggedInAlumni(null);
+                    router.push("/login");
+                  }}
+                  className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                  title="लॉग आउट करें"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  Logout
                 </button>
               </div>
             </div>

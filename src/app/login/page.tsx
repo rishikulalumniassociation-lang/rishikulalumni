@@ -46,7 +46,7 @@ export default function AlumniLoginPage() {
       }
 
       setLoggedInAlumni(user);
-      router.push("/membership");
+      router.push("/profile");
     }, 500);
   };
 

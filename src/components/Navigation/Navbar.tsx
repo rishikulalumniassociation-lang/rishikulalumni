@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import {
   Menu,
   X,
@@ -27,6 +27,7 @@ import { AlumniProfile } from "@/types";
 
 export default function Navbar() {
   const pathname = usePathname();
+  const router = useRouter();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const [loggedInUser, setLoggedInUser] = useState<AlumniProfile | null>(null);
@@ -46,8 +47,19 @@ export default function Navbar() {
     };
   }, []);
 
+  const handleLogout = () => {
+    setLoggedInAlumni(null);
+    setLoggedInUser(null);
+    if (pathname === "/profile" || pathname.startsWith("/membership")) {
+      router.push("/login");
+    } else {
+      router.refresh();
+    }
+  };
+
   const navLinks = [
     { name: "Home", href: "/", icon: GraduationCap },
+    ...(loggedInUser ? [{ name: "My Profile (प्रोफाइल)", href: "/profile", icon: UserCheck }] : []),
     { name: "Directory", href: "/directory", icon: Users },
     { name: "Ayurveda Experts", href: "/experts", icon: Stethoscope },
     { name: "Achievements", href: "/achievements", icon: Sparkles },
@@ -143,56 +155,94 @@ export default function Navbar() {
           {/* Right Action: Alumni Login / Register CTA */}
           <div className="hidden sm:flex items-center gap-2">
             {loggedInUser ? (
-              <div className="flex items-center gap-2 bg-white border border-[#C5A059]/40 py-1.5 px-3 rounded-full shadow-sm">
-                <img
-                  src={loggedInUser.avatarUrl}
-                  alt={loggedInUser.fullName}
-                  className="w-6 h-6 rounded-full object-cover border"
-                />
-                <span className="text-xs font-bold text-[#0F172A] truncate max-w-[120px]">
-                  Dr. {loggedInUser.fullName.split(" ")[1] || loggedInUser.fullName}
-                </span>
+              <div className="flex items-center gap-2">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-2.5 bg-white hover:bg-amber-50/60 border-2 border-[#C5A059] py-1.5 px-3.5 rounded-full shadow-sm transition-all group"
+                  title="Open and Update Profile"
+                >
+                  <img
+                    src={loggedInUser.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                    alt={loggedInUser.fullName}
+                    className="w-7 h-7 rounded-full object-cover border border-[#C5A059]"
+                  />
+                  <div className="flex flex-col text-left">
+                    <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#2D5A43] truncate max-w-[130px] leading-tight">
+                      Dr. {loggedInUser.fullName.split(" ")[1] || loggedInUser.fullName}
+                    </span>
+                    <span className="text-[10px] text-[#2D5A43] font-bold">
+                      प्रोफाइल अपडेट करें ✏️
+                    </span>
+                  </div>
+                </Link>
                 <button
-                  onClick={() => setLoggedInAlumni(null)}
-                  className="text-slate-400 hover:text-red-600 p-0.5"
-                  title="Logout"
+                  onClick={handleLogout}
+                  className="flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold text-rose-700 bg-rose-50 hover:bg-rose-100 border border-rose-200 transition-all shadow-xs"
+                  title="Logout Account"
                 >
                   <LogOut className="w-3.5 h-3.5" />
+                  <span>Logout</span>
                 </button>
               </div>
             ) : (
-              <Link
-                href="/login"
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider text-[#0F172A] bg-white border border-slate-300 hover:bg-[#FAF7F2] transition-colors"
-              >
-                <LogIn className="w-3.5 h-3.5 text-[#C5A059]" />
-                Login
-              </Link>
+              <>
+                <Link
+                  href="/login"
+                  className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-full text-xs font-bold uppercase tracking-wider text-[#0F172A] bg-white border border-slate-300 hover:bg-[#FAF7F2] transition-colors"
+                >
+                  <LogIn className="w-3.5 h-3.5 text-[#C5A059]" />
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-[#0F172A] text-[#FAF7F2] hover:bg-[#2D5A43] hover:shadow-md transition-all duration-200 border border-[#C5A059]/40"
+                >
+                  <UserCheck className="w-3.5 h-3.5 text-[#C5A059]" />
+                  Join Alumni
+                </Link>
+              </>
             )}
-
-            <Link
-              href="/register"
-              className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-semibold tracking-wide uppercase bg-[#0F172A] text-[#FAF7F2] hover:bg-[#2D5A43] hover:shadow-md transition-all duration-200 border border-[#C5A059]/40"
-            >
-              <UserCheck className="w-3.5 h-3.5 text-[#C5A059]" />
-              Join Alumni
-            </Link>
           </div>
 
           {/* Mobile hamburger menu */}
           <div className="flex lg:hidden items-center gap-2">
-            <Link
-              href="/login"
-              className="px-2.5 py-1 text-xs font-bold uppercase bg-white border border-slate-300 rounded-md text-[#0F172A]"
-            >
-              Login
-            </Link>
-            <Link
-              href="/register"
-              className="px-2.5 py-1 text-xs font-bold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40"
-            >
-              Join
-            </Link>
+            {loggedInUser ? (
+              <div className="flex items-center gap-1.5">
+                <Link
+                  href="/profile"
+                  className="flex items-center gap-1 px-2.5 py-1 text-xs font-bold bg-[#FAF7F2] border-2 border-[#C5A059] rounded-lg text-[#0F172A]"
+                >
+                  <img
+                    src={loggedInUser.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                    alt={loggedInUser.fullName}
+                    className="w-5 h-5 rounded-full object-cover"
+                  />
+                  <span>Profile</span>
+                </Link>
+                <button
+                  onClick={handleLogout}
+                  className="p-1.5 text-rose-700 bg-rose-50 border border-rose-200 rounded-lg text-xs"
+                  title="Logout"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
+              </div>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="px-2.5 py-1 text-xs font-bold uppercase bg-white border border-slate-300 rounded-md text-[#0F172A]"
+                >
+                  Login
+                </Link>
+                <Link
+                  href="/register"
+                  className="px-2.5 py-1 text-xs font-bold uppercase bg-[#0F172A] text-[#FAF7F2] rounded-md border border-[#C5A059]/40"
+                >
+                  Join
+                </Link>
+              </>
+            )}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="p-2 rounded-lg text-[#0F172A] hover:bg-[#F3ECE2] transition-colors"
@@ -206,7 +256,40 @@ export default function Navbar() {
 
       {/* Mobile Drawer Dropdown */}
       {mobileMenuOpen && (
-        <div className="lg:hidden border-t border-[#C5A059]/20 bg-[#FAF7F2] px-4 pt-2 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2">
+        <div className="lg:hidden border-t border-[#C5A059]/20 bg-[#FAF7F2] px-4 pt-3 pb-6 space-y-2 shadow-lg animate-in slide-in-from-top-2">
+          {loggedInUser && (
+            <div className="p-3 bg-white rounded-2xl border-2 border-[#C5A059]/40 mb-3 flex items-center justify-between shadow-xs">
+              <Link
+                href="/profile"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-2.5 min-w-0"
+              >
+                <img
+                  src={loggedInUser.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                  alt={loggedInUser.fullName}
+                  className="w-10 h-10 rounded-xl object-cover border border-[#C5A059] shrink-0"
+                />
+                <div className="min-w-0">
+                  <div className="font-bold text-sm text-[#0F172A] truncate">
+                    Dr. {loggedInUser.fullName}
+                  </div>
+                  <div className="text-[11px] text-[#2D5A43] font-bold">
+                    प्रोफाइल अपडेट करें / Edit Profile →
+                  </div>
+                </div>
+              </Link>
+              <button
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  handleLogout();
+                }}
+                className="px-2.5 py-1.5 rounded-lg bg-rose-50 text-rose-700 border border-rose-200 text-xs font-bold flex items-center gap-1 shrink-0 ml-2"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                Logout
+              </button>
+            </div>
+          )}
           {navLinks.map((link) => {
             const Icon = link.icon;
             const isActive = pathname === link.href;

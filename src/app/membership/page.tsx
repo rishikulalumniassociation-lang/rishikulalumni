@@ -14,7 +14,8 @@ import {
   CheckCircle2,
   Check,
   UserCheck,
-  HelpCircle
+  HelpCircle,
+  User
 } from "lucide-react";
 
 const SAMPLE_FALLBACK_CARD: AlumniProfile = {
@@ -111,6 +112,15 @@ export default function MembershipPage() {
             <p className="text-[11px] text-slate-500 text-center mt-3">
               💡 Tap or click the card to interact. You can export a high-resolution PNG for your mobile wallet.
             </p>
+            <div className="w-full mt-4 flex items-center justify-center">
+              <Link
+                href="/profile"
+                className="inline-flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0F172A] text-[#C5A059] hover:bg-[#2D5A43] hover:text-white text-xs font-bold uppercase tracking-wider transition-all shadow-sm"
+              >
+                <User className="w-4 h-4" />
+                <span>Update My Profile (अपनी प्रोफाइल अपडेट करें)</span>
+              </Link>
+            </div>
           </div>
 
           <div className="lg:col-span-6 space-y-6">
