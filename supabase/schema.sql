@@ -1,6 +1,6 @@
 -- ==============================================================================
--- Rishikul Sangam - Complete Production Schema (Updated)
--- Run this in Supabase Dashboard -> SQL Editor -> New Query -> RUN ALL
+-- Rishikul Sangam (ऋषिकुल संगम) - Complete Production Database Schema for Supabase
+-- Run this entire script in Supabase Dashboard -> SQL Editor -> New query -> RUN
 -- ==============================================================================
 
 -- 1. Enable required extensions
@@ -8,13 +8,13 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- ==============================================================================
--- 2. Alumni Profiles Table
+-- 2. Alumni Profiles Table (पंजीकृत पूर्व छात्र)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.profiles (
     id TEXT PRIMARY KEY DEFAULT ('alumni-' || floor(extract(epoch from now()) * 1000)::text),
     full_name TEXT NOT NULL,
     full_name_hindi TEXT,
-    username TEXT UNIQUE NOT NULL,
+    username TEXT UNIQUE NOT NULL, -- Login username (Mobile Number)
     password_hash TEXT NOT NULL,
     email TEXT,
     mobile TEXT NOT NULL,
@@ -22,7 +22,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     date_of_birth DATE NOT NULL,
     avatar_url TEXT,
 
-    -- Education
+    -- Rishikul Education (UG / PG / Both)
     rishikul_education TEXT NOT NULL CHECK (rishikul_education IN ('UG', 'PG', 'BOTH')),
     ug_batch_year INTEGER,
     ug_degree TEXT DEFAULT 'BAMS',
@@ -30,14 +30,14 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     pg_degree TEXT,
     specialization TEXT,
 
-    -- Ayurveda Expertise
+    -- Ayurveda Clinical Expertise & Guru-Shishya
     is_expert BOOLEAN DEFAULT FALSE,
     disease_specialty TEXT,
     specialty_description TEXT,
     accepting_shishya BOOLEAN DEFAULT FALSE,
     shishya_requirement TEXT,
 
-    -- Professional
+    -- Professional Details
     job_type TEXT NOT NULL CHECK (job_type IN ('Private Practice', 'Govt Job', 'Retired', 'Teaching / Academia', 'Corporate / Industry', 'Other')),
     designation TEXT,
     workplace TEXT,
@@ -46,24 +46,24 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     address TEXT,
     country TEXT DEFAULT 'India',
 
-    -- Bio
+    -- Bio & Achievements
     bio TEXT,
     blood_group TEXT,
     achievements TEXT[],
     special_achievements JSONB DEFAULT '[]'::jsonb,
 
-    -- Extended Profile
+    -- Extended Social & Network Relations
     work_history JSONB DEFAULT '[]'::jsonb,
     family_alumni_relations JSONB DEFAULT '[]'::jsonb,
     teacher_alumni_ids TEXT[] DEFAULT '{}',
     connected_alumni_ids TEXT[] DEFAULT '{}',
 
-    -- Deceased
+    -- Deceased / Shradhanjali Tracking
     is_deceased BOOLEAN DEFAULT FALSE,
     date_of_demise DATE,
     demise_tribute TEXT,
 
-    -- Membership
+    -- Membership Governance
     membership_id TEXT UNIQUE NOT NULL,
     membership_tier TEXT DEFAULT 'Non-Paid Member' CHECK (membership_tier IN ('Non-Paid Member', 'Life Member', 'Patron Member', 'Annual Member', 'Student Member', 'Honorary Fellow')),
     is_verified BOOLEAN DEFAULT FALSE,
@@ -74,6 +74,21 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
+-- Ensure columns exist even if table was created in an earlier migration
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS full_name_hindi TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_expert BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS disease_specialty TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS specialty_description TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS accepting_shishya BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS shishya_requirement TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS special_achievements JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS teacher_alumni_ids TEXT[] DEFAULT '{}';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS connected_alumni_ids TEXT[] DEFAULT '{}';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_deceased BOOLEAN DEFAULT FALSE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_demise DATE;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS demise_tribute TEXT;
+
+-- Indexes for lightning fast lookups
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
 CREATE INDEX IF NOT EXISTS idx_profiles_mobile ON public.profiles(mobile);
 CREATE INDEX IF NOT EXISTS idx_profiles_approval ON public.profiles(approval_status);
@@ -81,7 +96,7 @@ CREATE INDEX IF NOT EXISTS idx_profiles_dob ON public.profiles(date_of_birth);
 CREATE INDEX IF NOT EXISTS idx_profiles_expert ON public.profiles(is_expert) WHERE is_expert = TRUE;
 
 -- ==============================================================================
--- 3. Lifetime Achievers (Hall of Fame)
+-- 3. Lifetime Achievers Table (हॉल ऑफ फेम)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.lifetime_achievers (
     id TEXT PRIMARY KEY DEFAULT ('achiever-' || floor(extract(epoch from now()) * 1000)::text),
@@ -99,7 +114,7 @@ CREATE TABLE IF NOT EXISTS public.lifetime_achievers (
 );
 
 -- ==============================================================================
--- 4. Shradhanjali Memorials
+-- 4. Shradhanjali Memorials Table (श्रद्धांजलि एवं स्मृति शेष)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.shradhanjali (
     id TEXT PRIMARY KEY DEFAULT ('shradhanjali-' || floor(extract(epoch from now()) * 1000)::text),
@@ -117,7 +132,7 @@ CREATE TABLE IF NOT EXISTS public.shradhanjali (
 );
 
 -- ==============================================================================
--- 5. Shradhanjali Offerings (who offered flowers per record)
+-- 5. Shradhanjali Flower Offerings Table (पुष्पांजलि अर्पण ट्रैकिंग)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.shradhanjali_offerings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -128,7 +143,7 @@ CREATE TABLE IF NOT EXISTS public.shradhanjali_offerings (
 );
 
 -- ==============================================================================
--- 6. Password Reset Requests
+-- 6. Password Reset Requests Table (पासवर्ड रीसेट अनुरोध)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.password_reset_requests (
     id TEXT PRIMARY KEY DEFAULT ('reset-' || floor(extract(epoch from now()) * 1000)::text),
@@ -143,7 +158,7 @@ CREATE TABLE IF NOT EXISTS public.password_reset_requests (
 );
 
 -- ==============================================================================
--- 7. Achiever Nominations
+-- 7. Achiever Nominations Table (लाइफटाइम अचीवर नामांकन)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.nominations (
     id TEXT PRIMARY KEY DEFAULT ('nom-' || floor(extract(epoch from now()) * 1000)::text),
@@ -166,7 +181,7 @@ CREATE TABLE IF NOT EXISTS public.nominations (
 );
 
 -- ==============================================================================
--- 8. Community Achievements (Alumni Board)
+-- 8. Community Achievements Table (पूर्व छात्र उपलब्धि पटल)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.community_achievements (
     id TEXT PRIMARY KEY DEFAULT ('achieve-' || floor(extract(epoch from now()) * 1000)::text),
@@ -183,7 +198,6 @@ CREATE TABLE IF NOT EXISTS public.community_achievements (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Achievement likes per user
 CREATE TABLE IF NOT EXISTS public.achievement_likes (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     achievement_id TEXT NOT NULL REFERENCES public.community_achievements(id) ON DELETE CASCADE,
@@ -193,7 +207,30 @@ CREATE TABLE IF NOT EXISTS public.achievement_likes (
 );
 
 -- ==============================================================================
--- 9. Row Level Security (RLS) Policies
+-- 9. Association Events Table (कार्यक्रम एवं अधिवेशन)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.events (
+    id TEXT PRIMARY KEY DEFAULT ('event-' || floor(extract(epoch from now()) * 1000)::text),
+    title TEXT NOT NULL,
+    title_hindi TEXT,
+    slug TEXT UNIQUE NOT NULL,
+    event_type TEXT NOT NULL,
+    event_date TEXT NOT NULL,
+    time TEXT NOT NULL,
+    venue TEXT NOT NULL,
+    city TEXT NOT NULL,
+    is_online BOOLEAN DEFAULT FALSE,
+    registration_open BOOLEAN DEFAULT TRUE,
+    registration_fee TEXT,
+    description TEXT,
+    chief_guest TEXT,
+    banner_url TEXT,
+    attendees_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- ==============================================================================
+-- 10. Row Level Security (RLS) & Access Policies
 -- ==============================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lifetime_achievers ENABLE ROW LEVEL SECURITY;
@@ -203,41 +240,91 @@ ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.nominations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.community_achievements ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.achievement_likes ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
 
--- Profiles
+-- Drop existing policies if re-running script to avoid conflicts
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Public read profiles" ON public.profiles;
+    DROP POLICY IF EXISTS "Anyone can register" ON public.profiles;
+    DROP POLICY IF EXISTS "Enable update profiles" ON public.profiles;
+    DROP POLICY IF EXISTS "Enable delete profiles" ON public.profiles;
+
+    DROP POLICY IF EXISTS "Public read achievers" ON public.lifetime_achievers;
+    DROP POLICY IF EXISTS "Enable all achievers" ON public.lifetime_achievers;
+
+    DROP POLICY IF EXISTS "Public read shradhanjali" ON public.shradhanjali;
+    DROP POLICY IF EXISTS "Enable all shradhanjali" ON public.shradhanjali;
+
+    DROP POLICY IF EXISTS "Public read offerings" ON public.shradhanjali_offerings;
+    DROP POLICY IF EXISTS "Enable all offerings" ON public.shradhanjali_offerings;
+
+    DROP POLICY IF EXISTS "Enable all reset requests" ON public.password_reset_requests;
+
+    DROP POLICY IF EXISTS "Enable all nominations" ON public.nominations;
+
+    DROP POLICY IF EXISTS "Public read achievements" ON public.community_achievements;
+    DROP POLICY IF EXISTS "Enable all achievements" ON public.community_achievements;
+
+    DROP POLICY IF EXISTS "Public read likes" ON public.achievement_likes;
+    DROP POLICY IF EXISTS "Enable all likes" ON public.achievement_likes;
+
+    DROP POLICY IF EXISTS "Public can read events" ON public.events;
+    DROP POLICY IF EXISTS "Enable all events" ON public.events;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+-- Profiles Policies
 CREATE POLICY "Public read profiles" ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Anyone can register" ON public.profiles FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update profiles" ON public.profiles FOR UPDATE USING (true);
 CREATE POLICY "Enable delete profiles" ON public.profiles FOR DELETE USING (true);
 
--- Achievers
+-- Achievers Policies
 CREATE POLICY "Public read achievers" ON public.lifetime_achievers FOR SELECT USING (true);
 CREATE POLICY "Enable all achievers" ON public.lifetime_achievers FOR ALL USING (true);
 
--- Shradhanjali
+-- Shradhanjali Policies
 CREATE POLICY "Public read shradhanjali" ON public.shradhanjali FOR SELECT USING (true);
 CREATE POLICY "Enable all shradhanjali" ON public.shradhanjali FOR ALL USING (true);
 
--- Shradhanjali Offerings
+-- Offerings Policies
 CREATE POLICY "Public read offerings" ON public.shradhanjali_offerings FOR SELECT USING (true);
 CREATE POLICY "Enable all offerings" ON public.shradhanjali_offerings FOR ALL USING (true);
 
--- Password Resets
+-- Reset Requests Policies
 CREATE POLICY "Enable all reset requests" ON public.password_reset_requests FOR ALL USING (true);
 
--- Nominations
+-- Nominations Policies
 CREATE POLICY "Enable all nominations" ON public.nominations FOR ALL USING (true);
 
--- Community Achievements
+-- Community Achievements Policies
 CREATE POLICY "Public read achievements" ON public.community_achievements FOR SELECT USING (true);
 CREATE POLICY "Enable all achievements" ON public.community_achievements FOR ALL USING (true);
 
--- Achievement Likes
+-- Achievement Likes Policies
 CREATE POLICY "Public read likes" ON public.achievement_likes FOR SELECT USING (true);
 CREATE POLICY "Enable all likes" ON public.achievement_likes FOR ALL USING (true);
 
+-- Events Policies
+CREATE POLICY "Public can read events" ON public.events FOR SELECT USING (true);
+CREATE POLICY "Enable all events" ON public.events FOR ALL USING (true);
+
 -- ==============================================================================
--- 10. Seed Data: Jagdish Vats Shradhanjali (martyr - permanent record)
+-- 11. Helper RPC: increment condolences count atomically
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.increment_condolences(record_id TEXT)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE public.shradhanjali
+  SET condolences_count = condolences_count + 1
+  WHERE id = record_id;
+END;
+$$;
+
+-- ==============================================================================
+-- 12. Seed Data: Jagdish Vats Shradhanjali (अमर शहीद जगदीश वत्स)
 -- ==============================================================================
 INSERT INTO public.shradhanjali (id, name, name_hindi, batch_year, degree, photo_url, date_of_demise, tribute, condolences_count, posted_by)
 VALUES (
@@ -252,17 +339,3 @@ VALUES (
     0,
     'ऋषिकुल एल्युमनाई एसोसिएशन एवं संपूर्ण पुरातन छात्र परिवार'
 ) ON CONFLICT (id) DO NOTHING;
-
--- ==============================================================================
--- 11. Helper RPC: increment condolences count atomically
--- ==============================================================================
-CREATE OR REPLACE FUNCTION public.increment_condolences(record_id TEXT)
-RETURNS void LANGUAGE plpgsql AS $$
-BEGIN
-  UPDATE public.shradhanjali
-  SET condolences_count = condolences_count + 1
-  WHERE id = record_id;
-END;
-$$;
-
-
