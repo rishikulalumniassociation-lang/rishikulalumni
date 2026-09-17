@@ -120,13 +120,18 @@ export function getLifetimeAchievers(): LifetimeAchiever[] {
   if (typeof window === "undefined") return INITIAL_ACHIEVERS;
   const stored = localStorage.getItem(STORAGE_KEYS.ACHIEVERS);
   if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.ACHIEVERS, JSON.stringify(INITIAL_ACHIEVERS));
-    return INITIAL_ACHIEVERS;
+    localStorage.setItem(STORAGE_KEYS.ACHIEVERS, JSON.stringify([]));
+    return [];
   }
   try {
-    return JSON.parse(stored);
+    const list: LifetimeAchiever[] = JSON.parse(stored);
+    const cleaned = list.filter((a) => !["achiever-1", "achiever-2", "achiever-3"].includes(a.id));
+    if (cleaned.length !== list.length) {
+      localStorage.setItem(STORAGE_KEYS.ACHIEVERS, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (e) {
-    return INITIAL_ACHIEVERS;
+    return [];
   }
 }
 

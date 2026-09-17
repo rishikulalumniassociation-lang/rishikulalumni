@@ -115,47 +115,76 @@ export default function HomePage() {
             </Link>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {achievers.slice(0, 3).map((achiever) => (
-              <div
-                key={achiever.id}
-                className="bg-[#FAF7F2] rounded-3xl overflow-hidden border border-[#C5A059]/30 shadow-md hover:shadow-xl transition-all group flex flex-col justify-between"
-              >
-                <div>
-                  <div className="relative h-56 w-full bg-slate-900 overflow-hidden">
-                    <img
-                      src={achiever.photoUrl}
-                      alt={achiever.name}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
-                    <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#C5A059] text-[#0F172A]">
-                      Batch {achiever.batchYear}
-                    </span>
-                    <div className="absolute bottom-3 left-3 right-3 text-white">
-                      <h4 className="font-serif-heading text-xl font-bold text-white leading-tight">
-                        {achiever.name}
-                      </h4>
+          {achievers.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              {achievers.slice(0, 3).map((achiever) => (
+                <div
+                  key={achiever.id}
+                  className="bg-[#FAF7F2] rounded-3xl overflow-hidden border border-[#C5A059]/30 shadow-md hover:shadow-xl transition-all group flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="relative h-56 w-full bg-slate-900 overflow-hidden">
+                      <img
+                        src={achiever.photoUrl}
+                        alt={achiever.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300 opacity-90"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#0F172A] via-transparent to-transparent" />
+                      <span className="absolute top-3 left-3 px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase bg-[#C5A059] text-[#0F172A]">
+                        Batch {achiever.batchYear}
+                      </span>
+                      <div className="absolute bottom-3 left-3 right-3 text-white">
+                        <h4 className="font-serif-heading text-xl font-bold text-white leading-tight">
+                          {achiever.name}
+                        </h4>
+                      </div>
+                    </div>
+
+                    <div className="p-5">
+                      <span className="text-xs font-semibold text-[#2D5A43] block mb-2">
+                        {achiever.title}
+                      </span>
+                      <p className="text-xs text-slate-600 line-clamp-3 italic mb-3">
+                        "{achiever.citation}"
+                      </p>
                     </div>
                   </div>
 
-                  <div className="p-5">
-                    <span className="text-xs font-semibold text-[#2D5A43] block mb-2">
-                      {achiever.title}
-                    </span>
-                    <p className="text-xs text-slate-600 line-clamp-3 italic mb-3">
-                      "{achiever.citation}"
-                    </p>
+                  <div className="p-5 pt-0 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
+                    <span className="truncate">{achiever.currentRole}</span>
+                    <span className="font-bold text-[#0F172A] ml-2">{achiever.degree}</span>
                   </div>
                 </div>
-
-                <div className="p-5 pt-0 border-t border-slate-200/60 flex items-center justify-between text-xs text-slate-500">
-                  <span className="truncate">{achiever.currentRole}</span>
-                  <span className="font-bold text-[#0F172A] ml-2">{achiever.degree}</span>
-                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-[#FAF7F2] rounded-3xl p-8 sm:p-10 border border-[#C5A059]/30 text-center max-w-2xl mx-auto shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-[#C5A059]/15 flex items-center justify-center mx-auto mb-4 text-[#C5A059]">
+                <Award className="w-6 h-6" />
               </div>
-            ))}
-          </div>
+              <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-2">
+                विशिष्ट विभूतियाँ एवं संरक्षक मंडल
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-600 leading-relaxed mb-6">
+                ऋषिकुल के जिन पूर्व छात्रों ने राष्ट्रीय स्तर पर विशिष्ट कीर्तिमान स्थापित किए हैं अथवा जो एसोसिएशन के संरक्षक मंडल (Patrons) से जुड़े हैं, उन्हें सम्मानित करने हेतु यह विशेष खंड समर्पित है।
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-3">
+                <Link
+                  href="/achievers"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors"
+                >
+                  <span>Hall of Fame & Patrons देखें</span>
+                  <ArrowRight className="w-4 h-4 text-[#C5A059]" />
+                </Link>
+                <Link
+                  href="/membership"
+                  className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full bg-white border border-[#C5A059]/40 text-[#0F172A] text-xs font-semibold hover:bg-amber-50/50 transition-colors"
+                >
+                  <span>संरक्षक सदस्यता विवरण</span>
+                </Link>
+              </div>
+            </div>
+          )}
         </div>
       </section>
 

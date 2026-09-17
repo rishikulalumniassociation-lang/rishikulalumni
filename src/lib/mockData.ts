@@ -3,47 +3,7 @@ import { AlumniProfile, AssociationEvent, ExecutiveMember, LifetimeAchiever, Shr
 export const MOCK_ALUMNI: AlumniProfile[] = [];
 
 
-export const INITIAL_ACHIEVERS: LifetimeAchiever[] = [
-  {
-    id: "achiever-1",
-    name: "Padma Bhushan Vaidya Devendra Triguna",
-    nameHindi: "पद्म भूषण वैद्य देवेंद्र त्रिगुणा",
-    batchYear: 1971,
-    degree: "Ayurvedacharya (BAMS)",
-    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-    title: "Legendary Nadi Pariksha Master & National AYUSH Leader",
-    citation: "Honored with Padma Shri and Padma Bhushan by the President of India. Renowned globally for pulse diagnosis and representing Ayurveda at WHO.",
-    awards: ["Padma Bhushan (2009)", "Padma Shri (1999)", "Dhanvantari Award"],
-    currentRole: "President, All India Ayurvedic Congress",
-    orderIndex: 1
-  },
-  {
-    id: "achiever-2",
-    name: "Prof. (Dr.) Satya Prakash Gupta",
-    nameHindi: "प्रो. (डॉ.) सत्य प्रकाश गुप्ता",
-    batchYear: 1965,
-    degree: "MD (Ayurveda), PhD",
-    photoUrl: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?q=80&w=400&auto=format&fit=crop",
-    title: "Doyen of Rasashastra & Ayurvedic Pharmacology",
-    citation: "Authored 12 definitive textbook volumes on Bhaishajya Kalpana used across 80+ universities. Mentored over 140 postgraduate scholars and PhDs.",
-    awards: ["Rashtriya Vaidya Ratna", "Charak International Scholar Medal"],
-    currentRole: "Professor Emeritus & Chair, Herbal Pharmacopoeia Committee",
-    orderIndex: 2
-  },
-  {
-    id: "achiever-3",
-    name: "Dr. Sunita Pant (Bhardwaj)",
-    nameHindi: "डॉ. सुनीता पंत (भारद्वाज)",
-    batchYear: 1983,
-    degree: "MS (Shalya Tantra)",
-    photoUrl: "https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?q=80&w=400&auto=format&fit=crop",
-    title: "Pioneering Woman Surgeon & Ksharasutra Specialist",
-    citation: "One of the earliest women surgeons to master and standardize Ksharasutra technique in Northern India, serving over 25,000 patients without surgery recurrence.",
-    awards: ["Uttarakhand Mahila Gaurav Samman", "Sushruta Gold Seal"],
-    currentRole: "Director, Ganga Anorectal Surgical Research Institute",
-    orderIndex: 3
-  }
-];
+export const INITIAL_ACHIEVERS: LifetimeAchiever[] = [];
 
 export const INITIAL_SHRADHANJALI: ShradhanjaliRecord[] = [
   {
