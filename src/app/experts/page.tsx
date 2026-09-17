@@ -370,7 +370,7 @@ export default function AyurvedaExpertsPage() {
                                 ? `PG:${exp.pgBatchYear || ""} (MD/MS)`
                                 : `UG:${exp.ugBatchYear || ""} (BAMS)`}
                             </span>
-                            {exp.specialization && (
+                            {exp.rishikulEducation !== "UG" && exp.specialization && exp.specialization !== "General Ayurvedic Practice" && (
                               <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
                                 PG: {exp.specialization}
                               </span>

@@ -149,7 +149,7 @@ export default function AlumniCard({
               ? "PG (MD/MS)"
               : "UG (BAMS)"}
           </span>
-          {alumni.specialization && (
+          {alumni.rishikulEducation !== "UG" && alumni.specialization && alumni.specialization !== "General Ayurvedic Practice" && (
             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43] line-clamp-1">
               PG: {alumni.specialization}
             </span>

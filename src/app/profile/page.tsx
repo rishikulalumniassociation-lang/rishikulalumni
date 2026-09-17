@@ -334,7 +334,7 @@ export default function AlumniProfilePage() {
                       PG Batch: {user.pgBatchYear} ({user.pgDegree || "MD"})
                     </span>
                   )}
-                  {user.specialization && (
+                  {user.rishikulEducation !== "UG" && user.specialization && user.specialization !== "General Ayurvedic Practice" && (
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-semibold bg-slate-100 text-slate-700 border border-slate-200">
                       PG Specialization: {user.specialization}
                     </span>

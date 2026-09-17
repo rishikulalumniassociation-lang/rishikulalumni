@@ -84,7 +84,7 @@ function profileToRow(p: AlumniProfile): Record<string, unknown> {
     ug_degree: p.ugDegree ?? null,
     pg_batch_year: p.pgBatchYear ?? null,
     pg_degree: p.pgDegree ?? null,
-    specialization: p.specialization || "General Ayurvedic Practice",
+    specialization: (p.rishikulEducation === "UG" ? null : (p.specialization || null)),
     is_expert: p.isExpert ?? false,
     disease_specialty: p.diseaseSpecialty ?? null,
     specialty_description: p.specialtyDescription ?? null,

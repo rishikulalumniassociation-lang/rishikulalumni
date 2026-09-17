@@ -137,7 +137,7 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
               <p className="text-xs text-amber-200 font-semibold mt-0.5">
                 {batchLabel}
               </p>
-              {alumni.specialization && (
+              {alumni.rishikulEducation !== "UG" && alumni.specialization && alumni.specialization !== "General Ayurvedic Practice" && (
                 <p className="text-[11px] text-slate-300 truncate">
                   {alumni.specialization}
                 </p>

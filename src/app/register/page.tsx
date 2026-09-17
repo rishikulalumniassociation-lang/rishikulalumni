@@ -138,9 +138,9 @@ export default function RegisterPage() {
       rishikulEducation: formData.rishikulEducation,
       ugBatchYear: formData.rishikulEducation === "PG" ? undefined : Number(formData.ugBatchYear),
       ugDegree: formData.rishikulEducation === "PG" ? undefined : formData.ugDegree,
-      pgBatchYear: formData.rishikulEducation === "UG" ? undefined : Number(formData.pgBatchYear),
+      pgBatchYear: formData.rishikulEducation === "UG" ? undefined : (formData.pgBatchYear ? Number(formData.pgBatchYear) : undefined),
       pgDegree: formData.rishikulEducation === "UG" ? undefined : formData.pgDegree,
-      specialization: formData.rishikulEducation === "UG" ? "General Ayurvedic Practice" : (formData.specialization || "General Ayurvedic Practice"),
+      specialization: formData.rishikulEducation === "UG" ? undefined : (formData.specialization || undefined),
 
       // Job & Address
       jobType: formData.jobType,

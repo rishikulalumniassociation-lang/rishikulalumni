@@ -604,9 +604,11 @@ export default function AdminDashboardPage() {
                               PG Batch: {alumnus.pgBatchYear} ({alumnus.pgDegree || "MD"})
                             </span>
                           )}
-                          <span className="text-[11px] text-slate-600 font-medium px-2 py-0.5 rounded bg-slate-100">
-                            {alumnus.specialization}
-                          </span>
+                          {alumnus.rishikulEducation !== "UG" && alumnus.specialization && alumnus.specialization !== "General Ayurvedic Practice" && (
+                            <span className="text-[11px] text-slate-600 font-medium px-2 py-0.5 rounded bg-slate-100">
+                              {alumnus.specialization}
+                            </span>
+                          )}
                         </div>
 
                         <p className="text-xs text-slate-600">
