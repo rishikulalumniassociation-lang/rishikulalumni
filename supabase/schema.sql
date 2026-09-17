@@ -108,7 +108,7 @@ CREATE TABLE IF NOT EXISTS public.lifetime_achievers (
     title TEXT NOT NULL,
     citation TEXT NOT NULL,
     awards TEXT[] DEFAULT '{}',
-    current_role TEXT NOT NULL,
+    "current_role" TEXT NOT NULL,
     order_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
@@ -236,7 +236,7 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
     id TEXT PRIMARY KEY DEFAULT ('admin-' || floor(extract(epoch from now()) * 1000)::text),
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
-    role TEXT DEFAULT 'Super Admin',
+    "role" TEXT DEFAULT 'Super Admin',
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
@@ -359,7 +359,7 @@ VALUES (
 -- Seed default Admin credentials with SHA-256 encrypted passwords
 -- "admin" password "rishikul1919" -> a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84
 -- "secretary" password "admin123" -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
-INSERT INTO public.admin_users (id, username, password_hash, role)
+INSERT INTO public.admin_users (id, username, password_hash, "role")
 VALUES 
     ('admin-1', 'admin', 'a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84', 'Super Admin'),
     ('admin-2', 'secretary', '240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9', 'General Secretary')
