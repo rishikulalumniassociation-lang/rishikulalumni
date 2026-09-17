@@ -97,9 +97,15 @@ export default function Footer() {
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
           <p>© {new Date().getFullYear()} Rishikul Snatak Evam Snatkottar Association. All rights reserved.</p>
-          <div className="flex items-center gap-1">
-            <span>Preserving 100+ years of Rishikul alumni fraternity</span>
-            <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <span className="text-[11px] text-slate-400 font-medium">
+              Developed by <strong className="text-amber-300 font-semibold">Vd KK Pandey</strong>
+            </span>
+            <span className="hidden sm:inline text-slate-600">•</span>
+            <div className="flex items-center gap-1">
+              <span>Preserving 100+ years of Rishikul alumni fraternity</span>
+              <Heart className="w-3.5 h-3.5 text-red-500 fill-red-500" />
+            </div>
           </div>
         </div>
       </div>
