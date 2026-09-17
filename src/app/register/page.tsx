@@ -20,7 +20,7 @@ import {
   MapPin
 } from "lucide-react";
 import { SPECIALIZATION_OPTIONS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
-import { getAlumniList, saveAlumniList } from "@/lib/store";
+import { registerAlumni } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
 import { AlumniProfile, RishikulEducationType, JobType } from "@/types";
 
@@ -115,7 +115,7 @@ export default function RegisterPage() {
 
   const prevStep = () => setStep((s) => Math.max(s - 1, 1));
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     const randomNum = Math.floor(1000 + Math.random() * 9000);
     const memId = `RISHI-PEN-${randomNum}`;
@@ -161,8 +161,11 @@ export default function RegisterPage() {
       specialAchievements: [],
     };
 
-    const currentList = getAlumniList();
-    saveAlumniList([newProfile, ...currentList]);
+    const result = await registerAlumni(newProfile);
+    if (!result.success) {
+      alert('Registration failed: ' + result.error);
+      return;
+    }
 
     setSubmitted(true);
 

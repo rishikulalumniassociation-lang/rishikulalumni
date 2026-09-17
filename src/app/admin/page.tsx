@@ -32,6 +32,7 @@ import {
 import {
   getAlumniList,
   saveAlumniList,
+  updateAlumniProfile,
   markAlumnusAsDeceased,
   getLifetimeAchievers,
   saveLifetimeAchievers,
@@ -112,16 +113,18 @@ export default function AdminDashboardPage() {
 
     // Listen for new registrations and profile updates
     const handleAlumniUpdate = () => {
-      setAlumniList(getAlumniList());
+      getAlumniList().then(list => setAlumniList(list));
     };
 
     const handleNomUpdate = () => {
-      setNominationsList(getAchieverNominations());
-      setAchieversList(getLifetimeAchievers());
+      Promise.all([getAchieverNominations(), getLifetimeAchievers()]).then(([noms, ach]) => {
+        setNominationsList(noms);
+        setAchieversList(ach);
+      });
     };
 
     const handleResetUpdate = () => {
-      setResetRequests(getPasswordResetRequests());
+      getPasswordResetRequests().then(r => setResetRequests(r));
     };
 
     window.addEventListener("alumni_updated", handleAlumniUpdate);
@@ -137,90 +140,71 @@ export default function AdminDashboardPage() {
     };
   }, [router]);
 
-  const loadAllData = () => {
-    setAlumniList(getAlumniList());
-    setResetRequests(getPasswordResetRequests());
-    setAchieversList(getLifetimeAchievers());
-    setShradhanjaliList(getShradhanjaliList());
-    setNominationsList(getAchieverNominations());
+  const loadAllData = async () => {
+    const [alumni, resets, achievers, shradhanjali, nominations] = await Promise.all([
+      getAlumniList(),
+      getPasswordResetRequests(),
+      getLifetimeAchievers(),
+      getShradhanjaliList(),
+      getAchieverNominations(),
+    ]);
+    setAlumniList(alumni);
+    setResetRequests(resets);
+    setAchieversList(achievers);
+    setShradhanjaliList(shradhanjali);
+    setNominationsList(nominations);
   };
 
-  const handleApproveNomination = (nomId: string) => {
+  const handleApproveNomination = async (nomId: string) => {
     if (!confirm("क्या आप इस पूर्व छात्र का नामांकन स्वीकृत कर हॉल ऑफ फेम (Lifetime Achievers) में सम्मिलित करना चाहते हैं?")) return;
-    approveAchieverNomination(nomId);
-    setNominationsList(getAchieverNominations());
-    setAchieversList(getLifetimeAchievers());
+    await approveAchieverNomination(nomId);
+    const [noms, ach] = await Promise.all([getAchieverNominations(), getLifetimeAchievers()]);
+    setNominationsList(noms);
+    setAchieversList(ach);
     alert("नामांकन सफलतापूर्वक स्वीकृत हो गया और पूर्व छात्र को 'हॉल ऑफ फेम' में जोड़ दिया गया है!");
   };
 
-  const handleRejectNomination = (nomId: string) => {
+  const handleRejectNomination = async (nomId: string) => {
     if (!confirm("क्या आप इस नामांकन को अस्वीकार करना चाहते हैं?")) return;
-    rejectAchieverNomination(nomId);
-    setNominationsList(getAchieverNominations());
+    await rejectAchieverNomination(nomId);
+    getAchieverNominations().then(noms => setNominationsList(noms));
   };
 
   if (!mounted) return null;
 
   // 1. APPROVE ALUMNI WITH SPECIFIC MEMBERSHIP TIER
-  const handleApproveAlumni = (id: string, tier: MembershipTier) => {
-    const updated = alumniList.map((a) => {
-      if (a.id === id) {
-        return {
-          ...a,
-          isVerified: true,
-          approvalStatus: "approved" as const,
-          membershipTier: tier,
-        };
-      }
-      return a;
-    });
-    setAlumniList(updated);
-    saveAlumniList(updated);
+  const handleApproveAlumni = async (id: string, tier: MembershipTier) => {
+    await updateAlumniProfile(id, { isVerified: true, approvalStatus: 'approved', membershipTier: tier });
+    getAlumniList().then(list => setAlumniList(list));
   };
 
-  const handleRejectAlumni = (id: string) => {
+  const handleRejectAlumni = async (id: string) => {
     const candidate = alumniList.find((a) => a.id === id);
-    const updated = alumniList.map((a) => {
-      if (a.id === id) {
-        return {
-          ...a,
-          isVerified: false,
-          approvalStatus: "rejected" as const,
-        };
-      }
-      return a;
-    });
-    setAlumniList(updated);
-    saveAlumniList(updated);
+    await updateAlumniProfile(id, { isVerified: false, approvalStatus: 'rejected' });
+    getAlumniList().then(list => setAlumniList(list));
     if (candidate) {
       alert(`Dr. ${candidate.fullName} का रजिस्ट्रेशन अस्वीकार (Reject) कर दिया गया है।`);
     }
   };
 
-  const handleChangeTier = (id: string, newTier: MembershipTier) => {
-    const updated = alumniList.map((a) => {
-      if (a.id === id) {
-        return { ...a, membershipTier: newTier };
-      }
-      return a;
-    });
-    setAlumniList(updated);
-    saveAlumniList(updated);
+  const handleChangeTier = async (id: string, newTier: MembershipTier) => {
+    await updateAlumniProfile(id, { membershipTier: newTier });
+    getAlumniList().then(list => setAlumniList(list));
   };
 
   // 2. MARK ALUMNUS AS EXPIRED / DECEASED (Automatically adds to Shradhanjali)
-  const handleConfirmMarkExpired = (e: React.FormEvent) => {
+  const handleConfirmMarkExpired = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeDeceasedAlumnus) return;
 
-    markAlumnusAsDeceased(activeDeceasedAlumnus.id, demiseDateInput, demiseTributeInput);
-    loadAllData();
+    await markAlumnusAsDeceased(activeDeceasedAlumnus.id, demiseDateInput, demiseTributeInput);
+    await loadAllData();
     alert(`Dr. ${activeDeceasedAlumnus.fullName} has been marked as Expired. Their tribute is now live in the Shradhanjali Hall!`);
     setActiveDeceasedAlumnus(null);
   };
 
   // 3. RESOLVE PASSWORD RESET REQUEST
-  const handleExecutePasswordReset = (e: React.FormEvent) => {
+  const handleExecutePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeResetModalReq || !newPasswordToAssign) return;
 
@@ -234,7 +218,7 @@ export default function AdminDashboardPage() {
       return a;
     });
     setAlumniList(updatedAlumni);
-    saveAlumniList(updatedAlumni);
+    await saveAlumniList(updatedAlumni);
 
     const updatedRequests = resetRequests.map((r) => {
       if (r.id === activeResetModalReq.id) {
@@ -247,14 +231,15 @@ export default function AdminDashboardPage() {
       return r;
     });
     setResetRequests(updatedRequests);
-    savePasswordResetRequests(updatedRequests);
+    await savePasswordResetRequests(updatedRequests);
 
     alert(`Password for ${activeResetModalReq.fullName} (${activeResetModalReq.username}) has been updated to: ${newPasswordToAssign}`);
     setActiveResetModalReq(null);
   };
 
+
   // Achievers & Shradhanjali handlers
-  const handleAddAchiever = (e: React.FormEvent) => {
+  const handleAddAchiever = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newAchiever.name || !newAchiever.title) return;
     const item: LifetimeAchiever = {
@@ -272,19 +257,19 @@ export default function AdminDashboardPage() {
     };
     const updated = [item, ...achieversList];
     setAchieversList(updated);
-    saveLifetimeAchievers(updated);
+    await saveLifetimeAchievers(updated);
     setShowAchieverModal(false);
   };
 
-  const handleDeleteAchiever = (id: string) => {
+  const handleDeleteAchiever = async (id: string) => {
     if (confirm("Are you sure you want to remove this Lifetime Achiever?")) {
       const updated = achieversList.filter((a) => a.id !== id);
       setAchieversList(updated);
-      saveLifetimeAchievers(updated);
+      await saveLifetimeAchievers(updated);
     }
   };
 
-  const handleAddShradhanjali = (e: React.FormEvent) => {
+  const handleAddShradhanjali = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newShradhanjali.name || !newShradhanjali.tribute) return;
     const record: ShradhanjaliRecord = {
@@ -301,15 +286,15 @@ export default function AdminDashboardPage() {
     };
     const updated = [record, ...shradhanjaliList];
     setShradhanjaliList(updated);
-    saveShradhanjaliList(updated);
+    await saveShradhanjaliList(updated);
     setShowShradhanjaliModal(false);
   };
 
-  const handleDeleteShradhanjali = (id: string) => {
+  const handleDeleteShradhanjali = async (id: string) => {
     if (confirm("Are you sure you want to remove this tribute?")) {
       const updated = shradhanjaliList.filter((s) => s.id !== id);
       setShradhanjaliList(updated);
-      saveShradhanjaliList(updated);
+      await saveShradhanjaliList(updated);
     }
   };
 

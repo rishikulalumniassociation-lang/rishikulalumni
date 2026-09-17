@@ -1,7 +1,6 @@
 -- ==============================================================================
--- Rishikul Snatak Evam Snatkottar Association (ऋषिकुल पुरातन छात्र एसोसिएशन)
--- Complete Production Database Schema for Supabase PostgreSQL
--- Run this complete script in Supabase Dashboard -> SQL Editor -> New query -> RUN
+-- Rishikul Sangam - Complete Production Schema (Updated)
+-- Run this in Supabase Dashboard -> SQL Editor -> New Query -> RUN ALL
 -- ==============================================================================
 
 -- 1. Enable required extensions
@@ -15,23 +14,30 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     id TEXT PRIMARY KEY DEFAULT ('alumni-' || floor(extract(epoch from now()) * 1000)::text),
     full_name TEXT NOT NULL,
     full_name_hindi TEXT,
-    username TEXT UNIQUE NOT NULL, -- Login username (WhatsApp Mobile Number)
+    username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     email TEXT,
     mobile TEXT NOT NULL,
     whatsapp_number TEXT NOT NULL,
     date_of_birth DATE NOT NULL,
     avatar_url TEXT,
-    
-    -- Rishikul Education (UG / PG / Both)
+
+    -- Education
     rishikul_education TEXT NOT NULL CHECK (rishikul_education IN ('UG', 'PG', 'BOTH')),
     ug_batch_year INTEGER,
     ug_degree TEXT DEFAULT 'BAMS',
     pg_batch_year INTEGER,
     pg_degree TEXT,
-    specialization TEXT NOT NULL,
-    
-    -- Professional Info
+    specialization TEXT,
+
+    -- Ayurveda Expertise
+    is_expert BOOLEAN DEFAULT FALSE,
+    disease_specialty TEXT,
+    specialty_description TEXT,
+    accepting_shishya BOOLEAN DEFAULT FALSE,
+    shishya_requirement TEXT,
+
+    -- Professional
     job_type TEXT NOT NULL CHECK (job_type IN ('Private Practice', 'Govt Job', 'Retired', 'Teaching / Academia', 'Corporate / Industry', 'Other')),
     designation TEXT,
     workplace TEXT,
@@ -39,42 +45,43 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     state TEXT NOT NULL,
     address TEXT,
     country TEXT DEFAULT 'India',
-    
-    -- Personal Bio & Status
+
+    -- Bio
     bio TEXT,
     blood_group TEXT,
     achievements TEXT[],
-    
-    -- Facebook-like extended data
+    special_achievements JSONB DEFAULT '[]'::jsonb,
+
+    -- Extended Profile
     work_history JSONB DEFAULT '[]'::jsonb,
     family_alumni_relations JSONB DEFAULT '[]'::jsonb,
-    teacher_alumni_ids JSONB DEFAULT '[]'::jsonb,
-    connected_alumni_ids JSONB DEFAULT '[]'::jsonb,
-    
-    -- Deceased / Expired Status
+    teacher_alumni_ids TEXT[] DEFAULT '{}',
+    connected_alumni_ids TEXT[] DEFAULT '{}',
+
+    -- Deceased
     is_deceased BOOLEAN DEFAULT FALSE,
     date_of_demise DATE,
     demise_tribute TEXT,
-    
-    -- Membership Governance
+
+    -- Membership
     membership_id TEXT UNIQUE NOT NULL,
     membership_tier TEXT DEFAULT 'Non-Paid Member' CHECK (membership_tier IN ('Non-Paid Member', 'Life Member', 'Patron Member', 'Annual Member', 'Student Member', 'Honorary Fellow')),
     is_verified BOOLEAN DEFAULT FALSE,
     approval_status TEXT DEFAULT 'pending' CHECK (approval_status IN ('pending', 'approved', 'rejected', 'expired')),
     joined_date DATE DEFAULT CURRENT_DATE,
-    
+
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- Index for fast lookup by WhatsApp mobile / username
 CREATE INDEX IF NOT EXISTS idx_profiles_username ON public.profiles(username);
 CREATE INDEX IF NOT EXISTS idx_profiles_mobile ON public.profiles(mobile);
 CREATE INDEX IF NOT EXISTS idx_profiles_approval ON public.profiles(approval_status);
 CREATE INDEX IF NOT EXISTS idx_profiles_dob ON public.profiles(date_of_birth);
+CREATE INDEX IF NOT EXISTS idx_profiles_expert ON public.profiles(is_expert) WHERE is_expert = TRUE;
 
 -- ==============================================================================
--- 3. Lifetime Achievers (हॉल ऑफ फेम)
+-- 3. Lifetime Achievers (Hall of Fame)
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.lifetime_achievers (
     id TEXT PRIMARY KEY DEFAULT ('achiever-' || floor(extract(epoch from now()) * 1000)::text),
@@ -86,13 +93,13 @@ CREATE TABLE IF NOT EXISTS public.lifetime_achievers (
     title TEXT NOT NULL,
     citation TEXT NOT NULL,
     awards TEXT[] DEFAULT '{}',
-    "current_role" TEXT NOT NULL,
+    current_role TEXT NOT NULL,
     order_index INTEGER DEFAULT 0,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
 -- ==============================================================================
--- 4. Shradhanjali Memorials (पुण्य स्मरण एवं श्रद्धांजलि)
+-- 4. Shradhanjali Memorials
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.shradhanjali (
     id TEXT PRIMARY KEY DEFAULT ('shradhanjali-' || floor(extract(epoch from now()) * 1000)::text),
@@ -110,11 +117,22 @@ CREATE TABLE IF NOT EXISTS public.shradhanjali (
 );
 
 -- ==============================================================================
--- 5. Password Reset Requests (Admin Queue)
+-- 5. Shradhanjali Offerings (who offered flowers per record)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.shradhanjali_offerings (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    shradhanjali_id TEXT NOT NULL REFERENCES public.shradhanjali(id) ON DELETE CASCADE,
+    alumni_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    offered_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(shradhanjali_id, alumni_id)
+);
+
+-- ==============================================================================
+-- 6. Password Reset Requests
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.password_reset_requests (
     id TEXT PRIMARY KEY DEFAULT ('reset-' || floor(extract(epoch from now()) * 1000)::text),
-    alumni_id TEXT,
+    alumni_id TEXT REFERENCES public.profiles(id) ON DELETE CASCADE,
     full_name TEXT NOT NULL,
     username TEXT NOT NULL,
     mobile TEXT NOT NULL,
@@ -125,79 +143,126 @@ CREATE TABLE IF NOT EXISTS public.password_reset_requests (
 );
 
 -- ==============================================================================
--- 6. Association Events & Gatherings
+-- 7. Achiever Nominations
 -- ==============================================================================
-CREATE TABLE IF NOT EXISTS public.events (
-    id TEXT PRIMARY KEY DEFAULT ('event-' || floor(extract(epoch from now()) * 1000)::text),
-    title TEXT NOT NULL,
-    title_hindi TEXT,
-    slug TEXT UNIQUE NOT NULL,
-    event_type TEXT NOT NULL,
-    event_date TEXT NOT NULL,
-    time TEXT NOT NULL,
-    venue TEXT NOT NULL,
-    city TEXT NOT NULL,
-    is_online BOOLEAN DEFAULT FALSE,
-    registration_open BOOLEAN DEFAULT TRUE,
-    registration_fee TEXT,
-    description TEXT,
-    chief_guest TEXT,
-    banner_url TEXT,
-    attendees_count INTEGER DEFAULT 0,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+CREATE TABLE IF NOT EXISTS public.nominations (
+    id TEXT PRIMARY KEY DEFAULT ('nom-' || floor(extract(epoch from now()) * 1000)::text),
+    nominee_name TEXT NOT NULL,
+    nominee_name_hindi TEXT,
+    nominee_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
+    nominee_batch_year INTEGER,
+    nominee_degree TEXT,
+    nominee_photo_url TEXT,
+    nominee_workplace TEXT,
+    nominee_city TEXT,
+    achievement_title TEXT NOT NULL,
+    citation TEXT NOT NULL,
+    awards TEXT[] DEFAULT '{}',
+    nominator_id TEXT NOT NULL,
+    nominator_name TEXT NOT NULL,
+    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    admin_remarks TEXT
 );
 
 -- ==============================================================================
--- 7. Row Level Security (RLS) & Public Policies
+-- 8. Community Achievements (Alumni Board)
+-- ==============================================================================
+CREATE TABLE IF NOT EXISTS public.community_achievements (
+    id TEXT PRIMARY KEY DEFAULT ('achieve-' || floor(extract(epoch from now()) * 1000)::text),
+    alumni_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    alumni_name TEXT NOT NULL,
+    alumni_batch TEXT,
+    alumni_city TEXT,
+    alumni_avatar TEXT,
+    title TEXT NOT NULL,
+    category TEXT NOT NULL,
+    details TEXT NOT NULL,
+    date_posted DATE DEFAULT CURRENT_DATE,
+    likes_count INTEGER DEFAULT 0,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+-- Achievement likes per user
+CREATE TABLE IF NOT EXISTS public.achievement_likes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    achievement_id TEXT NOT NULL REFERENCES public.community_achievements(id) ON DELETE CASCADE,
+    alumni_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    liked_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL,
+    UNIQUE(achievement_id, alumni_id)
+);
+
+-- ==============================================================================
+-- 9. Row Level Security (RLS) Policies
 -- ==============================================================================
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.lifetime_achievers ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.shradhanjali ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.shradhanjali_offerings ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.password_reset_requests ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.events ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.nominations ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.community_achievements ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.achievement_likes ENABLE ROW LEVEL SECURITY;
 
--- Allow public read of verified/approved alumni directory
-CREATE POLICY "Public can view approved profiles"
-ON public.profiles FOR SELECT
-USING (true);
+-- Profiles
+CREATE POLICY "Public read profiles" ON public.profiles FOR SELECT USING (true);
+CREATE POLICY "Anyone can register" ON public.profiles FOR INSERT WITH CHECK (true);
+CREATE POLICY "Enable update profiles" ON public.profiles FOR UPDATE USING (true);
+CREATE POLICY "Enable delete profiles" ON public.profiles FOR DELETE USING (true);
 
--- Allow new registration inserts
-CREATE POLICY "Anyone can register profile"
-ON public.profiles FOR INSERT
-WITH CHECK (true);
+-- Achievers
+CREATE POLICY "Public read achievers" ON public.lifetime_achievers FOR SELECT USING (true);
+CREATE POLICY "Enable all achievers" ON public.lifetime_achievers FOR ALL USING (true);
 
--- Allow alumni to update their own profile and admin modifications
-CREATE POLICY "Enable update for profile"
-ON public.profiles FOR UPDATE
-USING (true);
+-- Shradhanjali
+CREATE POLICY "Public read shradhanjali" ON public.shradhanjali FOR SELECT USING (true);
+CREATE POLICY "Enable all shradhanjali" ON public.shradhanjali FOR ALL USING (true);
 
--- Lifetime Achievers & Shradhanjali: Public read
-CREATE POLICY "Public can read achievers"
-ON public.lifetime_achievers FOR SELECT
-USING (true);
+-- Shradhanjali Offerings
+CREATE POLICY "Public read offerings" ON public.shradhanjali_offerings FOR SELECT USING (true);
+CREATE POLICY "Enable all offerings" ON public.shradhanjali_offerings FOR ALL USING (true);
 
-CREATE POLICY "Enable all for achievers"
-ON public.lifetime_achievers FOR ALL
-USING (true);
+-- Password Resets
+CREATE POLICY "Enable all reset requests" ON public.password_reset_requests FOR ALL USING (true);
 
-CREATE POLICY "Public can read shradhanjali"
-ON public.shradhanjali FOR SELECT
-USING (true);
+-- Nominations
+CREATE POLICY "Enable all nominations" ON public.nominations FOR ALL USING (true);
 
-CREATE POLICY "Enable all for shradhanjali"
-ON public.shradhanjali FOR ALL
-USING (true);
+-- Community Achievements
+CREATE POLICY "Public read achievements" ON public.community_achievements FOR SELECT USING (true);
+CREATE POLICY "Enable all achievements" ON public.community_achievements FOR ALL USING (true);
 
--- Password reset requests
-CREATE POLICY "Enable insert for reset requests"
-ON public.password_reset_requests FOR INSERT
-WITH CHECK (true);
+-- Achievement Likes
+CREATE POLICY "Public read likes" ON public.achievement_likes FOR SELECT USING (true);
+CREATE POLICY "Enable all likes" ON public.achievement_likes FOR ALL USING (true);
 
-CREATE POLICY "Enable select and update for reset requests"
-ON public.password_reset_requests FOR ALL
-USING (true);
+-- ==============================================================================
+-- 10. Seed Data: Jagdish Vats Shradhanjali (martyr - permanent record)
+-- ==============================================================================
+INSERT INTO public.shradhanjali (id, name, name_hindi, batch_year, degree, photo_url, date_of_demise, tribute, condolences_count, posted_by)
+VALUES (
+    'shradhanjali-martyr',
+    'Amar Shaheed Jagdish Vats (अमर शहीद जगदीश वत्स)',
+    'अमर शहीद जगदीश वत्स',
+    1942,
+    'छात्र, ऋषिकुल आयुर्वेदिक कॉलेज (1942)',
+    '/images/jagdish-vats.png',
+    '1942-08-14',
+    '17 वर्षीय तेजस्वी छात्र जगदीश वत्स ने 14 अगस्त 1942 को भारत छोड़ो आंदोलन के दौरान हरिद्वार रेलवे स्टेशन और सुभाष घाट पर ब्रिटिश यूनियन जैक उतारकर तिरंगा फहराया। अंग्रेजी पुलिस की गोलियाँ लगने के बाद भी धोती से हाथ बाँधकर डाकघर पर तिरंगा फहराया और सीने पर गोली खाकर वीरगति को प्राप्त हुए। वे हरिद्वार के प्रथम अमर शहीद हैं।',
+    0,
+    'ऋषिकुल एल्युमनाई एसोसिएशन एवं संपूर्ण पुरातन छात्र परिवार'
+) ON CONFLICT (id) DO NOTHING;
 
--- Events public read
-CREATE POLICY "Public can read events"
-ON public.events FOR SELECT
-USING (true);
+-- ==============================================================================
+-- 11. Helper RPC: increment condolences count atomically
+-- ==============================================================================
+CREATE OR REPLACE FUNCTION public.increment_condolences(record_id TEXT)
+RETURNS void LANGUAGE plpgsql AS $$
+BEGIN
+  UPDATE public.shradhanjali
+  SET condolences_count = condolences_count + 1
+  WHERE id = record_id;
+END;
+$$;
+
+

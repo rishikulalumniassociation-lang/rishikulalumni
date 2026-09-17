@@ -41,11 +41,11 @@ export default function DirectoryPage() {
   const [modalTab, setModalTab] = useState<"info" | "achievements" | "connections" | "teachers" | "family" | "specialty" | "work">("info");
 
   useEffect(() => {
-    setAlumniList(getAlumniList());
+    getAlumniList().then((list) => setAlumniList(list));
     setCurrentUser(getLoggedInAlumni());
 
     const handleUpdate = () => {
-      setAlumniList(getAlumniList());
+      getAlumniList().then((list) => setAlumniList(list));
       setCurrentUser(getLoggedInAlumni());
     };
     window.addEventListener("alumni_updated", handleUpdate);
@@ -314,7 +314,7 @@ export default function DirectoryPage() {
                 currentAlumniId={currentUser?.id}
                 onSelect={(selected) => setSelectedProfile(selected)}
                 onConnectionToggle={() => {
-                  setAlumniList(getAlumniList());
+                  getAlumniList().then((list) => setAlumniList(list));
                   setCurrentUser(getLoggedInAlumni());
                 }}
               />
@@ -955,9 +955,9 @@ export default function DirectoryPage() {
                 {currentUser && selectedProfile.id !== currentUser.id && (
                   <button
                     type="button"
-                    onClick={() => {
-                      toggleAlumniConnection(currentUser.id, selectedProfile.id);
-                      const freshList = getAlumniList();
+                    onClick={async () => {
+                      await toggleAlumniConnection(currentUser.id, selectedProfile.id);
+                      const freshList = await getAlumniList();
                       setAlumniList(freshList);
                       const freshProfile = freshList.find((a) => a.id === selectedProfile.id);
                       if (freshProfile) setSelectedProfile(freshProfile);

@@ -85,9 +85,7 @@ export default function AyurvedaExpertsPage() {
   }, []);
 
   const refreshData = () => {
-    const list = getAlumniList();
     const user = getLoggedInAlumni();
-    setAlumni(list);
     setCurrentUser(user);
 
     if (user) {
@@ -98,6 +96,10 @@ export default function AyurvedaExpertsPage() {
         shishyaRequirement: user.shishyaRequirement || "",
       });
     }
+
+    getAlumniList().then((list) => {
+      setAlumni(list);
+    });
   };
 
   const handleOpenExpertModal = () => {

@@ -146,7 +146,7 @@ export interface LifetimeAchiever {
   citation: string;
   awards: string[];
   currentRole: string;
-  orderIndex: number;
+  orderIndex?: number;
 }
 
 export interface ShradhanjaliRecord {
@@ -207,11 +207,11 @@ export interface DirectoryFilterState {
 
 export interface CommunityAchievement {
   id: string;
-  authorId: string;
-  authorName: string;
-  authorBatchText: string;
-  authorAvatar?: string;
-  authorCity: string;
+  alumniId: string;
+  alumniName: string;
+  alumniBatch?: string;
+  alumniCity?: string;
+  alumniAvatar?: string;
   title: string;
   details: string;
   category: 'Award & Honor' | 'Clinical Breakthrough' | 'Research Publication' | 'Social & Community Service' | 'Book / Literature' | 'Other';
@@ -221,7 +221,7 @@ export interface CommunityAchievement {
 
 export interface AchieverNomination {
   id: string;
-  nomineeAlumniId: string;
+  nomineeId?: string;         // linked alumni profile id
   nomineeName: string;
   nomineeNameHindi?: string;
   nomineeDegree?: string;
@@ -229,19 +229,18 @@ export interface AchieverNomination {
   nomineeWorkplace?: string;
   nomineeCity?: string;
   nomineePhotoUrl?: string;
-  
-  achievementTitle: string; // e.g. Padma Awardee, Eminent Director, etc.
+
+  achievementTitle: string;
   citation: string;
   awards?: string[];
-  
-  nominatorId?: string;
+
+  nominatorId: string;
   nominatorName: string;
   nominatorEmail?: string;
   nominatorMobile?: string;
   nominatorBatchText?: string;
-  
+
   submittedAt: string;
   status: 'pending' | 'approved' | 'rejected';
   adminRemarks?: string;
 }
-

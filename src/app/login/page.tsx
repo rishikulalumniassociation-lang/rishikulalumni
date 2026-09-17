@@ -4,7 +4,7 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, User, ArrowRight, AlertCircle, HelpCircle, CheckCircle2, ShieldAlert } from "lucide-react";
-import { getAlumniList, setLoggedInAlumni, addPasswordResetRequest } from "@/lib/store";
+import { getAlumniList, getAlumniByUsername, setLoggedInAlumni, addPasswordResetRequest } from "@/lib/store";
 
 export default function AlumniLoginPage() {
   const router = useRouter();
@@ -18,41 +18,32 @@ export default function AlumniLoginPage() {
   const [forgotData, setForgotData] = useState({ usernameOrEmail: "", mobile: "" });
   const [resetRequested, setResetRequested] = useState(false);
 
-  const handleLogin = (e: React.FormEvent) => {
+  const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
     setLoading(true);
 
-    setTimeout(() => {
-      const list = getAlumniList();
-      const user = list.find(
-        (a) =>
-          (a.username?.toLowerCase() === username.toLowerCase() ||
-            a.email.toLowerCase() === username.toLowerCase() ||
-            a.mobile === username) &&
-          (a.passwordHash === password || password === "pass123")
-      );
+    const user = await getAlumniByUsername(username);
 
-      if (!user) {
-        setError("Invalid username or password. If you forgot your password, please submit a reset request for Admin.");
-        setLoading(false);
-        return;
-      }
+    if (!user || (user.passwordHash !== password && password !== "pass123")) {
+      setError("Invalid username or password. If you forgot your password, please submit a reset request for Admin.");
+      setLoading(false);
+      return;
+    }
 
-      if (!user.isVerified || user.approvalStatus === "pending") {
-        setError("Your alumni registration is currently under review by the Association Administrator. You will be able to log in once approved.");
-        setLoading(false);
-        return;
-      }
+    if (!user.isVerified || user.approvalStatus === "pending") {
+      setError("Your alumni registration is currently under review by the Association Administrator. You will be able to log in once approved.");
+      setLoading(false);
+      return;
+    }
 
-      setLoggedInAlumni(user);
-      router.push("/profile");
-    }, 500);
+    setLoggedInAlumni(user);
+    router.push("/profile");
   };
 
-  const handleForgotPasswordSubmit = (e: React.FormEvent) => {
+  const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const list = getAlumniList();
+    const list = await getAlumniList();
     const user = list.find(
       (a) =>
         a.username?.toLowerCase() === forgotData.usernameOrEmail.toLowerCase() ||
@@ -60,7 +51,7 @@ export default function AlumniLoginPage() {
         a.mobile === forgotData.mobile
     );
 
-    addPasswordResetRequest({
+    await addPasswordResetRequest({
       alumniId: user ? user.id : "unmatched",
       fullName: user ? user.fullName : forgotData.usernameOrEmail,
       username: user ? user.username : forgotData.usernameOrEmail,

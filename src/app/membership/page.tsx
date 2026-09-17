@@ -29,13 +29,15 @@ export default function MembershipPage() {
     const loggedIn = getLoggedInAlumni();
     if (loggedIn) {
       // Re-fetch fresh profile from list
-      const list = getAlumniList();
-      const freshUser = list.find((a) => a.id === loggedIn.id) || loggedIn;
-      setCurrentUser(freshUser);
+      getAlumniList().then((list) => {
+        const freshUser = list.find((a) => a.id === loggedIn.id) || loggedIn;
+        setCurrentUser(freshUser);
+        setLoading(false);
+      });
     } else {
       setCurrentUser(null);
+      setLoading(false);
     }
-    setLoading(false);
   }, []);
 
   if (loading) {

@@ -12,7 +12,7 @@ export default function BirthdaysPage() {
   const [wishedIds, setWishedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    setAlumni(getAlumniList());
+    getAlumniList().then((list) => setAlumni(list));
   }, []);
 
   // Compute Today's Month-Day

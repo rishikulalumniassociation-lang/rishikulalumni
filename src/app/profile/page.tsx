@@ -88,26 +88,28 @@ export default function AlumniProfilePage() {
       router.push("/login");
       return;
     }
-    const fullList = getAlumniList();
-    const freshUser = fullList.find((a) => a.id === loggedIn.id) || loggedIn;
+    (async () => {
+      const fullList = await getAlumniList();
+      const freshUser = fullList.find((a) => a.id === loggedIn.id) || loggedIn;
 
-    setUser(freshUser);
-    setAllAlumni(fullList);
-    setFormData(freshUser);
-    setWorkHistory(freshUser.workHistory || [
-      {
-        id: "work-1",
-        institution: freshUser.workplace,
-        designation: freshUser.designation,
-        fromYear: "2018",
-        toYear: "Present",
-        location: `${freshUser.city}, ${freshUser.state}`,
-        description: "Leading patient OPD and Ayurvedic clinical consultations.",
-      }
-    ]);
-    setFamilyRelations(freshUser.familyAlumniRelations || []);
-    setTeacherIds(freshUser.teacherAlumniIds || []);
-    setSpecialAchievements(freshUser.specialAchievements || []);
+      setUser(freshUser);
+      setAllAlumni(fullList);
+      setFormData(freshUser);
+      setWorkHistory(freshUser.workHistory || [
+        {
+          id: "work-1",
+          institution: freshUser.workplace,
+          designation: freshUser.designation,
+          fromYear: "2018",
+          toYear: "Present",
+          location: `${freshUser.city}, ${freshUser.state}`,
+          description: "Leading patient OPD and Ayurvedic clinical consultations.",
+        }
+      ]);
+      setFamilyRelations(freshUser.familyAlumniRelations || []);
+      setTeacherIds(freshUser.teacherAlumniIds || []);
+      setSpecialAchievements(freshUser.specialAchievements || []);
+    })();
   }, [router]);
 
   if (!user) return null;
@@ -126,7 +128,7 @@ export default function AlumniProfilePage() {
       teacherAlumniIds: teacherIds,
       specialAchievements,
     };
-    updateAlumniProfile(user.id, updates);
+    void updateAlumniProfile(user.id, updates);
     setUser({ ...user, ...updates });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
@@ -157,14 +159,14 @@ export default function AlumniProfilePage() {
       awardedBy: "",
       description: "",
     });
-    updateAlumniProfile(user.id, { specialAchievements: updated });
+    void updateAlumniProfile(user.id, { specialAchievements: updated });
     setUser({ ...user, specialAchievements: updated });
   };
 
   const handleDeleteSpecialAchievement = (id: string) => {
     const updated = specialAchievements.filter((a) => a.id !== id);
     setSpecialAchievements(updated);
-    updateAlumniProfile(user.id, { specialAchievements: updated });
+    void updateAlumniProfile(user.id, { specialAchievements: updated });
     setUser({ ...user, specialAchievements: updated });
   };
 
@@ -183,13 +185,13 @@ export default function AlumniProfilePage() {
     const updated = [item, ...workHistory];
     setWorkHistory(updated);
     setNewWork({ institution: "", designation: "", fromYear: "2020", toYear: "Present", location: "", description: "" });
-    updateAlumniProfile(user.id, { workHistory: updated });
+    void updateAlumniProfile(user.id, { workHistory: updated });
   };
 
   const handleDeleteWork = (id: string) => {
     const updated = workHistory.filter((w) => w.id !== id);
     setWorkHistory(updated);
-    updateAlumniProfile(user.id, { workHistory: updated });
+    void updateAlumniProfile(user.id, { workHistory: updated });
   };
 
   const handleAddFamilyRelation = () => {
@@ -197,14 +199,14 @@ export default function AlumniProfilePage() {
     if (familyRelations.some((r) => r.relatedAlumniId === selectedFamilyAlumniId)) return;
     const updated = [...familyRelations, { relatedAlumniId: selectedFamilyAlumniId, relationType: selectedFamilyRelation }];
     setFamilyRelations(updated);
-    updateAlumniProfile(user.id, { familyAlumniRelations: updated });
+    void updateAlumniProfile(user.id, { familyAlumniRelations: updated });
     setSelectedFamilyAlumniId("");
   };
 
   const handleDeleteFamilyRelation = (relId: string) => {
     const updated = familyRelations.filter((r) => r.relatedAlumniId !== relId);
     setFamilyRelations(updated);
-    updateAlumniProfile(user.id, { familyAlumniRelations: updated });
+    void updateAlumniProfile(user.id, { familyAlumniRelations: updated });
   };
 
   const handleAddTeacher = () => {
@@ -212,14 +214,14 @@ export default function AlumniProfilePage() {
     if (teacherIds.includes(selectedTeacherId)) return;
     const updated = [...teacherIds, selectedTeacherId];
     setTeacherIds(updated);
-    updateAlumniProfile(user.id, { teacherAlumniIds: updated });
+    void updateAlumniProfile(user.id, { teacherAlumniIds: updated });
     setSelectedTeacherId("");
   };
 
   const handleDeleteTeacher = (tid: string) => {
     const updated = teacherIds.filter((id) => id !== tid);
     setTeacherIds(updated);
-    updateAlumniProfile(user.id, { teacherAlumniIds: updated });
+    void updateAlumniProfile(user.id, { teacherAlumniIds: updated });
   };
 
   // Friends / Connected Batchmates

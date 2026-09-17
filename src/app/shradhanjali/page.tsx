@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { Heart, Sparkles, ShieldAlert, Flower, LogIn } from "lucide-react";
-import { getShradhanjaliList, saveShradhanjaliList, isAdminAuthenticated, getLoggedInAlumni } from "@/lib/store";
+import { getShradhanjaliList, offerShradhanjaliFlower, getMyShradhanjaliOfferings, isAdminAuthenticated, getLoggedInAlumni } from "@/lib/store";
 import { ShradhanjaliRecord } from "@/types";
 
 export default function ShradhanjaliPage() {
@@ -21,26 +21,25 @@ export default function ShradhanjaliPage() {
     setCurrentUserId(user?.id || null);
     setIsAdmin(isAdminAuthenticated());
 
-    // Load offered flowers from localStorage (per-user key)
+    // Load shradhanjali list and offered IDs in parallel (if user logged in)
     if (user) {
-      const storedOffered = localStorage.getItem(`shradhanjali_offered_${user.id}`);
-      if (storedOffered) {
-        try {
-          setOfferedIds(JSON.parse(storedOffered));
-        } catch {
-          setOfferedIds([]);
-        }
-      }
+      Promise.all([
+        getShradhanjaliList(),
+        getMyShradhanjaliOfferings(user.id),
+      ]).then(([list, offeredList]) => {
+        setRecords(list);
+        setOfferedIds(offeredList);
+      });
+    } else {
+      getShradhanjaliList().then((list) => setRecords(list));
     }
 
-    setRecords(getShradhanjaliList());
-
-    const handleUpdate = () => setRecords(getShradhanjaliList());
+    const handleUpdate = () => getShradhanjaliList().then((list) => setRecords(list));
     window.addEventListener("shradhanjali_updated", handleUpdate);
     return () => window.removeEventListener("shradhanjali_updated", handleUpdate);
   }, []);
 
-  const handleOfferFlower = (id: string) => {
+  const handleOfferFlower = async (id: string) => {
     if (!isLoggedIn || !currentUserId) {
       // Redirect to login if not logged in
       window.location.href = "/login?redirect=/shradhanjali";
@@ -50,20 +49,19 @@ export default function ShradhanjaliPage() {
     // Already offered — no double counting
     if (offeredIds.includes(id)) return;
 
-    const newOffered = [...offeredIds, id];
-    setOfferedIds(newOffered);
+    setOfferedIds((prev) => [...prev, id]);
 
-    // Persist per-user offered set in localStorage
-    localStorage.setItem(`shradhanjali_offered_${currentUserId}`, JSON.stringify(newOffered));
+    // Optimistically update UI
+    setRecords((prev) =>
+      prev.map((r) => (r.id === id ? { ...r, condolencesCount: (r.condolencesCount || 0) + 1 } : r))
+    );
 
-    const updated = records.map((r) => {
-      if (r.id === id) {
-        return { ...r, condolencesCount: (r.condolencesCount || 0) + 1 };
-      }
-      return r;
-    });
-    setRecords(updated);
-    saveShradhanjaliList(updated);
+    // Call Supabase
+    try {
+      await offerShradhanjaliFlower(id, currentUserId);
+    } catch (e) {
+      console.error("Error offering flowers:", e);
+    }
   };
 
   return (

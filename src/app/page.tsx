@@ -31,9 +31,11 @@ export default function HomePage() {
   const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
 
   useEffect(() => {
-    setAlumniList(getAlumniList());
-    setAchievers(getLifetimeAchievers());
-    setShradhanjali(getShradhanjaliList());
+    Promise.all([getAlumniList(), getLifetimeAchievers(), getShradhanjaliList()]).then(([alumni, achievers, shradhanjali]) => {
+      setAlumniList(alumni);
+      setAchievers(achievers);
+      setShradhanjali(shradhanjali);
+    });
   }, []);
 
   // Compute Today's Birthday count

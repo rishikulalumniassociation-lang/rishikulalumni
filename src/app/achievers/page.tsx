@@ -98,9 +98,12 @@ export default function AchieversPage() {
     };
   }, []);
 
-  const loadData = () => {
-    setAchievers(getLifetimeAchievers());
-    const list = getAlumniList();
+  const loadData = async () => {
+    const [achieversList, list] = await Promise.all([
+      getLifetimeAchievers(),
+      getAlumniList(),
+    ]);
+    setAchievers(achieversList);
     setAllAlumni(list);
     const patrons = list.filter(
       (a) => a.membershipTier === "Patron Member" && a.approvalStatus === "approved" && !a.isDeceased
@@ -129,7 +132,7 @@ export default function AchieversPage() {
     setIsNominateModalOpen(true);
   };
 
-  const handleSubmitNomination = (e: React.FormEvent) => {
+  const handleSubmitNomination = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedNominee) {
       alert("कृपया पहले किसी पंजीकृत पूर्व छात्र का चयन करें।");
@@ -144,28 +147,33 @@ export default function AchieversPage() {
       ? nomForm.awards.split(",").map((s) => s.trim()).filter(Boolean)
       : [];
 
-    submitAchieverNomination({
-      nomineeAlumniId: selectedNominee.id,
-      nomineeName: selectedNominee.fullName,
-      nomineeNameHindi: selectedNominee.fullNameHindi,
-      nomineeDegree: selectedNominee.ugDegree || selectedNominee.pgDegree || "BAMS",
-      nomineeBatchYear: selectedNominee.ugBatchYear || selectedNominee.pgBatchYear || 1980,
-      nomineeWorkplace: selectedNominee.workplace,
-      nomineeCity: selectedNominee.city,
-      nomineePhotoUrl: selectedNominee.avatarUrl,
-      achievementTitle: nomForm.achievementTitle.trim(),
-      citation: nomForm.citation.trim(),
-      awards: awardsArr,
-      nominatorId: currentUser?.id,
-      nominatorName: nomForm.nominatorName.trim() || (currentUser ? `Dr. ${currentUser.fullName}` : "ऋषिकुल एलुमनाई"),
-      nominatorEmail: nomForm.nominatorEmail.trim(),
-      nominatorMobile: nomForm.nominatorMobile.trim(),
-      nominatorBatchText: nomForm.nominatorBatchText.trim(),
-    });
+    try {
+      await submitAchieverNomination({
+        nomineeId: selectedNominee.id,
+        nomineeName: selectedNominee.fullName,
+        nomineeNameHindi: selectedNominee.fullNameHindi,
+        nomineeDegree: selectedNominee.ugDegree || selectedNominee.pgDegree || "BAMS",
+        nomineeBatchYear: selectedNominee.ugBatchYear || selectedNominee.pgBatchYear || 1980,
+        nomineeWorkplace: selectedNominee.workplace,
+        nomineeCity: selectedNominee.city,
+        nomineePhotoUrl: selectedNominee.avatarUrl,
+        achievementTitle: nomForm.achievementTitle.trim(),
+        citation: nomForm.citation.trim(),
+        awards: awardsArr,
+        nominatorId: currentUser?.id || "guest",
+        nominatorName: nomForm.nominatorName.trim() || (currentUser ? `Dr. ${currentUser.fullName}` : "ऋषिकुल एलुमनाई"),
+        nominatorEmail: nomForm.nominatorEmail.trim(),
+        nominatorMobile: nomForm.nominatorMobile.trim(),
+        nominatorBatchText: nomForm.nominatorBatchText.trim(),
+      });
 
-    setNominationSuccessMsg(
-      `डॉ. ${selectedNominee.fullName} का नामांकन एसोसिएशन एडमिन समिति को सफलतापूर्वक भेज दिया गया है। समिति के सत्यापन के उपरांत यह नाम 'हॉल ऑफ फेम' में सम्मिलित किया जाएगा।`
-    );
+      setNominationSuccessMsg(
+        `डॉ. ${selectedNominee.fullName} का नामांकन एसोसिएशन एडमिन समिति को सफलतापूर्वक भेज दिया गया है। समिति के सत्यापन के उपरांत यह नाम 'हॉल ऑफ फेम' में सम्मिलित किया जाएगा।`
+      );
+    } catch (err) {
+      alert("नामांकन सबमिट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।");
+      console.error(err);
+    }
   };
 
   return (

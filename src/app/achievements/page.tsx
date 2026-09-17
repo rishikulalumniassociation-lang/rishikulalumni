@@ -18,7 +18,7 @@ import {
   BookOpen,
   Filter
 } from "lucide-react";
-import { getCommunityAchievements, addCommunityAchievement, getLoggedInAlumni } from "@/lib/store";
+import { getCommunityAchievements, addCommunityAchievement, saveCommunityAchievements, getLoggedInAlumni } from "@/lib/store";
 import { CommunityAchievement, AlumniProfile } from "@/types";
 
 const CATEGORIES: CommunityAchievement["category"][] = [
@@ -44,17 +44,17 @@ export default function CommunityAchievementsPage() {
   const [category, setCategory] = useState<CommunityAchievement["category"]>("Award & Honor");
 
   useEffect(() => {
-    setAchievements(getCommunityAchievements());
+    getCommunityAchievements().then((res) => setAchievements(res));
     setCurrentUser(getLoggedInAlumni());
 
     const handleUpdate = () => {
-      setAchievements(getCommunityAchievements());
+      getCommunityAchievements().then((res) => setAchievements(res));
     };
     window.addEventListener("achievements_updated", handleUpdate);
     return () => window.removeEventListener("achievements_updated", handleUpdate);
   }, []);
 
-  const handlePost = (e: React.FormEvent) => {
+  const handlePost = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!currentUser) {
       alert("उपलब्धि पोस्ट करने के लिए कृपया पहले लॉग-इन करें।");
@@ -72,12 +72,12 @@ export default function CommunityAchievementsPage() {
         ? `PG:${currentUser.pgBatchYear || ""}`
         : `UG:${currentUser.ugBatchYear || ""}`;
 
-    addCommunityAchievement({
-      authorId: currentUser.id,
-      authorName: currentUser.fullName,
-      authorBatchText: batchText,
-      authorAvatar: currentUser.avatarUrl,
-      authorCity: `${currentUser.city}, ${currentUser.state}`,
+    await addCommunityAchievement({
+      alumniId: currentUser.id,
+      alumniName: currentUser.fullName,
+      alumniBatch: batchText,
+      alumniAvatar: currentUser.avatarUrl,
+      alumniCity: `${currentUser.city}, ${currentUser.state}`,
       title: title.trim(),
       details: details.trim(),
       category,
@@ -91,7 +91,7 @@ export default function CommunityAchievementsPage() {
     setTimeout(() => setSuccessMsg(false), 4000);
   };
 
-  const handleLike = (id: string) => {
+  const handleLike = async (id: string) => {
     const updated = achievements.map((a) => {
       if (a.id === id) {
         return { ...a, likesCount: (a.likesCount || 0) + 1 };
@@ -99,9 +99,7 @@ export default function CommunityAchievementsPage() {
       return a;
     });
     setAchievements(updated);
-    if (typeof window !== "undefined") {
-      localStorage.setItem("rishikul_community_achievements_v1", JSON.stringify(updated));
-    }
+    await saveCommunityAchievements(updated);
   };
 
   // Filtering
@@ -112,8 +110,8 @@ export default function CommunityAchievementsPage() {
       !q ||
       item.title.toLowerCase().includes(q) ||
       item.details.toLowerCase().includes(q) ||
-      item.authorName.toLowerCase().includes(q) ||
-      item.authorCity.toLowerCase().includes(q);
+      (item.alumniName || "").toLowerCase().includes(q) ||
+      (item.alumniCity || "").toLowerCase().includes(q);
     return matchesCat && matchesSearch;
   });
 
@@ -344,20 +342,20 @@ export default function CommunityAchievementsPage() {
                 <div className="flex items-start justify-between gap-4 mb-3">
                   <div className="flex items-center gap-3">
                     <img
-                      src={item.authorAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
-                      alt={item.authorName}
+                      src={item.alumniAvatar || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                      alt={item.alumniName}
                       className="w-11 h-11 rounded-2xl object-cover border border-slate-200 shrink-0"
                     />
                     <div>
                       <h4 className="font-bold text-sm text-[#0F172A] flex items-center gap-1.5">
-                        <span>Dr. {item.authorName}</span>
+                        <span>Dr. {item.alumniName}</span>
                       </h4>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
-                        <span className="text-[#2D5A43] font-semibold">{item.authorBatchText}</span>
+                        <span className="text-[#2D5A43] font-semibold">{item.alumniBatch}</span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           <MapPin className="w-3 h-3 text-slate-400" />
-                          {item.authorCity}
+                          {item.alumniCity}
                         </span>
                       </div>
                     </div>

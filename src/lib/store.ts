@@ -1,387 +1,701 @@
-"use client";
+// ============================================================
+// store.ts — ALL data via Supabase PostgreSQL (no localStorage)
+// ============================================================
+import { supabase } from "./supabase";
+import {
+  AlumniProfile,
+  LifetimeAchiever,
+  ShradhanjaliRecord,
+  PasswordResetRequest,
+  CommunityAchievement,
+  AssociationEvent,
+  AchieverNomination,
+} from "@/types";
 
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest, CommunityAchievement, AssociationEvent, AchieverNomination } from "@/types";
-import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI, MOCK_EVENTS } from "./mockData";
+// ---------------------------------------------------------------------------
+// Helpers: camelCase ↔ snake_case field mapping
+// ---------------------------------------------------------------------------
 
-const STORAGE_KEYS = {
-  ALUMNI: "rishikul_alumni_list_v5",
-  ACHIEVERS: "rishikul_lifetime_achievers_v4",
-  SHRADHANJALI: "rishikul_shradhanjali_v6",
-  ADMIN_AUTH: "rishikul_admin_logged_in_v4",
-  RESET_REQUESTS: "rishikul_password_reset_requests_v4",
-  LOGGED_IN_USER: "rishikul_logged_in_user_v5",
-  COMMUNITY_ACHIEVEMENTS: "rishikul_community_achievements_v1",
-  EVENTS: "rishikul_events_v2",
-  NOMINATIONS: "rishikul_achiever_nominations_v1",
-};
-
-export function getAlumniList(): AlumniProfile[] {
-  if (typeof window === "undefined") return MOCK_ALUMNI;
-  const stored = localStorage.getItem(STORAGE_KEYS.ALUMNI);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.ALUMNI, JSON.stringify(MOCK_ALUMNI));
-    return MOCK_ALUMNI;
-  }
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return MOCK_ALUMNI;
-  }
+function rowToProfile(row: Record<string, unknown>): AlumniProfile {
+  return {
+    id: row.id as string,
+    fullName: row.full_name as string,
+    fullNameHindi: row.full_name_hindi as string | undefined,
+    username: row.username as string,
+    passwordHash: row.password_hash as string,
+    email: row.email as string,
+    mobile: row.mobile as string,
+    whatsappNumber: row.whatsapp_number as string,
+    dateOfBirth: row.date_of_birth as string,
+    avatarUrl: row.avatar_url as string | undefined,
+    rishikulEducation: row.rishikul_education as AlumniProfile["rishikulEducation"],
+    ugBatchYear: row.ug_batch_year as number | undefined,
+    ugDegree: row.ug_degree as string | undefined,
+    pgBatchYear: row.pg_batch_year as number | undefined,
+    pgDegree: row.pg_degree as string | undefined,
+    specialization: row.specialization as AlumniProfile["specialization"],
+    isExpert: row.is_expert as boolean | undefined,
+    diseaseSpecialty: row.disease_specialty as string | undefined,
+    specialtyDescription: row.specialty_description as string | undefined,
+    acceptingShishya: row.accepting_shishya as boolean | undefined,
+    shishyaRequirement: row.shishya_requirement as string | undefined,
+    jobType: row.job_type as AlumniProfile["jobType"],
+    designation: row.designation as string,
+    workplace: row.workplace as string,
+    city: row.city as string,
+    state: row.state as string,
+    address: row.address as string | undefined,
+    country: row.country as string,
+    bio: row.bio as string | undefined,
+    bloodGroup: row.blood_group as string | undefined,
+    achievements: row.achievements as string[] | undefined,
+    specialAchievements: (row.special_achievements as unknown[] | undefined) as AlumniProfile["specialAchievements"],
+    workHistory: (row.work_history as unknown[] | undefined) as AlumniProfile["workHistory"],
+    familyAlumniRelations: (row.family_alumni_relations as unknown[] | undefined) as AlumniProfile["familyAlumniRelations"],
+    teacherAlumniIds: row.teacher_alumni_ids as string[] | undefined,
+    connectedAlumniIds: row.connected_alumni_ids as string[] | undefined,
+    isDeceased: row.is_deceased as boolean | undefined,
+    dateOfDemise: row.date_of_demise as string | undefined,
+    demiseTribute: row.demise_tribute as string | undefined,
+    membershipId: row.membership_id as string,
+    membershipTier: row.membership_tier as AlumniProfile["membershipTier"],
+    isVerified: row.is_verified as boolean,
+    approvalStatus: row.approval_status as AlumniProfile["approvalStatus"],
+    joinedDate: row.joined_date as string,
+  };
 }
 
-export function saveAlumniList(list: AlumniProfile[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.ALUMNI, JSON.stringify(list));
-  window.dispatchEvent(new Event("alumni_updated"));
+function profileToRow(p: AlumniProfile): Record<string, unknown> {
+  return {
+    id: p.id,
+    full_name: p.fullName,
+    full_name_hindi: p.fullNameHindi ?? null,
+    username: p.username,
+    password_hash: p.passwordHash ?? "",
+    email: p.email ?? null,
+    mobile: p.mobile,
+    whatsapp_number: p.whatsappNumber,
+    date_of_birth: p.dateOfBirth,
+    avatar_url: p.avatarUrl ?? null,
+    rishikul_education: p.rishikulEducation,
+    ug_batch_year: p.ugBatchYear ?? null,
+    ug_degree: p.ugDegree ?? null,
+    pg_batch_year: p.pgBatchYear ?? null,
+    pg_degree: p.pgDegree ?? null,
+    specialization: p.specialization ?? null,
+    is_expert: p.isExpert ?? false,
+    disease_specialty: p.diseaseSpecialty ?? null,
+    specialty_description: p.specialtyDescription ?? null,
+    accepting_shishya: p.acceptingShishya ?? false,
+    shishya_requirement: p.shishyaRequirement ?? null,
+    job_type: p.jobType,
+    designation: p.designation ?? null,
+    workplace: p.workplace ?? null,
+    city: p.city,
+    state: p.state,
+    address: p.address ?? null,
+    country: p.country ?? "India",
+    bio: p.bio ?? null,
+    blood_group: p.bloodGroup ?? null,
+    achievements: p.achievements ?? [],
+    special_achievements: p.specialAchievements ?? [],
+    work_history: p.workHistory ?? [],
+    family_alumni_relations: p.familyAlumniRelations ?? [],
+    teacher_alumni_ids: p.teacherAlumniIds ?? [],
+    connected_alumni_ids: p.connectedAlumniIds ?? [],
+    is_deceased: p.isDeceased ?? false,
+    date_of_demise: p.dateOfDemise ?? null,
+    demise_tribute: p.demiseTribute ?? null,
+    membership_id: p.membershipId,
+    membership_tier: p.membershipTier,
+    is_verified: p.isVerified,
+    approval_status: p.approvalStatus,
+    joined_date: p.joinedDate,
+  };
 }
 
-export function updateAlumniProfile(id: string, updates: Partial<AlumniProfile>) {
-  const list = getAlumniList();
-  const updatedList = list.map((a) => (a.id === id ? { ...a, ...updates } : a));
-  saveAlumniList(updatedList);
+function rowToAchiever(row: Record<string, unknown>): LifetimeAchiever {
+  return {
+    id: row.id as string,
+    name: row.name as string,
+    nameHindi: row.name_hindi as string | undefined,
+    batchYear: row.batch_year as number,
+    degree: row.degree as string,
+    photoUrl: row.photo_url as string,
+    title: row.title as string,
+    citation: row.citation as string,
+    awards: row.awards as string[],
+    currentRole: row.current_role as string,
+    orderIndex: row.order_index as number | undefined,
+  };
+}
 
-  // If current logged-in user is this alumnus, update session too
+function rowToShradhanjali(row: Record<string, unknown>): ShradhanjaliRecord {
+  return {
+    id: row.id as string,
+    alumniId: row.alumni_id as string | undefined,
+    name: row.name as string,
+    nameHindi: row.name_hindi as string | undefined,
+    batchYear: row.batch_year as number,
+    degree: row.degree as string,
+    photoUrl: row.photo_url as string,
+    dateOfDemise: row.date_of_demise as string,
+    tribute: row.tribute as string,
+    condolencesCount: row.condolences_count as number,
+    postedBy: row.posted_by as string,
+  };
+}
+
+function rowToPasswordReset(row: Record<string, unknown>): PasswordResetRequest {
+  return {
+    id: row.id as string,
+    alumniId: row.alumni_id as string,
+    fullName: row.full_name as string,
+    username: row.username as string,
+    mobile: row.mobile as string,
+    email: row.email as string,
+    requestedAt: row.requested_at as string,
+    status: row.status as "pending" | "resolved",
+    newPasswordAssigned: row.new_password_assigned as string | undefined,
+  };
+}
+
+function rowToNomination(row: Record<string, unknown>): AchieverNomination {
+  return {
+    id: row.id as string,
+    nomineeName: row.nominee_name as string,
+    nomineeNameHindi: row.nominee_name_hindi as string | undefined,
+    nomineeId: row.nominee_id as string | undefined,
+    nomineeBatchYear: row.nominee_batch_year as number | undefined,
+    nomineeDegree: row.nominee_degree as string | undefined,
+    nomineePhotoUrl: row.nominee_photo_url as string | undefined,
+    nomineeWorkplace: row.nominee_workplace as string | undefined,
+    nomineeCity: row.nominee_city as string | undefined,
+    achievementTitle: row.achievement_title as string,
+    citation: row.citation as string,
+    awards: row.awards as string[] | undefined,
+    nominatorId: row.nominator_id as string,
+    nominatorName: row.nominator_name as string,
+    submittedAt: row.submitted_at as string,
+    status: row.status as AchieverNomination["status"],
+    adminRemarks: row.admin_remarks as string | undefined,
+  };
+}
+
+function rowToCommunityAchievement(row: Record<string, unknown>): CommunityAchievement {
+  return {
+    id: row.id as string,
+    alumniId: row.alumni_id as string,
+    alumniName: row.alumni_name as string,
+    alumniBatch: row.alumni_batch as string | undefined,
+    alumniCity: row.alumni_city as string | undefined,
+    alumniAvatar: row.alumni_avatar as string | undefined,
+    title: row.title as string,
+    category: row.category as CommunityAchievement["category"],
+    details: row.details as string,
+    datePosted: row.date_posted as string,
+    likesCount: row.likes_count as number,
+  };
+}
+
+// ---------------------------------------------------------------------------
+// ALUMNI PROFILES
+// ---------------------------------------------------------------------------
+
+export async function getAlumniList(): Promise<AlumniProfile[]> {
+  const { data, error } = await supabase
+    .from("profiles")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) { console.error("getAlumniList:", error.message); return []; }
+  return (data ?? []).map(rowToProfile);
+}
+
+export async function saveAlumniList(list: AlumniProfile[]): Promise<void> {
+  // Used only by admin bulk operations — upsert full list
+  for (const profile of list) {
+    await supabase.from("profiles").upsert(profileToRow(profile), { onConflict: "id" });
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("alumni_updated"));
+}
+
+export async function getAlumniById(id: string): Promise<AlumniProfile | null> {
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", id).single();
+  if (error || !data) return null;
+  return rowToProfile(data as Record<string, unknown>);
+}
+
+export async function getAlumniByUsername(username: string): Promise<AlumniProfile | null> {
+  const { data, error } = await supabase.from("profiles").select("*").eq("username", username).single();
+  if (error || !data) return null;
+  return rowToProfile(data as Record<string, unknown>);
+}
+
+export async function registerAlumni(profile: AlumniProfile): Promise<{ success: boolean; error?: string }> {
+  const { error } = await supabase.from("profiles").insert(profileToRow(profile));
+  if (error) return { success: false, error: error.message };
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("alumni_updated"));
+  return { success: true };
+}
+
+export async function updateAlumniProfile(id: string, updates: Partial<AlumniProfile>): Promise<void> {
+  // Build snake_case update object
+  const snakeUpdates: Record<string, unknown> = {};
+  if (updates.fullName !== undefined) snakeUpdates.full_name = updates.fullName;
+  if (updates.fullNameHindi !== undefined) snakeUpdates.full_name_hindi = updates.fullNameHindi;
+  if (updates.email !== undefined) snakeUpdates.email = updates.email;
+  if (updates.mobile !== undefined) snakeUpdates.mobile = updates.mobile;
+  if (updates.whatsappNumber !== undefined) snakeUpdates.whatsapp_number = updates.whatsappNumber;
+  if (updates.avatarUrl !== undefined) snakeUpdates.avatar_url = updates.avatarUrl;
+  if (updates.bio !== undefined) snakeUpdates.bio = updates.bio;
+  if (updates.bloodGroup !== undefined) snakeUpdates.blood_group = updates.bloodGroup;
+  if (updates.designation !== undefined) snakeUpdates.designation = updates.designation;
+  if (updates.workplace !== undefined) snakeUpdates.workplace = updates.workplace;
+  if (updates.city !== undefined) snakeUpdates.city = updates.city;
+  if (updates.state !== undefined) snakeUpdates.state = updates.state;
+  if (updates.address !== undefined) snakeUpdates.address = updates.address;
+  if (updates.country !== undefined) snakeUpdates.country = updates.country;
+  if (updates.jobType !== undefined) snakeUpdates.job_type = updates.jobType;
+  if (updates.isExpert !== undefined) snakeUpdates.is_expert = updates.isExpert;
+  if (updates.diseaseSpecialty !== undefined) snakeUpdates.disease_specialty = updates.diseaseSpecialty;
+  if (updates.specialtyDescription !== undefined) snakeUpdates.specialty_description = updates.specialtyDescription;
+  if (updates.acceptingShishya !== undefined) snakeUpdates.accepting_shishya = updates.acceptingShishya;
+  if (updates.shishyaRequirement !== undefined) snakeUpdates.shishya_requirement = updates.shishyaRequirement;
+  if (updates.workHistory !== undefined) snakeUpdates.work_history = updates.workHistory;
+  if (updates.familyAlumniRelations !== undefined) snakeUpdates.family_alumni_relations = updates.familyAlumniRelations;
+  if (updates.teacherAlumniIds !== undefined) snakeUpdates.teacher_alumni_ids = updates.teacherAlumniIds;
+  if (updates.connectedAlumniIds !== undefined) snakeUpdates.connected_alumni_ids = updates.connectedAlumniIds;
+  if (updates.specialAchievements !== undefined) snakeUpdates.special_achievements = updates.specialAchievements;
+  if (updates.isVerified !== undefined) snakeUpdates.is_verified = updates.isVerified;
+  if (updates.approvalStatus !== undefined) snakeUpdates.approval_status = updates.approvalStatus;
+  if (updates.membershipTier !== undefined) snakeUpdates.membership_tier = updates.membershipTier;
+  if (updates.isDeceased !== undefined) snakeUpdates.is_deceased = updates.isDeceased;
+  if (updates.dateOfDemise !== undefined) snakeUpdates.date_of_demise = updates.dateOfDemise;
+  if (updates.demiseTribute !== undefined) snakeUpdates.demise_tribute = updates.demiseTribute;
+  if (updates.passwordHash !== undefined) snakeUpdates.password_hash = updates.passwordHash;
+  snakeUpdates.updated_at = new Date().toISOString();
+
+  const { error } = await supabase.from("profiles").update(snakeUpdates).eq("id", id);
+  if (error) { console.error("updateAlumniProfile:", error.message); return; }
+
+  // Refresh session if this is the logged-in user
   const currentUser = getLoggedInAlumni();
   if (currentUser && currentUser.id === id) {
-    setLoggedInAlumni({ ...currentUser, ...updates });
+    const fresh = await getAlumniById(id);
+    if (fresh) setLoggedInAlumni(fresh);
   }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("alumni_updated"));
 }
 
-export function markAlumnusAsDeceased(alumniId: string, dateOfDemise: string, tributeText?: string) {
-  const list = getAlumniList();
-  const alumnus = list.find((a) => a.id === alumniId);
+export async function markAlumnusAsDeceased(alumniId: string, dateOfDemise: string, tributeText?: string): Promise<void> {
+  const alumnus = await getAlumniById(alumniId);
   if (!alumnus) return;
 
-  // 1. Update alumnus record
-  const updatedList = list.map((a) => {
-    if (a.id === alumniId) {
-      return {
-        ...a,
-        isDeceased: true,
-        dateOfDemise,
-        demiseTribute: tributeText || `In loving memory of Dr. ${a.fullName}`,
-        approvalStatus: "expired" as const,
-      };
-    }
-    return a;
+  await updateAlumniProfile(alumniId, {
+    isDeceased: true,
+    dateOfDemise,
+    demiseTribute: tributeText || `In loving memory of Dr. ${alumnus.fullName}`,
+    approvalStatus: "expired",
   });
-  saveAlumniList(updatedList);
 
-  // 2. Automatically create entry in Shradhanjali memorials
-  const currentShradhanjali = getShradhanjaliList();
-  const alreadyExists = currentShradhanjali.some((s) => s.alumniId === alumniId);
-  if (!alreadyExists) {
-    const newRecord: ShradhanjaliRecord = {
+  // Check if already in shradhanjali
+  const { data: existing } = await supabase
+    .from("shradhanjali")
+    .select("id")
+    .eq("alumni_id", alumniId)
+    .maybeSingle();
+
+  if (!existing) {
+    const newRecord = {
       id: `shradhanjali-${Date.now()}`,
-      alumniId: alumnus.id,
+      alumni_id: alumnus.id,
       name: alumnus.fullName.startsWith("Late") ? alumnus.fullName : `Late Dr. ${alumnus.fullName}`,
-      nameHindi: alumnus.fullNameHindi ? (alumnus.fullNameHindi.startsWith("स्व.") ? alumnus.fullNameHindi : `स्व. ${alumnus.fullNameHindi}`) : undefined,
-      batchYear: alumnus.ugBatchYear || alumnus.pgBatchYear || alumnus.batchYear || 1980,
+      name_hindi: alumnus.fullNameHindi
+        ? alumnus.fullNameHindi.startsWith("स्व.") ? alumnus.fullNameHindi : `स्व. ${alumnus.fullNameHindi}`
+        : null,
+      batch_year: alumnus.ugBatchYear || alumnus.pgBatchYear || 1980,
       degree: alumnus.ugDegree || alumnus.pgDegree || "BAMS",
-      photoUrl: alumnus.avatarUrl || "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop",
-      dateOfDemise,
-      tribute: tributeText || `अत्यंत दुःख के साथ सूचित किया जाता है कि हमारे वरिष्ठ साथी डॉ. ${alumnus.fullName} का निधन ${dateOfDemise} को हो गया। ऋषिकुल पुरातन छात्र परिवार दिवंगत आत्मा की शांति की प्रार्थना करता है।`,
-      condolencesCount: 0,
-      postedBy: "Association Executive Committee",
+      photo_url: alumnus.avatarUrl || "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop",
+      date_of_demise: dateOfDemise,
+      tribute: tributeText || `अत्यंत दुःख के साथ सूचित किया जाता है कि हमारे वरिष्ठ साथी डॉ. ${alumnus.fullName} का निधन ${dateOfDemise} को हो गया।`,
+      condolences_count: 0,
+      posted_by: "Association Executive Committee",
     };
-    saveShradhanjaliList([newRecord, ...currentShradhanjali]);
+    await supabase.from("shradhanjali").insert(newRecord);
+    if (typeof window !== "undefined") window.dispatchEvent(new Event("shradhanjali_updated"));
   }
 }
 
-export function getPasswordResetRequests(): PasswordResetRequest[] {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(STORAGE_KEYS.RESET_REQUESTS);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return [];
+export async function toggleAlumniConnection(fromId: string, toId: string): Promise<void> {
+  if (!fromId || !toId || fromId === toId) return;
+
+  const fromProfile = await getAlumniById(fromId);
+  if (!fromProfile) return;
+
+  const current = fromProfile.connectedAlumniIds || [];
+  const isConn = current.includes(toId);
+  const newConnections = isConn ? current.filter((id) => id !== toId) : [...current, toId];
+
+  await updateAlumniProfile(fromId, { connectedAlumniIds: newConnections });
+
+  // Also update the other side
+  const toProfile = await getAlumniById(toId);
+  if (toProfile) {
+    const toCurrent = toProfile.connectedAlumniIds || [];
+    const toIsConn = toCurrent.includes(fromId);
+    const toNewConnections = toIsConn ? toCurrent.filter((id) => id !== fromId) : [...toCurrent, fromId];
+    await updateAlumniProfile(toId, { connectedAlumniIds: toNewConnections });
   }
 }
 
-export function savePasswordResetRequests(list: PasswordResetRequest[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.RESET_REQUESTS, JSON.stringify(list));
-  window.dispatchEvent(new Event("reset_requests_updated"));
-}
+// ---------------------------------------------------------------------------
+// SESSION (localStorage only — small session data, not persistent DB)
+// ---------------------------------------------------------------------------
 
-export function addPasswordResetRequest(req: Omit<PasswordResetRequest, "id" | "requestedAt" | "status">) {
-  const current = getPasswordResetRequests();
-  const newReq: PasswordResetRequest = {
-    ...req,
-    id: `reset-${Date.now()}`,
-    requestedAt: new Date().toLocaleString(),
-    status: "pending",
-  };
-  savePasswordResetRequests([newReq, ...current]);
-  return newReq;
-}
-
-export function getLifetimeAchievers(): LifetimeAchiever[] {
-  if (typeof window === "undefined") return INITIAL_ACHIEVERS;
-  const stored = localStorage.getItem(STORAGE_KEYS.ACHIEVERS);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.ACHIEVERS, JSON.stringify([]));
-    return [];
-  }
-  try {
-    const list: LifetimeAchiever[] = JSON.parse(stored);
-    const cleaned = list.filter((a) => !["achiever-1", "achiever-2", "achiever-3"].includes(a.id));
-    if (cleaned.length !== list.length) {
-      localStorage.setItem(STORAGE_KEYS.ACHIEVERS, JSON.stringify(cleaned));
-    }
-    return cleaned;
-  } catch (e) {
-    return [];
-  }
-}
-
-export function saveLifetimeAchievers(list: LifetimeAchiever[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.ACHIEVERS, JSON.stringify(list));
-  window.dispatchEvent(new Event("achievers_updated"));
-}
-
-export function getShradhanjaliList(): ShradhanjaliRecord[] {
-  if (typeof window === "undefined") return INITIAL_SHRADHANJALI;
-  const stored = localStorage.getItem(STORAGE_KEYS.SHRADHANJALI);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.SHRADHANJALI, JSON.stringify(INITIAL_SHRADHANJALI));
-    return INITIAL_SHRADHANJALI;
-  }
-  try {
-    const list: ShradhanjaliRecord[] = JSON.parse(stored);
-    const cleaned = list
-      .filter((item) => !["shradhanjali-1", "shradhanjali-2"].includes(item.id))
-      .map((item) =>
-        item.id === "shradhanjali-martyr"
-          ? { ...item, photoUrl: "/images/jagdish-vats.png" }
-          : item
-      );
-    if (cleaned.length !== list.length) {
-      localStorage.setItem(STORAGE_KEYS.SHRADHANJALI, JSON.stringify(cleaned));
-    }
-    return cleaned;
-  } catch (e) {
-    return INITIAL_SHRADHANJALI;
-  }
-}
-
-export function saveShradhanjaliList(list: ShradhanjaliRecord[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.SHRADHANJALI, JSON.stringify(list));
-  window.dispatchEvent(new Event("shradhanjali_updated"));
-}
-
-export function isAdminAuthenticated(): boolean {
-  if (typeof window === "undefined") return false;
-  return localStorage.getItem(STORAGE_KEYS.ADMIN_AUTH) === "true";
-}
-
-export function setAdminAuthenticated(val: boolean) {
-  if (typeof window === "undefined") return;
-  if (val) {
-    localStorage.setItem(STORAGE_KEYS.ADMIN_AUTH, "true");
-  } else {
-    localStorage.removeItem(STORAGE_KEYS.ADMIN_AUTH);
-  }
-  window.dispatchEvent(new Event("admin_auth_changed"));
-}
+const SESSION_KEY = "rishikul_session_v1";
+const ADMIN_KEY = "rishikul_admin_v1";
 
 export function getLoggedInAlumni(): AlumniProfile | null {
   if (typeof window === "undefined") return null;
-  const stored = localStorage.getItem(STORAGE_KEYS.LOGGED_IN_USER);
+  const stored = localStorage.getItem(SESSION_KEY);
   if (!stored) return null;
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return null;
-  }
+  try { return JSON.parse(stored); } catch { return null; }
 }
 
 export function setLoggedInAlumni(user: AlumniProfile | null) {
   if (typeof window === "undefined") return;
   if (user) {
-    localStorage.setItem(STORAGE_KEYS.LOGGED_IN_USER, JSON.stringify(user));
+    localStorage.setItem(SESSION_KEY, JSON.stringify(user));
   } else {
-    localStorage.removeItem(STORAGE_KEYS.LOGGED_IN_USER);
+    localStorage.removeItem(SESSION_KEY);
   }
   window.dispatchEvent(new Event("user_auth_changed"));
 }
 
-export function toggleAlumniConnection(fromId: string, toId: string) {
-  if (!fromId || !toId || fromId === toId) return;
-  const list = getAlumniList();
-  const updated = list.map((a) => {
-    if (a.id === fromId) {
-      const current = a.connectedAlumniIds || [];
-      const isConn = current.includes(toId);
-      return {
-        ...a,
-        connectedAlumniIds: isConn
-          ? current.filter((id) => id !== toId)
-          : [...current, toId],
-      };
-    }
-    if (a.id === toId) {
-      const current = a.connectedAlumniIds || [];
-      const isConn = current.includes(fromId);
-      return {
-        ...a,
-        connectedAlumniIds: isConn
-          ? current.filter((id) => id !== fromId)
-          : [...current, fromId],
-      };
-    }
-    return a;
-  });
-  saveAlumniList(updated);
-
-  // Update session if affected
-  const currentUser = getLoggedInAlumni();
-  if (currentUser && (currentUser.id === fromId || currentUser.id === toId)) {
-    const freshMe = updated.find((a) => a.id === currentUser.id);
-    if (freshMe) setLoggedInAlumni(freshMe);
-  }
+export function isAdminAuthenticated(): boolean {
+  if (typeof window === "undefined") return false;
+  return localStorage.getItem(ADMIN_KEY) === "true";
 }
 
-export function getCommunityAchievements(): CommunityAchievement[] {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(STORAGE_KEYS.COMMUNITY_ACHIEVEMENTS);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return [];
-  }
-}
-
-export function saveCommunityAchievements(list: CommunityAchievement[]) {
+export function setAdminAuthenticated(val: boolean) {
   if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.COMMUNITY_ACHIEVEMENTS, JSON.stringify(list));
-  window.dispatchEvent(new Event("achievements_updated"));
+  if (val) {
+    localStorage.setItem(ADMIN_KEY, "true");
+  } else {
+    localStorage.removeItem(ADMIN_KEY);
+  }
+  window.dispatchEvent(new Event("admin_auth_changed"));
 }
 
-export function addCommunityAchievement(item: Omit<CommunityAchievement, "id" | "datePosted">): CommunityAchievement {
-  const newItem: CommunityAchievement = {
-    ...item,
-    id: `achieve-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-    datePosted: new Date().toISOString().split("T")[0],
-    likesCount: 0,
-  };
-  const list = getCommunityAchievements();
-  saveCommunityAchievements([newItem, ...list]);
-  return newItem;
+// ---------------------------------------------------------------------------
+// PASSWORD RESET REQUESTS
+// ---------------------------------------------------------------------------
+
+export async function getPasswordResetRequests(): Promise<PasswordResetRequest[]> {
+  const { data, error } = await supabase
+    .from("password_reset_requests")
+    .select("*")
+    .order("requested_at", { ascending: false });
+  if (error) { console.error("getPasswordResetRequests:", error.message); return []; }
+  return (data ?? []).map(rowToPasswordReset);
 }
+
+export async function addPasswordResetRequest(req: Omit<PasswordResetRequest, "id" | "requestedAt" | "status">): Promise<PasswordResetRequest> {
+  const newReq = {
+    id: `reset-${Date.now()}`,
+    alumni_id: req.alumniId ?? null,
+    full_name: req.fullName,
+    username: req.username,
+    mobile: req.mobile,
+    email: req.email ?? null,
+    status: "pending",
+  };
+  const { data, error } = await supabase.from("password_reset_requests").insert(newReq).select().single();
+  if (error) throw new Error(error.message);
+  return rowToPasswordReset(data as Record<string, unknown>);
+}
+
+export async function savePasswordResetRequests(list: PasswordResetRequest[]): Promise<void> {
+  for (const req of list) {
+    await supabase.from("password_reset_requests").upsert({
+      id: req.id,
+      alumni_id: req.alumniId ?? null,
+      full_name: req.fullName,
+      username: req.username,
+      mobile: req.mobile,
+      email: req.email ?? null,
+      status: req.status,
+      new_password_assigned: req.newPasswordAssigned ?? null,
+    }, { onConflict: "id" });
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("password_reset_updated"));
+}
+
+// ---------------------------------------------------------------------------
+// LIFETIME ACHIEVERS
+// ---------------------------------------------------------------------------
+
+export async function getLifetimeAchievers(): Promise<LifetimeAchiever[]> {
+  const { data, error } = await supabase
+    .from("lifetime_achievers")
+    .select("*")
+    .order("order_index", { ascending: true });
+  if (error) { console.error("getLifetimeAchievers:", error.message); return []; }
+  return (data ?? []).map(rowToAchiever);
+}
+
+export async function saveLifetimeAchievers(list: LifetimeAchiever[]): Promise<void> {
+  for (const a of list) {
+    await supabase.from("lifetime_achievers").upsert({
+      id: a.id,
+      name: a.name,
+      name_hindi: a.nameHindi ?? null,
+      batch_year: a.batchYear,
+      degree: a.degree,
+      photo_url: a.photoUrl,
+      title: a.title,
+      citation: a.citation,
+      awards: a.awards ?? [],
+      current_role: a.currentRole,
+      order_index: a.orderIndex ?? 0,
+    }, { onConflict: "id" });
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("achievers_updated"));
+}
+
+// ---------------------------------------------------------------------------
+// SHRADHANJALI
+// ---------------------------------------------------------------------------
+
+export async function getShradhanjaliList(): Promise<ShradhanjaliRecord[]> {
+  const { data, error } = await supabase
+    .from("shradhanjali")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) { console.error("getShradhanjaliList:", error.message); return []; }
+  return (data ?? []).map(rowToShradhanjali);
+}
+
+export async function saveShradhanjaliList(list: ShradhanjaliRecord[]): Promise<void> {
+  for (const s of list) {
+    await supabase.from("shradhanjali").upsert({
+      id: s.id,
+      alumni_id: s.alumniId ?? null,
+      name: s.name,
+      name_hindi: s.nameHindi ?? null,
+      batch_year: s.batchYear,
+      degree: s.degree,
+      photo_url: s.photoUrl,
+      date_of_demise: s.dateOfDemise,
+      tribute: s.tribute,
+      condolences_count: s.condolencesCount,
+      posted_by: s.postedBy,
+    }, { onConflict: "id" });
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("shradhanjali_updated"));
+}
+
+export async function offerShradhanjaliFlower(shradhanjaliId: string, alumniId: string): Promise<{ alreadyOffered: boolean }> {
+  // Check if already offered
+  const { data: existing } = await supabase
+    .from("shradhanjali_offerings")
+    .select("id")
+    .eq("shradhanjali_id", shradhanjaliId)
+    .eq("alumni_id", alumniId)
+    .maybeSingle();
+
+  if (existing) return { alreadyOffered: true };
+
+  // Insert offering
+  await supabase.from("shradhanjali_offerings").insert({
+    shradhanjali_id: shradhanjaliId,
+    alumni_id: alumniId,
+  });
+
+  // Increment count
+  await supabase.rpc("increment_condolences", { record_id: shradhanjaliId });
+
+  return { alreadyOffered: false };
+}
+
+export async function getMyShradhanjaliOfferings(alumniId: string): Promise<string[]> {
+  const { data } = await supabase
+    .from("shradhanjali_offerings")
+    .select("shradhanjali_id")
+    .eq("alumni_id", alumniId);
+  return (data ?? []).map((r: Record<string, unknown>) => r.shradhanjali_id as string);
+}
+
+// ---------------------------------------------------------------------------
+// ACHIEVER NOMINATIONS
+// ---------------------------------------------------------------------------
+
+export async function getAchieverNominations(): Promise<AchieverNomination[]> {
+  const { data, error } = await supabase
+    .from("nominations")
+    .select("*")
+    .order("submitted_at", { ascending: false });
+  if (error) { console.error("getAchieverNominations:", error.message); return []; }
+  return (data ?? []).map(rowToNomination);
+}
+
+export async function saveAchieverNominations(list: AchieverNomination[]): Promise<void> {
+  for (const n of list) {
+    await supabase.from("nominations").upsert({
+      id: n.id,
+      nominee_name: n.nomineeName,
+      nominee_name_hindi: n.nomineeNameHindi ?? null,
+      nominee_id: n.nomineeId ?? null,
+      nominee_batch_year: n.nomineeBatchYear ?? null,
+      nominee_degree: n.nomineeDegree ?? null,
+      nominee_photo_url: n.nomineePhotoUrl ?? null,
+      nominee_workplace: n.nomineeWorkplace ?? null,
+      nominee_city: n.nomineeCity ?? null,
+      achievement_title: n.achievementTitle,
+      citation: n.citation,
+      awards: n.awards ?? [],
+      nominator_id: n.nominatorId,
+      nominator_name: n.nominatorName,
+      status: n.status,
+      admin_remarks: n.adminRemarks ?? null,
+    }, { onConflict: "id" });
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("nominations_updated"));
+}
+
+export async function submitAchieverNomination(nom: Omit<AchieverNomination, "id" | "submittedAt" | "status">): Promise<AchieverNomination> {
+  const row = {
+    id: `nom-${Date.now()}`,
+    nominee_name: nom.nomineeName,
+    nominee_name_hindi: nom.nomineeNameHindi ?? null,
+    nominee_id: nom.nomineeId ?? null,
+    nominee_batch_year: nom.nomineeBatchYear ?? null,
+    nominee_degree: nom.nomineeDegree ?? null,
+    nominee_photo_url: nom.nomineePhotoUrl ?? null,
+    nominee_workplace: nom.nomineeWorkplace ?? null,
+    nominee_city: nom.nomineeCity ?? null,
+    achievement_title: nom.achievementTitle,
+    citation: nom.citation,
+    awards: nom.awards ?? [],
+    nominator_id: nom.nominatorId,
+    nominator_name: nom.nominatorName,
+    status: "pending",
+  };
+  const { data, error } = await supabase.from("nominations").insert(row).select().single();
+  if (error) throw new Error(error.message);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("nominations_updated"));
+  return rowToNomination(data as Record<string, unknown>);
+}
+
+export async function approveAchieverNomination(nominationId: string, adminRemarks?: string): Promise<void> {
+  // Get nomination
+  const { data: nomRow } = await supabase.from("nominations").select("*").eq("id", nominationId).single();
+  if (!nomRow) return;
+  const nom = rowToNomination(nomRow as Record<string, unknown>);
+
+  // Update status
+  await supabase.from("nominations").update({ status: "approved", admin_remarks: adminRemarks ?? null }).eq("id", nominationId);
+
+  // Add to lifetime_achievers
+  const { data: existingAchievers } = await supabase.from("lifetime_achievers").select("order_index").order("order_index", { ascending: false }).limit(1);
+  const maxOrder = (existingAchievers?.[0] as Record<string, unknown> | undefined)?.order_index as number | undefined ?? 0;
+
+  await supabase.from("lifetime_achievers").insert({
+    id: `achiever-${Date.now()}`,
+    name: nom.nomineeName,
+    name_hindi: nom.nomineeNameHindi ?? null,
+    batch_year: nom.nomineeBatchYear || 1980,
+    degree: nom.nomineeDegree || "BAMS",
+    photo_url: nom.nomineePhotoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop",
+    title: nom.achievementTitle,
+    citation: nom.citation,
+    awards: nom.awards ?? [],
+    current_role: nom.nomineeWorkplace ? `${nom.nomineeWorkplace}${nom.nomineeCity ? `, ${nom.nomineeCity}` : ""}` : "Distinguished Rishikul Alumnus",
+    order_index: (maxOrder as number) + 1,
+  });
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("nominations_updated"));
+    window.dispatchEvent(new Event("achievers_updated"));
+  }
+}
+
+export async function rejectAchieverNomination(nominationId: string, adminRemarks?: string): Promise<void> {
+  await supabase.from("nominations").update({ status: "rejected", admin_remarks: adminRemarks ?? null }).eq("id", nominationId);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("nominations_updated"));
+}
+
+// ---------------------------------------------------------------------------
+// COMMUNITY ACHIEVEMENTS
+// ---------------------------------------------------------------------------
+
+export async function getCommunityAchievements(): Promise<CommunityAchievement[]> {
+  const { data, error } = await supabase
+    .from("community_achievements")
+    .select("*")
+    .order("created_at", { ascending: false });
+  if (error) { console.error("getCommunityAchievements:", error.message); return []; }
+  return (data ?? []).map(rowToCommunityAchievement);
+}
+
+export async function addCommunityAchievement(item: Omit<CommunityAchievement, "id" | "datePosted" | "likesCount">): Promise<CommunityAchievement> {
+  const row = {
+    id: `achieve-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    alumni_id: item.alumniId,
+    alumni_name: item.alumniName,
+    alumni_batch: item.alumniBatch ?? null,
+    alumni_city: item.alumniCity ?? null,
+    alumni_avatar: item.alumniAvatar ?? null,
+    title: item.title,
+    category: item.category,
+    details: item.details,
+    likes_count: 0,
+  };
+  const { data, error } = await supabase.from("community_achievements").insert(row).select().single();
+  if (error) throw new Error(error.message);
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("achievements_updated"));
+  return rowToCommunityAchievement(data as Record<string, unknown>);
+}
+
+export async function saveCommunityAchievements(list: CommunityAchievement[]): Promise<void> {
+  for (const a of list) {
+    await supabase.from("community_achievements").upsert({
+      id: a.id,
+      alumni_id: a.alumniId,
+      alumni_name: a.alumniName,
+      alumni_batch: a.alumniBatch ?? null,
+      alumni_city: a.alumniCity ?? null,
+      alumni_avatar: a.alumniAvatar ?? null,
+      title: a.title,
+      category: a.category,
+      details: a.details,
+      date_posted: a.datePosted,
+      likes_count: a.likesCount,
+    }, { onConflict: "id" });
+  }
+  if (typeof window !== "undefined") window.dispatchEvent(new Event("achievements_updated"));
+}
+
+// ---------------------------------------------------------------------------
+// EVENTS (kept as static mock for now — admin can manage later)
+// ---------------------------------------------------------------------------
+
+import { MOCK_EVENTS } from "./mockData";
 
 export function getEvents(): AssociationEvent[] {
-  if (typeof window === "undefined") return MOCK_EVENTS;
-  const stored = localStorage.getItem(STORAGE_KEYS.EVENTS);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(MOCK_EVENTS));
-    return MOCK_EVENTS;
-  }
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return MOCK_EVENTS;
-  }
+  return MOCK_EVENTS;
 }
 
-export function saveEvents(list: AssociationEvent[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.EVENTS, JSON.stringify(list));
-  window.dispatchEvent(new Event("events_updated"));
+export async function saveEvents(_list: AssociationEvent[]): Promise<void> {
+  // TODO: persist to supabase events table when event management is added
 }
 
-export function addEvent(event: Omit<AssociationEvent, "id" | "slug" | "attendeesCount">): AssociationEvent {
+export async function addEvent(event: Omit<AssociationEvent, "id" | "slug" | "attendeesCount">): Promise<AssociationEvent> {
   const newId = `event-${Date.now()}`;
   const slug = event.title
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_-]+/g, "-")
     .replace(/^-+|-+$/g, "");
-  const newEvent: AssociationEvent = {
-    ...event,
-    id: newId,
-    slug: slug || newId,
-    attendeesCount: 0,
-  };
-  const list = getEvents();
-  saveEvents([newEvent, ...list]);
-  return newEvent;
+  return { ...event, id: newId, slug: slug || newId, attendeesCount: 0 };
 }
-
-export function getAchieverNominations(): AchieverNomination[] {
-  if (typeof window === "undefined") return [];
-  const stored = localStorage.getItem(STORAGE_KEYS.NOMINATIONS);
-  if (!stored) return [];
-  try {
-    return JSON.parse(stored);
-  } catch (e) {
-    return [];
-  }
-}
-
-export function saveAchieverNominations(list: AchieverNomination[]) {
-  if (typeof window === "undefined") return;
-  localStorage.setItem(STORAGE_KEYS.NOMINATIONS, JSON.stringify(list));
-  window.dispatchEvent(new Event("nominations_updated"));
-}
-
-export function submitAchieverNomination(nom: Omit<AchieverNomination, "id" | "submittedAt" | "status">): AchieverNomination {
-  const current = getAchieverNominations();
-  const newNom: AchieverNomination = {
-    ...nom,
-    id: `nom-${Date.now()}`,
-    submittedAt: new Date().toLocaleDateString("en-IN", {
-      day: "numeric",
-      month: "short",
-      year: "numeric"
-    }),
-    status: "pending",
-  };
-  saveAchieverNominations([newNom, ...current]);
-  return newNom;
-}
-
-export function approveAchieverNomination(nominationId: string, adminRemarks?: string) {
-  const nominations = getAchieverNominations();
-  const target = nominations.find((n) => n.id === nominationId);
-  if (!target) return;
-
-  // 1. Update nomination status to approved
-  const updatedNominations = nominations.map((n) =>
-    n.id === nominationId ? { ...n, status: "approved" as const, adminRemarks } : n
-  );
-  saveAchieverNominations(updatedNominations);
-
-  // 2. Automatically induct nominee into LifetimeAchiever list
-  const currentAchievers = getLifetimeAchievers();
-  const newAchiever: LifetimeAchiever = {
-    id: `achiever-${Date.now()}`,
-    name: target.nomineeName,
-    nameHindi: target.nomineeNameHindi,
-    batchYear: target.nomineeBatchYear || 1980,
-    degree: target.nomineeDegree || "BAMS",
-    photoUrl: target.nomineePhotoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop",
-    title: target.achievementTitle,
-    citation: target.citation,
-    awards: target.awards || [],
-    currentRole: target.nomineeWorkplace
-      ? `${target.nomineeWorkplace}${target.nomineeCity ? `, ${target.nomineeCity}` : ""}`
-      : "Distinguished Rishikul Alumnus",
-    orderIndex: currentAchievers.length + 1,
-  };
-  saveLifetimeAchievers([newAchiever, ...currentAchievers]);
-  window.dispatchEvent(new Event("achievers_updated"));
-}
-
-export function rejectAchieverNomination(nominationId: string, adminRemarks?: string) {
-  const nominations = getAchieverNominations();
-  const updatedNominations = nominations.map((n) =>
-    n.id === nominationId ? { ...n, status: "rejected" as const, adminRemarks } : n
-  );
-  saveAchieverNominations(updatedNominations);
-}
-
