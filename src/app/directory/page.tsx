@@ -907,15 +907,26 @@ export default function DirectoryPage() {
                         </div>
                       )}
                       {selectedProfile.whatsappNumber && (
-                        <a
-                          href={`https://wa.me/${selectedProfile.whatsappNumber}?text=${encodeURIComponent(`सादर प्रणाम वैद्य जी, मैंने ऋषिकुल एल्युमनाई पोर्टल पर आपकी विशेषज्ञता देखी और आपके मार्गदर्शन में शिष्य रूप में आयुर्वेद सीखना चाहता हूँ।`)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs uppercase hover:bg-emerald-700 transition-colors shadow-xs"
-                        >
-                          <span>Connect as Shishya on WhatsApp</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
-                        </a>
+                        currentUser ? (
+                          <a
+                            href={`https://wa.me/${selectedProfile.whatsappNumber}?text=${encodeURIComponent(`सादर प्रणाम वैद्य जी, मैंने ऋषिकुल एल्युमनाई पोर्टल पर आपकी विशेषज्ञता देखी और आपके मार्गदर्शन में शिष्य रूप में आयुर्वेद सीखना चाहता हूँ।`)}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs uppercase hover:bg-emerald-700 transition-colors shadow-xs"
+                          >
+                            <span>Connect as Shishya on WhatsApp</span>
+                            <ExternalLink className="w-3.5 h-3.5" />
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => router.push("/login?redirect=/directory")}
+                            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#0F172A] text-white font-bold text-xs uppercase hover:bg-[#2D5A43] transition-colors shadow-xs"
+                          >
+                            <Lock className="w-3.5 h-3.5 text-[#C5A059]" />
+                            <span>Login to Connect on WhatsApp</span>
+                          </button>
+                        )
                       )}
                     </div>
                   )}
@@ -988,14 +999,25 @@ export default function DirectoryPage() {
                   </button>
                 )}
                 {selectedProfile.whatsappNumber && (
-                  <a
-                    href={`https://wa.me/${selectedProfile.whatsappNumber}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs"
-                  >
-                    WhatsApp Connect
-                  </a>
+                  currentUser ? (
+                    <a
+                      href={`https://wa.me/${selectedProfile.whatsappNumber}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs"
+                    >
+                      WhatsApp Connect
+                    </a>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => router.push("/login?redirect=/directory")}
+                      className="w-full sm:flex-1 py-3 text-center rounded-xl bg-amber-500/10 border border-amber-400/50 text-amber-900 text-xs font-bold uppercase tracking-wider hover:bg-amber-500/20 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                      <Lock className="w-3.5 h-3.5 text-amber-700" />
+                      <span>Login for WhatsApp</span>
+                    </button>
+                  )
                 )}
                 <button
                   onClick={() => setSelectedProfile(null)}

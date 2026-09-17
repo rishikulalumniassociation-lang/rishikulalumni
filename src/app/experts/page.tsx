@@ -23,7 +23,8 @@ import {
   AlertCircle,
   Edit3,
   Trash2,
-  Plus
+  Plus,
+  Lock
 } from "lucide-react";
 import { getAlumniList, getLoggedInAlumni, updateAlumniProfile } from "@/lib/store";
 import { AlumniProfile } from "@/types";
@@ -437,15 +438,26 @@ export default function AyurvedaExpertsPage() {
                   {/* Actions */}
                   <div className="pt-3 border-t border-slate-100 flex items-center gap-2">
                     {waLink ? (
-                      <a
-                        href={waLink}
-                        target="_blank"
-                        rel="noreferrer"
-                        className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
-                      >
-                        <MessageCircle className="w-3.5 h-3.5" />
-                        <span>WhatsApp Connect</span>
-                      </a>
+                      currentUser ? (
+                        <a
+                          href={waLink}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" />
+                          <span>WhatsApp Connect</span>
+                        </a>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => router.push("/login?redirect=/experts")}
+                          className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-sm"
+                        >
+                          <Lock className="w-3.5 h-3.5 text-[#C5A059]" />
+                          <span>Login to WhatsApp</span>
+                        </button>
+                      )
                     ) : (
                       <div className="flex-1 text-center py-2 text-[11px] text-slate-400 bg-slate-100 rounded-xl">
                         Contact via Portal

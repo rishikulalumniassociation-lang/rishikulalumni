@@ -2,17 +2,21 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake } from "lucide-react";
-import { getAlumniList } from "@/lib/store";
+import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock } from "lucide-react";
+import { getAlumniList, getLoggedInAlumni } from "@/lib/store";
 import { AlumniProfile } from "@/types";
 
 export default function BirthdaysPage() {
+  const router = useRouter();
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
+  const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
   const [wishedIds, setWishedIds] = useState<string[]>([]);
 
   useEffect(() => {
     getAlumniList().then((list) => setAlumni(list));
+    setCurrentUser(getLoggedInAlumni());
   }, []);
 
   // Compute Today's Month-Day
@@ -147,18 +151,30 @@ export default function BirthdaysPage() {
                       </button>
 
                       {alumnus.whatsappNumber && (
-                        <a
-                          href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
-                            `Happy Birthday, Dr. ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`
-                          )}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1 text-xs font-bold"
-                          title="Wish on WhatsApp"
-                        >
-                          <MessageCircle className="w-4 h-4" />
-                          <span className="hidden sm:inline">WhatsApp Wish</span>
-                        </a>
+                        currentUser ? (
+                          <a
+                            href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
+                              `Happy Birthday, Dr. ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`
+                            )}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="p-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1 text-xs font-bold"
+                            title="Wish on WhatsApp"
+                          >
+                            <MessageCircle className="w-4 h-4" />
+                            <span className="hidden sm:inline">WhatsApp Wish</span>
+                          </a>
+                        ) : (
+                          <button
+                            type="button"
+                            onClick={() => router.push("/login?redirect=/birthdays")}
+                            className="p-2.5 rounded-xl bg-slate-100 text-slate-500 hover:bg-amber-100 hover:text-amber-850 transition-colors shadow-sm flex items-center gap-1 text-xs font-bold"
+                            title="Login to Wish on WhatsApp"
+                          >
+                            <Lock className="w-4 h-4 text-amber-700" />
+                            <span className="hidden sm:inline">Login to Wish</span>
+                          </button>
+                        )
                       )}
                     </div>
                   </div>

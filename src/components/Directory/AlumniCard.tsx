@@ -13,7 +13,8 @@ import {
   Users2,
   Cake,
   Building,
-  Medal
+  Medal,
+  Lock
 } from "lucide-react";
 import { toggleAlumniConnection } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -240,16 +241,30 @@ export default function AlumniCard({
 
         <div className="flex items-center gap-1.5">
           {alumni.whatsappNumber && (
-            <a
-              href={`https://wa.me/${alumni.whatsappNumber}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={(e) => e.stopPropagation()}
-              className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
-              title="Connect on WhatsApp"
-            >
-              <MessageCircle className="w-3.5 h-3.5" />
-            </a>
+            currentAlumniId ? (
+              <a
+                href={`https://wa.me/${alumni.whatsappNumber}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="p-1.5 rounded-lg bg-emerald-50 text-emerald-700 hover:bg-emerald-100 transition-colors"
+                title="Connect on WhatsApp"
+              >
+                <MessageCircle className="w-3.5 h-3.5" />
+              </a>
+            ) : (
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  router.push("/login?redirect=/directory");
+                }}
+                className="p-1.5 rounded-lg bg-slate-100 text-slate-400 hover:bg-amber-100 hover:text-amber-800 transition-colors"
+                title="लॉगिन करें WhatsApp से संपर्क करने हेतु (Login to message on WhatsApp)"
+              >
+                <Lock className="w-3.5 h-3.5" />
+              </button>
+            )
           )}
           <button
             type="button"
