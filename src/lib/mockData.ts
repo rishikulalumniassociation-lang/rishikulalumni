@@ -17,30 +17,6 @@ export const INITIAL_SHRADHANJALI: ShradhanjaliRecord[] = [
     tribute: "17 वर्षीय तेजस्वी छात्र जगदीश वत्स ने 14 अगस्त 1942 को भारत छोड़ो आंदोलन के दौरान हरिद्वार रेलवे स्टेशन और सुभाष घाट पर ब्रिटिश यूनियन जैक उतारकर तिरंगा फहराया। अंग्रेजी पुलिस की गोलियाँ लगने के बाद भी धोती से हाथ बाँधकर डाकघर पर तिरंगा फहराया और सीने पर गोली खाकर वीरगति को प्राप्त हुए। वे हरिद्वार के प्रथम अमर शहीद हैं।",
     condolencesCount: 540,
     postedBy: "ऋषिकुल एल्युमनाई एसोसिएशन एवं संपूर्ण पुरातन छात्र परिवार"
-  },
-  {
-    id: "shradhanjali-1",
-    name: "Late Vaidya Dr. Harish Chandra Sharma",
-    nameHindi: "स्व. वैद्य डॉ. हरीश चंद्र शर्मा",
-    batchYear: 1962,
-    degree: "BAMS (Gold Medalist)",
-    photoUrl: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?q=80&w=400&auto=format&fit=crop",
-    dateOfDemise: "2025-11-12",
-    tribute: "A stalwart of pure classical Ayurveda who dedicated 55 years of unselfish service at Haridwar. His legendary diagnosis without fees for the needy continues to inspire generations.",
-    condolencesCount: 148,
-    postedBy: "Association Executive Committee"
-  },
-  {
-    id: "shradhanjali-2",
-    name: "Late Dr. Birendra Singh Rawat",
-    nameHindi: "स्व. डॉ. बीरेंद्र सिंह रावत",
-    batchYear: 1977,
-    degree: "MD (Kayachikitsa)",
-    photoUrl: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?q=80&w=400&auto=format&fit=crop",
-    dateOfDemise: "2026-02-04",
-    tribute: "Former Chief Medical Officer (CMO), Tehri Garhwal. A noble soul who championed free medical relief across disaster-hit Himalayan valleys.",
-    condolencesCount: 92,
-    postedBy: "Batch of 1977"
   }
 ];
 

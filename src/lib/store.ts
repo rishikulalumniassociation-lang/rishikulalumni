@@ -151,11 +151,17 @@ export function getShradhanjaliList(): ShradhanjaliRecord[] {
   }
   try {
     const list: ShradhanjaliRecord[] = JSON.parse(stored);
-    return list.map((item) =>
-      item.id === "shradhanjali-martyr"
-        ? { ...item, photoUrl: "/images/jagdish-vats.png" }
-        : item
-    );
+    const cleaned = list
+      .filter((item) => !["shradhanjali-1", "shradhanjali-2"].includes(item.id))
+      .map((item) =>
+        item.id === "shradhanjali-martyr"
+          ? { ...item, photoUrl: "/images/jagdish-vats.png" }
+          : item
+      );
+    if (cleaned.length !== list.length) {
+      localStorage.setItem(STORAGE_KEYS.SHRADHANJALI, JSON.stringify(cleaned));
+    }
+    return cleaned;
   } catch (e) {
     return INITIAL_SHRADHANJALI;
   }
