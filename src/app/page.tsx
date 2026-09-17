@@ -5,8 +5,8 @@ import Link from "next/link";
 import EditorialHero from "@/components/Hero/EditorialHero";
 import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
 import AlumniCard from "@/components/Directory/AlumniCard";
-import { MOCK_EVENTS, EXECUTIVE_MEMBERS } from "@/lib/mockData";
-import { getAlumniList, getLifetimeAchievers, getShradhanjaliList } from "@/lib/store";
+import { EXECUTIVE_MEMBERS } from "@/lib/mockData";
+import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents } from "@/lib/store";
 import {
   Search,
   ArrowRight,
@@ -23,18 +23,25 @@ import {
   ChevronRight,
   Flag
 } from "lucide-react";
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, AssociationEvent } from "@/types";
 
 export default function HomePage() {
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
   const [achievers, setAchievers] = useState<LifetimeAchiever[]>([]);
   const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
+  const [eventsList, setEventsList] = useState<AssociationEvent[]>([]);
 
   useEffect(() => {
-    Promise.all([getAlumniList(), getLifetimeAchievers(), getShradhanjaliList()]).then(([alumni, achievers, shradhanjali]) => {
+    Promise.all([
+      getAlumniList(),
+      getLifetimeAchievers(),
+      getShradhanjaliList(),
+      getEvents(),
+    ]).then(([alumni, achieversData, shradhanjaliData, eventsData]) => {
       setAlumniList(alumni);
-      setAchievers(achievers);
-      setShradhanjali(shradhanjali);
+      setAchievers(achieversData);
+      setShradhanjali(shradhanjaliData);
+      setEventsList(eventsData);
     });
   }, []);
 
@@ -342,42 +349,63 @@ export default function HomePage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {MOCK_EVENTS.map((event) => (
-              <div
-                key={event.id}
-                className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 flex flex-col justify-between"
-              >
-                <div>
-                  <div className="flex items-center justify-between gap-2 mb-3">
-                    <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#2D5A43] text-white">
-                      {event.eventType}
-                    </span>
-                    <span className="text-xs font-medium text-[#C5A059]">
-                      {event.attendeesCount}+ Registered
-                    </span>
-                  </div>
-
-                  <h3 className="font-serif-heading text-xl sm:text-2xl font-bold text-white mb-2">
-                    {event.title}
-                  </h3>
-                  <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed mb-4 font-light">
-                    {event.description}
-                  </p>
-                </div>
-
-                <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
-                  <span className="text-xs text-slate-400">
-                    Fee: <strong className="text-white">{event.registrationFee}</strong>
-                  </span>
+            {eventsList.length === 0 ? (
+              <div className="col-span-full bg-slate-900/60 rounded-3xl p-8 border border-slate-800 text-center space-y-3">
+                <Calendar className="w-10 h-10 text-[#C5A059] mx-auto opacity-70" />
+                <h3 className="font-serif-heading text-lg font-bold text-white">
+                  वर्तमान में कोई आगामी महासम्मेलन निर्धारित नहीं है
+                </h3>
+                <p className="text-xs text-slate-400 max-w-md mx-auto">
+                  आगामी आयोजनों की सूचना जल्द ही यहाँ प्रकाशित की जाएगी। नया आयोजन देखने या जोड़ने हेतु इवेंट्स पेज पर जाएं।
+                </p>
+                <div className="pt-2">
                   <Link
                     href="/events"
-                    className="px-4 py-2 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors"
+                    className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-[#2D5A43] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#234734] transition-colors"
                   >
-                    RSVP / Register
+                    <span>इवेंट्स पेज देखें</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
                   </Link>
                 </div>
               </div>
-            ))}
+            ) : (
+              eventsList.slice(0, 2).map((event) => (
+                <div
+                  key={event.id}
+                  className="bg-slate-900/90 rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 flex flex-col justify-between"
+                >
+                  <div>
+                    <div className="flex items-center justify-between gap-2 mb-3">
+                      <span className="px-3 py-1 rounded-full text-xs font-semibold bg-[#2D5A43] text-white">
+                        {event.eventType}
+                      </span>
+                      <span className="text-xs font-medium text-[#C5A059]">
+                        {event.attendeesCount}+ Registered
+                      </span>
+                    </div>
+
+                    <h3 className="font-serif-heading text-xl sm:text-2xl font-bold text-white mb-2">
+                      {event.title}
+                    </h3>
+                    <p className="text-xs sm:text-sm text-slate-300 line-clamp-2 leading-relaxed mb-4 font-light">
+                      {event.description}
+                    </p>
+                  </div>
+
+                  <div className="pt-4 border-t border-slate-800 flex items-center justify-between">
+                    <span className="text-xs text-slate-400">
+                      Fee: <strong className="text-white">{event.registrationFee}</strong>
+                    </span>
+                    <Link
+                      href="/events"
+                      className="px-4 py-2 rounded-xl bg-[#C5A059] text-[#0F172A] text-xs font-bold uppercase tracking-wider hover:bg-amber-300 transition-colors"
+                    >
+                      RSVP / Register
+                    </Link>
+                  </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>

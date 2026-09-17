@@ -20,52 +20,7 @@ export const INITIAL_SHRADHANJALI: ShradhanjaliRecord[] = [
   }
 ];
 
-export const MOCK_EVENTS: AssociationEvent[] = [
-  {
-    id: "event-001",
-    title: "Maha Kumbh 2025 Alumni Conclave & Grand Golden Jubilee Meet",
-    titleHindi: "महा कुंभ 2025 पुरातन छात्र महासम्मेलन एवं स्वर्ण जयंती समारोह",
-    slug: "maha-kumbh-2025-alumni-conclave",
-    eventType: "Annual Reunion",
-    date: "November 14-16, 2025",
-    time: "09:30 AM - 06:00 PM IST",
-    venue: "Main Auditorium, Rishikul Campus, Haridwar",
-    city: "Haridwar",
-    isOnline: false,
-    registrationOpen: true,
-    registrationFee: "₹1,500 (Free for Patron Members)",
-    description: "The grandest gathering in the history of Rishikul Snatak Evam Snatkottar Association. Felicitating batches from 1950 to 2024, honoring distinguished veteran vaidyas, Ganga Aarti on Malviya Dweep, and special souvenir release.",
-    chiefGuest: "Hon'ble Union Minister of AYUSH, Govt. of India & Chief Minister of Uttarakhand",
-    bannerUrl: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=1200&auto=format&fit=crop",
-    attendeesCount: 540,
-    schedule: [
-      { time: "Day 1 - 09:30 AM", activity: "Traditional Dhanwantari Vandana & Inaugural Lamp Lighting" },
-      { time: "Day 1 - 11:30 AM", activity: "Keynote Address: Ayurveda's Global Century & Rishikul's Legacy" },
-      { time: "Day 1 - 05:30 PM", activity: "Alumni Holy Ganga Aarti at Har Ki Pauri / Malviya Dweep" },
-      { time: "Day 2 - 10:00 AM", activity: "Batch-wise Felicitation (Golden & Silver Jubilee Batches)" },
-      { time: "Day 2 - 02:00 PM", activity: "Interactive Clinical Innovations Panel & Career Mentorship" },
-      { time: "Day 3 - 11:00 AM", activity: "General Body Meeting & Association Elections" }
-    ]
-  },
-  {
-    id: "event-002",
-    title: "National CME on Integrative Shalya Tantra & Ksharasutra Advances",
-    titleHindi: "राष्ट्रीय सीएमई: एकीकृत शल्य तंत्र एवं क्षारसूत्र उन्नत तकनीक",
-    slug: "cme-shalya-tantra-advances",
-    eventType: "CME Conference",
-    date: "August 22, 2025",
-    time: "10:00 AM - 04:30 PM IST",
-    venue: "Dhanwantari Seminar Hall, Rishikul Campus & Hybrid Zoom Live",
-    city: "Haridwar",
-    isOnline: true,
-    registrationOpen: true,
-    registrationFee: "₹500 (Earn 4 CME Credit Hours)",
-    description: "Accredited Continuing Medical Education symposium showcasing surgical protocols, live surgical demonstrations of complicated fistula-in-ano, and paper presentations.",
-    chiefGuest: "Padma Shri Vaidya Balendu Prakash",
-    bannerUrl: "https://images.unsplash.com/photo-1576091160399-112ba8d25d1d?q=80&w=1200&auto=format&fit=crop",
-    attendeesCount: 320
-  }
-];
+export const MOCK_EVENTS: AssociationEvent[] = [];
 
 export const EXECUTIVE_MEMBERS: ExecutiveMember[] = [
   {

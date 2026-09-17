@@ -732,25 +732,89 @@ export async function saveCommunityAchievements(list: CommunityAchievement[]): P
 }
 
 // ---------------------------------------------------------------------------
-// EVENTS (kept as static mock for now — admin can manage later)
+// EVENTS (Supabase PostgreSQL "events" table)
 // ---------------------------------------------------------------------------
 
-import { MOCK_EVENTS } from "./mockData";
-
-export function getEvents(): AssociationEvent[] {
-  return MOCK_EVENTS;
+function rowToEvent(row: Record<string, unknown>): AssociationEvent {
+  return {
+    id: row.id as string,
+    title: row.title as string,
+    titleHindi: row.title_hindi as string | undefined,
+    slug: row.slug as string,
+    eventType: row.event_type as AssociationEvent["eventType"],
+    date: row.event_date as string,
+    time: row.time as string,
+    venue: row.venue as string,
+    city: row.city as string,
+    isOnline: Boolean(row.is_online),
+    registrationOpen: Boolean(row.registration_open),
+    registrationFee: (row.registration_fee as string) || "Free",
+    description: (row.description as string) || "",
+    chiefGuest: row.chief_guest as string | undefined,
+    bannerUrl: (row.banner_url as string) || "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=800&auto=format&fit=crop",
+    attendeesCount: (row.attendees_count as number) || 0,
+  };
 }
 
-export async function saveEvents(_list: AssociationEvent[]): Promise<void> {
-  // TODO: persist to supabase events table when event management is added
+function eventToRow(event: AssociationEvent): Record<string, unknown> {
+  return {
+    id: event.id,
+    title: event.title,
+    title_hindi: event.titleHindi ?? null,
+    slug: event.slug,
+    event_type: event.eventType,
+    event_date: event.date,
+    time: event.time,
+    venue: event.venue,
+    city: event.city,
+    is_online: event.isOnline,
+    registration_open: event.registrationOpen,
+    registration_fee: event.registrationFee,
+    description: event.description,
+    chief_guest: event.chiefGuest ?? null,
+    banner_url: event.bannerUrl,
+    attendees_count: event.attendeesCount ?? 0,
+  };
 }
 
-export async function addEvent(event: Omit<AssociationEvent, "id" | "slug" | "attendeesCount">): Promise<AssociationEvent> {
+export async function getEvents(): Promise<AssociationEvent[]> {
+  const { data, error } = await supabase
+    .from("events")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("getEvents error:", error.message);
+    return [];
+  }
+  return (data ?? []).map(rowToEvent);
+}
+
+export async function addEvent(
+  event: Omit<AssociationEvent, "id" | "slug" | "attendeesCount">
+): Promise<AssociationEvent> {
   const newId = `event-${Date.now()}`;
-  const slug = event.title
+  const slug = `${event.title
     .toLowerCase()
     .replace(/[^\w\s-]/g, "")
     .replace(/[\s_-]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-  return { ...event, id: newId, slug: slug || newId, attendeesCount: 0 };
+    .replace(/^-+|-+$/g, "")}-${Date.now().toString().slice(-4)}`;
+
+  const newEvent: AssociationEvent = {
+    ...event,
+    id: newId,
+    slug: slug || newId,
+    attendeesCount: 0,
+  };
+
+  const { error } = await supabase.from("events").insert(eventToRow(newEvent));
+  if (error) {
+    console.error("addEvent error:", error.message);
+    throw new Error(error.message);
+  }
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("events_updated"));
+  }
+  return newEvent;
 }

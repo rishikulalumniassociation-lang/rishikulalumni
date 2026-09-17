@@ -75,12 +75,12 @@ export default function EventsPage() {
   });
 
   useEffect(() => {
-    setEvents(getEvents());
+    getEvents().then((list) => setEvents(list));
     setCurrentUser(getLoggedInAlumni());
     setIsAdmin(isAdminAuthenticated());
 
     const handleUpdate = () => {
-      setEvents(getEvents());
+      getEvents().then((list) => setEvents(list));
     };
     window.addEventListener("events_updated", handleUpdate);
     return () => window.removeEventListener("events_updated", handleUpdate);
@@ -95,49 +95,53 @@ export default function EventsPage() {
     setSuccessModalEvent(event);
   };
 
-  const handleCreateEvent = (e: React.FormEvent) => {
+  const handleCreateEvent = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.title || !formData.date || !formData.venue) {
       alert("कृपया शीर्षक, तारीख एवं स्थान अनिवार्य रूप से भरें।");
       return;
     }
 
-    addEvent({
-      title: formData.title.trim(),
-      titleHindi: formData.titleHindi.trim() || undefined,
-      eventType: formData.eventType as any,
-      date: formData.date,
-      time: formData.time,
-      venue: formData.venue,
-      city: formData.city,
-      isOnline: formData.isOnline,
-      registrationOpen: formData.registrationOpen,
-      registrationFee: formData.registrationFee,
-      chiefGuest: formData.chiefGuest.trim() || undefined,
-      bannerUrl: formData.bannerUrl || PRESET_BANNERS[0].url,
-      description: formData.description.trim(),
-    });
+    try {
+      await addEvent({
+        title: formData.title.trim(),
+        titleHindi: formData.titleHindi.trim() || undefined,
+        eventType: formData.eventType as any,
+        date: formData.date,
+        time: formData.time,
+        venue: formData.venue,
+        city: formData.city,
+        isOnline: formData.isOnline,
+        registrationOpen: formData.registrationOpen,
+        registrationFee: formData.registrationFee,
+        chiefGuest: formData.chiefGuest.trim() || undefined,
+        bannerUrl: formData.bannerUrl || PRESET_BANNERS[0].url,
+        description: formData.description.trim(),
+      });
 
-    setShowCreateModal(false);
-    setNewEventSuccess(true);
-    setTimeout(() => setNewEventSuccess(false), 5000);
+      setShowCreateModal(false);
+      setNewEventSuccess(true);
+      setTimeout(() => setNewEventSuccess(false), 5000);
 
-    // Reset Form
-    setFormData({
-      title: "",
-      titleHindi: "",
-      eventType: "CME Conference",
-      date: "",
-      time: "10:00 AM – 4:00 PM IST",
-      venue: "",
-      city: "Haridwar",
-      isOnline: false,
-      registrationOpen: true,
-      registrationFee: "Free (निःशुल्क)",
-      chiefGuest: "",
-      bannerUrl: PRESET_BANNERS[0].url,
-      description: "",
-    });
+      // Reset Form
+      setFormData({
+        title: "",
+        titleHindi: "",
+        eventType: "CME Conference",
+        date: "",
+        time: "10:00 AM – 4:00 PM IST",
+        venue: "",
+        city: "Haridwar",
+        isOnline: false,
+        registrationOpen: true,
+        registrationFee: "Free (निःशुल्क)",
+        chiefGuest: "",
+        bannerUrl: PRESET_BANNERS[0].url,
+        description: "",
+      });
+    } catch (err) {
+      alert("इवेंट जोड़ने में त्रुटि हुई। कृपया पुनः प्रयास करें।");
+    }
   };
 
   const filteredEvents = events.filter((ev) => {
