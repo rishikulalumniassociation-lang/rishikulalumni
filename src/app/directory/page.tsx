@@ -22,7 +22,12 @@ import {
   ExternalLink,
   Users2,
   Cake,
-  Briefcase
+  Briefcase,
+  Heart,
+  Sparkles,
+  Lock,
+  ChevronRight,
+  Stethoscope,
 } from "lucide-react";
 
 export default function DirectoryPage() {
@@ -31,6 +36,7 @@ export default function DirectoryPage() {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AlumniProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
+  const [modalTab, setModalTab] = useState<"info" | "connections" | "teachers" | "family" | "specialty" | "work">("info");
 
   useEffect(() => {
     setAlumniList(getAlumniList());
@@ -344,141 +350,564 @@ export default function DirectoryPage() {
       />
 
       {/* Profile Detail Modal */}
-      {selectedProfile && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
-          <div className="relative w-full max-w-lg bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-[#C5A059]/40 max-h-[90vh] overflow-y-auto">
-            <button
-              onClick={() => setSelectedProfile(null)}
-              className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100"
-            >
-              <X className="w-5 h-5" />
-            </button>
+      {selectedProfile && (() => {
+        const connectedList = (selectedProfile.connectedAlumniIds || [])
+          .map((id) => alumniList.find((a) => a.id === id))
+          .filter(Boolean) as AlumniProfile[];
 
-            <div className="flex items-start gap-4 mb-6">
-              <div className="w-20 h-20 rounded-2xl overflow-hidden border-2 border-[#C5A059] bg-slate-100 flex-shrink-0">
-                <img
-                  src={selectedProfile.avatarUrl}
-                  alt={selectedProfile.fullName}
-                  className="w-full h-full object-cover"
-                />
-              </div>
-              <div>
-                <span className="text-[10px] font-bold uppercase tracking-wider text-[#C5A059] block">
-                  {selectedProfile.membershipTier} • Verified
-                </span>
-                <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                  {selectedProfile.fullName}
-                </h3>
-                {selectedProfile.fullNameHindi && (
-                  <p className="text-xs text-[#64748B] font-medium">
-                    {selectedProfile.fullNameHindi}
-                  </p>
-                )}
-                
-                {/* UG / PG badges in modal */}
-                <div className="flex flex-wrap gap-1.5 mt-1.5">
-                  {selectedProfile.ugBatchYear && (
-                    <span className="px-2 py-0.5 rounded bg-slate-100 text-[#0F172A] text-[11px] font-bold border">
-                      UG Batch: {selectedProfile.ugBatchYear} ({selectedProfile.ugDegree || "BAMS"})
-                    </span>
-                  )}
-                  {selectedProfile.pgBatchYear && (
-                    <span className="px-2 py-0.5 rounded bg-emerald-50 text-[#2D5A43] text-[11px] font-bold border border-emerald-200">
-                      PG Batch: {selectedProfile.pgBatchYear} ({selectedProfile.pgDegree || "MD"})
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
+        const teacherList = (selectedProfile.teacherAlumniIds || [])
+          .map((id) => alumniList.find((a) => a.id === id))
+          .filter(Boolean) as AlumniProfile[];
 
-            <div className="space-y-3 text-xs text-slate-600 border-t border-b border-slate-100 py-4 mb-6">
-              <div>
-                <strong className="text-slate-800">Job Type:</strong> {selectedProfile.jobType}
-              </div>
-              <div>
-                <strong className="text-slate-800">Designation & Workplace:</strong> {selectedProfile.designation} at {selectedProfile.workplace}
-              </div>
-              <div>
-                <strong className="text-slate-800">Specialization:</strong> {selectedProfile.specialization}
-              </div>
-              <div>
-                <strong className="text-slate-800">City & State:</strong> {selectedProfile.city}, {selectedProfile.state}
-              </div>
-              {selectedProfile.address && (
-                <div>
-                  <strong className="text-slate-800">Address:</strong> {selectedProfile.address}
-                </div>
-              )}
-              {selectedProfile.dateOfBirth && (
-                <div className="flex items-center gap-1.5 text-amber-800">
-                  <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
-                  <span><strong>Date of Birth:</strong> {selectedProfile.dateOfBirth}</span>
-                </div>
-              )}
-              {selectedProfile.bio && (
-                <div>
-                  <strong className="text-slate-800">Biography:</strong>
-                  <p className="mt-1 italic leading-relaxed text-slate-500">{selectedProfile.bio}</p>
-                </div>
-              )}
-            </div>
+        const familyList = (selectedProfile.familyAlumniRelations || [])
+          .map((rel) => {
+            const person = alumniList.find((a) => a.id === rel.relatedAlumniId);
+            return person ? { ...rel, person } : null;
+          })
+          .filter(Boolean) as { relatedAlumniId: string; relationType: string; person: AlumniProfile }[];
 
-            <div className="flex flex-col sm:flex-row items-center gap-3">
-              {currentUser && selectedProfile.id !== currentUser.id && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    toggleAlumniConnection(currentUser.id, selectedProfile.id);
-                    const freshList = getAlumniList();
-                    setAlumniList(freshList);
-                    const freshProfile = freshList.find((a) => a.id === selectedProfile.id);
-                    if (freshProfile) setSelectedProfile(freshProfile);
-                    setCurrentUser(getLoggedInAlumni());
-                  }}
-                  className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
-                    (selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
-                      ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
-                      : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
-                  }`}
-                >
-                  <Users2 className="w-4 h-4" />
-                  <span>
-                    {(selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
-                      ? "Connected ✓"
-                      : "Connect"}
-                  </span>
-                </button>
-              )}
-              {!currentUser && (
-                <button
-                  type="button"
-                  onClick={() => router.push("/login?redirect=/directory")}
-                  className="w-full sm:flex-1 py-3 text-center rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-                >
-                  <Users2 className="w-4 h-4 text-[#C5A059]" />
-                  <span>Login to Connect</span>
-                </button>
-              )}
-              {selectedProfile.whatsappNumber && (
-                <a
-                  href={`https://wa.me/${selectedProfile.whatsappNumber}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs"
-                >
-                  WhatsApp Connect
-                </a>
-              )}
+        const getFamilyRelationLabel = (rel: string) => {
+          switch (rel) {
+            case "Spouse": return "Spouse (पति / पत्नी)";
+            case "Brother": return "Brother (भाई)";
+            case "Sister": return "Sister (बहन)";
+            case "Father": return "Father (पिताजी)";
+            case "Mother": return "Mother (माताजी)";
+            case "Son": return "Son (पुत्र)";
+            case "Daughter": return "Daughter (पुत्री)";
+            default: return "Family Relative (रिश्तेदार)";
+          }
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/65 backdrop-blur-sm animate-in fade-in">
+            <div className="relative w-full max-w-2xl bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-[#C5A059]/40 max-h-[90vh] overflow-y-auto">
               <button
                 onClick={() => setSelectedProfile(null)}
-                className="w-full sm:w-28 py-3 text-center rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider hover:bg-slate-200 transition-colors"
+                className="absolute top-5 right-5 p-2 rounded-full text-slate-400 hover:text-slate-600 bg-slate-100 transition-colors"
+                title="Close"
               >
-                Close
+                <X className="w-5 h-5" />
               </button>
+
+              {/* Profile Card Top Section */}
+              <div className="flex flex-col sm:flex-row items-start gap-4 mb-6 pr-8">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl overflow-hidden border-2 border-[#C5A059] bg-slate-100 flex-shrink-0 shadow-md">
+                  <img
+                    src={selectedProfile.avatarUrl}
+                    alt={selectedProfile.fullName}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+                <div>
+                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#C5A059] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 mb-1">
+                    {selectedProfile.membershipTier} • Verified
+                  </span>
+                  <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A] leading-tight">
+                    {selectedProfile.fullName}
+                  </h3>
+                  {selectedProfile.fullNameHindi && (
+                    <p className="text-xs sm:text-sm text-[#C5A059] font-semibold mt-0.5">
+                      {selectedProfile.fullNameHindi}
+                    </p>
+                  )}
+                  
+                  {/* UG / PG badges in modal */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {selectedProfile.ugBatchYear && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[11px] font-bold border border-amber-300">
+                        UG Batch: {selectedProfile.ugBatchYear} ({selectedProfile.ugDegree || "BAMS"})
+                      </span>
+                    )}
+                    {selectedProfile.pgBatchYear && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-[#2D5A43] text-[11px] font-bold border border-emerald-200">
+                        PG Batch: {selectedProfile.pgBatchYear} ({selectedProfile.pgDegree || "MD"})
+                      </span>
+                    )}
+                    {selectedProfile.specialization && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-medium border border-slate-200">
+                        {selectedProfile.specialization}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              {/* Navigation Tabs in Modal */}
+              <div className="flex items-center gap-1.5 border-b border-slate-200 pb-2 mb-5 overflow-x-auto scrollbar-none text-xs font-bold uppercase tracking-wider">
+                <button
+                  type="button"
+                  onClick={() => setModalTab("info")}
+                  className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap ${
+                    modalTab === "info" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  Overview
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab("connections")}
+                  className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    modalTab === "connections" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Users2 className="w-3.5 h-3.5" />
+                  <span>Connections ({connectedList.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab("teachers")}
+                  className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    modalTab === "teachers" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <GraduationCap className="w-3.5 h-3.5" />
+                  <span>Teachers ({teacherList.length})</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalTab("family")}
+                  className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                    modalTab === "family" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-slate-600 hover:bg-slate-100"
+                  }`}
+                >
+                  <Heart className="w-3.5 h-3.5 text-rose-500" />
+                  <span>Family ({familyList.length})</span>
+                </button>
+                {(selectedProfile.diseaseSpecialty || selectedProfile.acceptingShishya) && (
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("specialty")}
+                    className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                      modalTab === "specialty" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>Specialty & Shishya</span>
+                  </button>
+                )}
+                {selectedProfile.workHistory && selectedProfile.workHistory.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("work")}
+                    className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                      modalTab === "work" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-slate-600 hover:bg-slate-100"
+                    }`}
+                  >
+                    <Briefcase className="w-3.5 h-3.5" />
+                    <span>Timeline ({selectedProfile.workHistory.length})</span>
+                  </button>
+                )}
+              </div>
+
+              {/* TAB 1: OVERVIEW */}
+              {modalTab === "info" && (
+                <div className="space-y-3.5 text-xs text-slate-600 mb-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-4 rounded-2xl bg-[#FAF7F2] border border-slate-200">
+                    <div>
+                      <strong className="text-slate-800 block text-[11px] uppercase font-bold">Job Type</strong>
+                      <span>{selectedProfile.jobType}</span>
+                    </div>
+                    <div>
+                      <strong className="text-slate-800 block text-[11px] uppercase font-bold">Designation & Workplace</strong>
+                      <span>{selectedProfile.designation} at {selectedProfile.workplace}</span>
+                    </div>
+                    <div>
+                      <strong className="text-slate-800 block text-[11px] uppercase font-bold">Location</strong>
+                      <span>{selectedProfile.city}, {selectedProfile.state}</span>
+                    </div>
+                    {selectedProfile.bloodGroup && (
+                      <div>
+                        <strong className="text-slate-800 block text-[11px] uppercase font-bold">Blood Group</strong>
+                        <span className="font-bold text-rose-700">{selectedProfile.bloodGroup}</span>
+                      </div>
+                    )}
+                    {selectedProfile.dateOfBirth && (
+                      <div>
+                        <strong className="text-slate-800 block text-[11px] uppercase font-bold">Date of Birth</strong>
+                        <span className="flex items-center gap-1 text-amber-800 font-medium">
+                          <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
+                          {selectedProfile.dateOfBirth}
+                        </span>
+                      </div>
+                    )}
+                    {selectedProfile.address && (
+                      <div>
+                        <strong className="text-slate-800 block text-[11px] uppercase font-bold">Address</strong>
+                        <span>{selectedProfile.address}</span>
+                      </div>
+                    )}
+                  </div>
+
+                  {selectedProfile.bio && (
+                    <div className="p-4 rounded-2xl bg-white border border-slate-200">
+                      <strong className="text-slate-800 block text-xs font-bold mb-1">Biography / परिचय:</strong>
+                      <p className="italic leading-relaxed text-slate-600 font-light">{selectedProfile.bio}</p>
+                    </div>
+                  )}
+
+                  {/* Quick Network Summary Chips */}
+                  <div className="grid grid-cols-3 gap-2 pt-1 text-center">
+                    <button
+                      type="button"
+                      onClick={() => setModalTab("connections")}
+                      className="p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200 transition-colors"
+                    >
+                      <span className="font-bold text-sm text-[#0F172A] block">{connectedList.length}</span>
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold">Connections</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModalTab("teachers")}
+                      className="p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200 transition-colors"
+                    >
+                      <span className="font-bold text-sm text-[#0F172A] block">{teacherList.length}</span>
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold">Teachers</span>
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setModalTab("family")}
+                      className="p-3 rounded-xl bg-slate-50 hover:bg-amber-50/60 border border-slate-200 transition-colors"
+                    >
+                      <span className="font-bold text-sm text-rose-700 block">{familyList.length}</span>
+                      <span className="text-[10px] text-slate-500 uppercase font-semibold">Family</span>
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {/* TAB 2: CONNECTIONS */}
+              {modalTab === "connections" && (
+                <div className="mb-6">
+                  {!currentUser ? (
+                    <div className="p-6 rounded-2xl bg-amber-50/70 border border-[#C5A059]/40 text-center">
+                      <Lock className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
+                      <h4 className="font-bold text-sm text-[#0F172A] mb-1">लॉगिन आवश्यक है (Login Required)</h4>
+                      <p className="text-xs text-slate-600 mb-4 max-w-md mx-auto">
+                        पूर्व छात्रों के आपसी कनेक्शन्स व बैचमेट नेटवर्क देखने के लिए कृपया अपने एल्युमनाई खाते से लॉगिन करें।
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/login?redirect=/directory")}
+                        className="px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] shadow-md transition-colors"
+                      >
+                        Login to View Connections
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      {connectedList.length > 0 ? (
+                        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                          {connectedList.map((conn) => (
+                            <div
+                              key={conn.id}
+                              onClick={() => {
+                                setSelectedProfile(conn);
+                                setModalTab("info");
+                              }}
+                              className="p-3 rounded-2xl bg-[#FAF7F2] border border-slate-200 hover:border-[#C5A059] cursor-pointer flex items-center justify-between gap-3 group transition-all"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                  src={conn.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                                  alt={conn.fullName}
+                                  className="w-11 h-11 rounded-xl object-cover border border-slate-300 group-hover:border-[#C5A059] flex-shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <h5 className="font-bold text-sm text-[#0F172A] group-hover:text-[#2D5A43] truncate">
+                                    Dr. {conn.fullName} {conn.fullNameHindi && <span className="text-xs text-[#C5A059]">({conn.fullNameHindi})</span>}
+                                  </h5>
+                                  <p className="text-xs text-slate-500 truncate">
+                                    {conn.ugBatchYear ? `UG: ${conn.ugBatchYear}` : ""}{conn.pgBatchYear ? ` • PG: ${conn.pgBatchYear}` : ""} • {conn.city}
+                                  </p>
+                                  {conn.designation && (
+                                    <p className="text-[11px] text-slate-600 truncate">{conn.designation}</p>
+                                  )}
+                                </div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C5A059] group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 rounded-2xl bg-[#FAF7F2] border border-slate-200 text-center text-xs text-slate-500">
+                          <Users2 className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                          <span>इस पूर्व छात्र के अभी कोई सार्वजनिक कनेक्शन्स नहीं हैं।</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 3: TEACHERS */}
+              {modalTab === "teachers" && (
+                <div className="mb-6">
+                  {!currentUser ? (
+                    <div className="p-6 rounded-2xl bg-amber-50/70 border border-[#C5A059]/40 text-center">
+                      <Lock className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
+                      <h4 className="font-bold text-sm text-[#0F172A] mb-1">लॉगिन आवश्यक है (Login Required)</h4>
+                      <p className="text-xs text-slate-600 mb-4 max-w-md mx-auto">
+                        ऋषिकुल के पूज्य गुरुजन एवं प्रोफेसरों की सूची देखने के लिए कृपया लॉगिन करें।
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/login?redirect=/directory")}
+                        className="px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] shadow-md transition-colors"
+                      >
+                        Login to View Teachers
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      {teacherList.length > 0 ? (
+                        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                          {teacherList.map((teacher) => (
+                            <div
+                              key={teacher.id}
+                              onClick={() => {
+                                setSelectedProfile(teacher);
+                                setModalTab("info");
+                              }}
+                              className="p-3 rounded-2xl bg-amber-50/50 border border-amber-200/80 hover:border-[#C5A059] cursor-pointer flex items-center justify-between gap-3 group transition-all"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                  src={teacher.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                                  alt={teacher.fullName}
+                                  className="w-11 h-11 rounded-xl object-cover border border-[#C5A059] flex-shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <span className="text-[10px] font-bold uppercase text-[#C5A059] block">
+                                    पूज्य गुरुजन • Revered Faculty
+                                  </span>
+                                  <h5 className="font-bold text-sm text-[#0F172A] group-hover:text-[#2D5A43] truncate">
+                                    Vaidya Dr. {teacher.fullName}
+                                  </h5>
+                                  <p className="text-xs text-slate-600 truncate font-medium">
+                                    {teacher.designation} • {teacher.workplace}
+                                  </p>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-[#C5A059] group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 rounded-2xl bg-[#FAF7F2] border border-slate-200 text-center text-xs text-slate-500">
+                          <GraduationCap className="w-8 h-8 text-slate-400 mx-auto mb-2" />
+                          <span>अभी इस प्रोफाइल पर किसी गुरुजन को अंकित नहीं किया गया है।</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 4: FAMILY */}
+              {modalTab === "family" && (
+                <div className="mb-6">
+                  {!currentUser ? (
+                    <div className="p-6 rounded-2xl bg-amber-50/70 border border-[#C5A059]/40 text-center">
+                      <Lock className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
+                      <h4 className="font-bold text-sm text-[#0F172A] mb-1">लॉगिन आवश्यक है (Login Required)</h4>
+                      <p className="text-xs text-slate-600 mb-4 max-w-md mx-auto">
+                        ऋषिकुल परिवार के पूर्व छात्र सदस्यों (पति/पत्नी, भाई, माता-पिता, संतान) के संबंध देखने हेतु कृपया लॉगिन करें।
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => router.push("/login?redirect=/directory")}
+                        className="px-5 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] shadow-md transition-colors"
+                      >
+                        Login to View Family
+                      </button>
+                    </div>
+                  ) : (
+                    <div>
+                      {familyList.length > 0 ? (
+                        <div className="space-y-2.5 max-h-72 overflow-y-auto pr-1">
+                          {familyList.map((rel, idx) => (
+                            <div
+                              key={idx}
+                              onClick={() => {
+                                setSelectedProfile(rel.person);
+                                setModalTab("info");
+                              }}
+                              className="p-3 rounded-2xl bg-rose-50/40 border border-rose-200 hover:border-rose-400 cursor-pointer flex items-center justify-between gap-3 group transition-all"
+                            >
+                              <div className="flex items-center gap-3 min-w-0">
+                                <img
+                                  src={rel.person.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                                  alt={rel.person.fullName}
+                                  className="w-11 h-11 rounded-xl object-cover border border-rose-300 flex-shrink-0"
+                                />
+                                <div className="min-w-0">
+                                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800 inline-block mb-0.5">
+                                    {getFamilyRelationLabel(rel.relationType)}
+                                  </span>
+                                  <h5 className="font-bold text-sm text-[#0F172A] group-hover:text-[#2D5A43] truncate">
+                                    Dr. {rel.person.fullName}
+                                  </h5>
+                                  <p className="text-xs text-slate-500 truncate">
+                                    {rel.person.ugBatchYear ? `UG:${rel.person.ugBatchYear}` : `PG:${rel.person.pgBatchYear}`} • {rel.person.city}
+                                  </p>
+                                </div>
+                              </div>
+                              <ChevronRight className="w-4 h-4 text-slate-400 group-hover:text-rose-600 group-hover:translate-x-0.5 transition-all flex-shrink-0" />
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="p-8 rounded-2xl bg-[#FAF7F2] border border-slate-200 text-center text-xs text-slate-500">
+                          <Heart className="w-8 h-8 text-rose-400 mx-auto mb-2" />
+                          <span>अभी इस प्रोफाइल पर परिवार का कोई पूर्व छात्र सदस्य लिंक नहीं है।</span>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 5: SPECIALTY & SHISHYA */}
+              {modalTab === "specialty" && (
+                <div className="space-y-4 text-xs text-slate-600 mb-6">
+                  {selectedProfile.diseaseSpecialty && (
+                    <div className="p-4 rounded-2xl bg-amber-50/70 border border-amber-300">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-amber-900 block mb-1">
+                        Ayurveda Clinical Specialty (रोग विशेषता)
+                      </span>
+                      <h4 className="font-serif-heading text-lg font-bold text-[#0F172A] mb-2">
+                        {selectedProfile.diseaseSpecialty}
+                      </h4>
+                      {selectedProfile.specialtyDescription && (
+                        <p className="leading-relaxed text-slate-700 italic font-light">
+                          "{selectedProfile.specialtyDescription}"
+                        </p>
+                      )}
+                    </div>
+                  )}
+
+                  {selectedProfile.acceptingShishya && (
+                    <div className="p-5 rounded-2xl bg-gradient-to-br from-amber-50 to-orange-50 border-2 border-[#C5A059] shadow-sm">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-5 h-5 text-[#C5A059]" />
+                        <h4 className="font-bold text-sm text-[#0F172A]">
+                          गुरु-शिष्य परंपरा • Accepting Shishya (शिष्य स्वीकार्य)
+                        </h4>
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed mb-3">
+                        यह वैद्य अपनी क्लिनिकल विशेषता को इच्छुक युवा चिकित्सकों व इंटर्न्स को सिखाने के लिए तैयार हैं।
+                      </p>
+                      {selectedProfile.shishyaRequirement && (
+                        <div className="p-3 bg-white/80 rounded-xl border border-amber-200 mb-3 text-slate-700">
+                          <strong className="block text-[11px] font-bold text-amber-950 mb-0.5">
+                            शिष्य हेतु नियम व मार्गदर्शन:
+                          </strong>
+                          <span>{selectedProfile.shishyaRequirement}</span>
+                        </div>
+                      )}
+                      {selectedProfile.whatsappNumber && (
+                        <a
+                          href={`https://wa.me/${selectedProfile.whatsappNumber}?text=${encodeURIComponent(`सादर प्रणाम वैद्य जी, मैंने ऋषिकुल एल्युमनाई पोर्टल पर आपकी विशेषज्ञता देखी और आपके मार्गदर्शन में शिष्य रूप में आयुर्वेद सीखना चाहता हूँ।`)}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 text-white font-bold text-xs uppercase hover:bg-emerald-700 transition-colors shadow-xs"
+                        >
+                          <span>Connect as Shishya on WhatsApp</span>
+                          <ExternalLink className="w-3.5 h-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  )}
+                </div>
+              )}
+
+              {/* TAB 6: CAREER TIMELINE */}
+              {modalTab === "work" && selectedProfile.workHistory && (
+                <div className="space-y-3 mb-6 max-h-72 overflow-y-auto pr-1">
+                  {selectedProfile.workHistory.map((work) => (
+                    <div
+                      key={work.id}
+                      className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-slate-200 flex items-start gap-3"
+                    >
+                      <div className="w-9 h-9 rounded-xl bg-[#0F172A] text-[#C5A059] flex items-center justify-center font-bold flex-shrink-0">
+                        <Building className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h5 className="font-bold text-sm text-[#0F172A]">{work.designation}</h5>
+                        <p className="text-xs font-semibold text-[#2D5A43]">{work.institution}</p>
+                        <p className="text-[11px] text-slate-500 mt-0.5">
+                          {work.fromYear} – {work.toYear} • {work.location}
+                        </p>
+                        {work.description && (
+                          <p className="text-xs text-slate-600 mt-1 italic font-light">
+                            "{work.description}"
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Modal Bottom Actions */}
+              <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-100">
+                {currentUser && selectedProfile.id !== currentUser.id && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      toggleAlumniConnection(currentUser.id, selectedProfile.id);
+                      const freshList = getAlumniList();
+                      setAlumniList(freshList);
+                      const freshProfile = freshList.find((a) => a.id === selectedProfile.id);
+                      if (freshProfile) setSelectedProfile(freshProfile);
+                      setCurrentUser(getLoggedInAlumni());
+                    }}
+                    className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
+                      (selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
+                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                        : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
+                    }`}
+                  >
+                    <Users2 className="w-4 h-4" />
+                    <span>
+                      {(selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
+                        ? "Connected ✓"
+                        : "Connect"}
+                    </span>
+                  </button>
+                )}
+                {!currentUser && (
+                  <button
+                    type="button"
+                    onClick={() => router.push("/login?redirect=/directory")}
+                    className="w-full sm:flex-1 py-3 text-center rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                  >
+                    <Users2 className="w-4 h-4 text-[#C5A059]" />
+                    <span>Login to Connect</span>
+                  </button>
+                )}
+                {selectedProfile.whatsappNumber && (
+                  <a
+                    href={`https://wa.me/${selectedProfile.whatsappNumber}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs"
+                  >
+                    WhatsApp Connect
+                  </a>
+                )}
+                <button
+                  onClick={() => setSelectedProfile(null)}
+                  className="w-full sm:w-28 py-3 text-center rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider hover:bg-slate-200 transition-colors"
+                >
+                  Close
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        );
+      })()}
     </div>
   );
 }
