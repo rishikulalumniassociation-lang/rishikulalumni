@@ -18,6 +18,7 @@ import {
   Star,
   Check,
   AlertTriangle,
+  AlertCircle,
   Key,
   KeyRound,
   Lock,
@@ -62,6 +63,9 @@ export default function AdminDashboardPage() {
   // Password reset execution modal
   const [activeResetModalReq, setActiveResetModalReq] = useState<PasswordResetRequest | null>(null);
   const [newPasswordToAssign, setNewPasswordToAssign] = useState("rishikul2026");
+
+  // Reject candidate confirmation modal
+  const [rejectCandidate, setRejectCandidate] = useState<AlumniProfile | null>(null);
 
   // Modals for creating new Achiever & Shradhanjali
   const [showAchieverModal, setShowAchieverModal] = useState(false);
@@ -125,6 +129,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleRejectAlumni = (id: string) => {
+    const candidate = alumniList.find((a) => a.id === id);
     const updated = alumniList.map((a) => {
       if (a.id === id) {
         return {
@@ -137,6 +142,9 @@ export default function AdminDashboardPage() {
     });
     setAlumniList(updated);
     saveAlumniList(updated);
+    if (candidate) {
+      alert(`Dr. ${candidate.fullName} का रजिस्ट्रेशन अस्वीकार (Reject) कर दिया गया है।`);
+    }
   };
 
   const handleChangeTier = (id: string, newTier: MembershipTier) => {
@@ -260,7 +268,7 @@ export default function AdminDashboardPage() {
     router.push("/admin/login");
   };
 
-  const pendingAlumni = alumniList.filter((a) => (a.approvalStatus === "pending" || !a.isVerified) && !a.isDeceased);
+  const pendingAlumni = alumniList.filter((a) => a.approvalStatus === "pending" && !a.isDeceased);
   const pendingPasswordResets = resetRequests.filter((r) => r.status === "pending");
   const patronMembers = alumniList.filter((a) => a.membershipTier === "Patron Member" && !a.isDeceased);
 
@@ -444,9 +452,9 @@ export default function AdminDashboardPage() {
                         Approve (Patron)
                       </button>
                       <button
-                        onClick={() => handleRejectAlumni(alumnus.id)}
-                        className="p-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 transition-colors"
-                        title="Reject Registration"
+                        onClick={() => setRejectCandidate(alumnus)}
+                        className="p-2 rounded-xl bg-red-100 text-red-700 hover:bg-red-200 transition-colors shadow-xs"
+                        title="Reject Registration (अस्वीकार करें)"
                       >
                         <XCircle className="w-5 h-5" />
                       </button>
@@ -1050,6 +1058,76 @@ export default function AdminDashboardPage() {
                 <button type="submit" className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase hover:bg-[#2D5A43]">Publish Tribute</button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* REJECT REGISTRATION CONFIRMATION POPUP MODAL */}
+      {rejectCandidate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
+          <div className="bg-white rounded-3xl p-6 sm:p-8 max-w-md w-full border-2 border-rose-200 shadow-2xl space-y-5 animate-in zoom-in-95">
+            <div className="flex items-center gap-3 text-rose-600">
+              <div className="w-12 h-12 rounded-2xl bg-rose-50 border border-rose-200 flex items-center justify-center shrink-0">
+                <AlertCircle className="w-6 h-6 text-rose-600" />
+              </div>
+              <div>
+                <h3 className="font-serif-heading text-lg font-bold text-[#0F172A]">
+                  Reject Registration
+                </h3>
+                <p className="text-xs text-slate-500">
+                  पंजीकरण अस्वीकार करने की पुष्टि करें
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-slate-200 space-y-2 text-xs">
+              <div className="flex items-center gap-2.5">
+                <img
+                  src={rejectCandidate.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                  alt={rejectCandidate.fullName}
+                  className="w-11 h-11 rounded-xl object-cover border border-slate-300 shrink-0"
+                />
+                <div>
+                  <div className="font-bold text-sm text-[#0F172A]">
+                    Dr. {rejectCandidate.fullName}
+                  </div>
+                  <div className="text-slate-500">
+                    Mobile: <span className="font-mono font-bold text-slate-800">{rejectCandidate.mobile}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="border-t border-slate-200 pt-2 text-slate-600 space-y-0.5">
+                <div><strong>Education:</strong> {rejectCandidate.rishikulEducation} {rejectCandidate.ugBatchYear ? `(UG: ${rejectCandidate.ugBatchYear})` : ""} {rejectCandidate.pgBatchYear ? `(PG: ${rejectCandidate.pgBatchYear})` : ""}</div>
+                <div><strong>Location:</strong> {rejectCandidate.city}, {rejectCandidate.state}</div>
+                <div><strong>Workplace:</strong> {rejectCandidate.designation}, {rejectCandidate.workplace}</div>
+              </div>
+            </div>
+
+            <p className="text-xs text-slate-600 leading-relaxed">
+              क्या आप वाकई <strong className="text-rose-700 font-bold">Dr. {rejectCandidate.fullName}</strong> का पंजीकरण अस्वीकार (Reject) करना चाहते हैं? अस्वीकार करने पर यह आवेदक पेंडिंग सूची से हट जाएगा और पोर्टल में लॉगिन नहीं कर सकेगा।
+            </p>
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setRejectCandidate(null)}
+                className="px-4 py-2.5 rounded-xl border border-slate-300 text-slate-700 text-xs font-bold uppercase hover:bg-slate-50 transition-colors"
+              >
+                Cancel (रद्द करें)
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  handleRejectAlumni(rejectCandidate.id);
+                  setRejectCandidate(null);
+                }}
+                className="px-5 py-2.5 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold uppercase tracking-wider transition-colors shadow-md flex items-center gap-1.5"
+              >
+                <XCircle className="w-4 h-4" />
+                <span>Yes, Reject (हाँ, अस्वीकार करें)</span>
+              </button>
+            </div>
           </div>
         </div>
       )}
