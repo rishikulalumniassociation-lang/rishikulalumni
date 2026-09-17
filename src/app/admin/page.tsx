@@ -22,11 +22,13 @@ import {
   KeyRound,
   Lock,
   GraduationCap,
-  Briefcase
+  Briefcase,
+  Flower
 } from "lucide-react";
 import {
   getAlumniList,
   saveAlumniList,
+  markAlumnusAsDeceased,
   getLifetimeAchievers,
   saveLifetimeAchievers,
   getShradhanjaliList,
@@ -51,6 +53,11 @@ export default function AdminDashboardPage() {
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
+
+  // Mark Expired / Deceased Modal State
+  const [activeDeceasedAlumnus, setActiveDeceasedAlumnus] = useState<AlumniProfile | null>(null);
+  const [demiseDateInput, setDemiseDateInput] = useState<string>("2026-03-01");
+  const [demiseTributeInput, setDemiseTributeInput] = useState<string>("");
 
   // Password reset execution modal
   const [activeResetModalReq, setActiveResetModalReq] = useState<PasswordResetRequest | null>(null);
@@ -100,7 +107,7 @@ export default function AdminDashboardPage() {
 
   if (!mounted) return null;
 
-  // 1. APPROVE ALUMNI WITH SPECIFIC MEMBERSHIP TIER (Non-Paid, Lifetime, Patron)
+  // 1. APPROVE ALUMNI WITH SPECIFIC MEMBERSHIP TIER
   const handleApproveAlumni = (id: string, tier: MembershipTier) => {
     const updated = alumniList.map((a) => {
       if (a.id === id) {
@@ -143,12 +150,22 @@ export default function AdminDashboardPage() {
     saveAlumniList(updated);
   };
 
-  // 2. RESOLVE PASSWORD RESET REQUEST (Admin changes password only when requested)
+  // 2. MARK ALUMNUS AS EXPIRED / DECEASED (Automatically adds to Shradhanjali)
+  const handleConfirmMarkExpired = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!activeDeceasedAlumnus) return;
+
+    markAlumnusAsDeceased(activeDeceasedAlumnus.id, demiseDateInput, demiseTributeInput);
+    loadAllData();
+    alert(`Dr. ${activeDeceasedAlumnus.fullName} has been marked as Expired. Their tribute is now live in the Shradhanjali Hall!`);
+    setActiveDeceasedAlumnus(null);
+  };
+
+  // 3. RESOLVE PASSWORD RESET REQUEST
   const handleExecutePasswordReset = (e: React.FormEvent) => {
     e.preventDefault();
     if (!activeResetModalReq || !newPasswordToAssign) return;
 
-    // Update alumnus password
     const updatedAlumni = alumniList.map((a) => {
       if (a.id === activeResetModalReq.alumniId || a.username === activeResetModalReq.username) {
         return {
@@ -161,7 +178,6 @@ export default function AdminDashboardPage() {
     setAlumniList(updatedAlumni);
     saveAlumniList(updatedAlumni);
 
-    // Mark reset request as resolved
     const updatedRequests = resetRequests.map((r) => {
       if (r.id === activeResetModalReq.id) {
         return {
@@ -244,12 +260,9 @@ export default function AdminDashboardPage() {
     router.push("/admin/login");
   };
 
-  // Pending approval alumni
-  const pendingAlumni = alumniList.filter((a) => a.approvalStatus === "pending" || !a.isVerified);
-  // Pending password requests
+  const pendingAlumni = alumniList.filter((a) => (a.approvalStatus === "pending" || !a.isVerified) && !a.isDeceased);
   const pendingPasswordResets = resetRequests.filter((r) => r.status === "pending");
-  // Patrons
-  const patronMembers = alumniList.filter((a) => a.membershipTier === "Patron Member");
+  const patronMembers = alumniList.filter((a) => a.membershipTier === "Patron Member" && !a.isDeceased);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-12">
@@ -265,7 +278,7 @@ export default function AdminDashboardPage() {
               Association Admin Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Approve pending alumni registrations, assign membership tiers (Non-Paid, Lifetime, Patron), manage password reset requests, and view all registered alumni.
+              Approve registrations, assign tiers, mark deceased alumni into Shradhanjali, and resolve password reset requests.
             </p>
           </div>
 
@@ -280,7 +293,7 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        {/* Top Counter Badges */}
+        {/* Counters */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
@@ -299,7 +312,7 @@ export default function AdminDashboardPage() {
             <div className="text-3xl font-serif-heading font-bold text-[#0F172A] mt-1">
               {alumniList.length}
             </div>
-            <span className="text-[11px] text-slate-500">In association database</span>
+            <span className="text-[11px] text-slate-500">In database</span>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
@@ -314,12 +327,12 @@ export default function AdminDashboardPage() {
 
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
-              Active Patrons
+              Shradhanjali Records
             </span>
-            <div className="text-3xl font-serif-heading font-bold text-[#C5A059] mt-1">
-              {patronMembers.length}
+            <div className="text-3xl font-serif-heading font-bold text-slate-800 mt-1">
+              {shradhanjaliList.length}
             </div>
-            <span className="text-[11px] text-slate-500">VIP Patron donors</span>
+            <span className="text-[11px] text-slate-500">Departed alumni tributes</span>
           </div>
         </div>
 
@@ -355,7 +368,7 @@ export default function AdminDashboardPage() {
               New Member Verification & Tier Assignment
             </h2>
             <p className="text-xs text-slate-500 mb-6">
-              Review basic data submitted by the alumnus. Choose and assign their official membership tier (Non-Paid, Lifetime, or Patron Member).
+              Review submitted data and assign official membership tier (Non-Paid, Lifetime, or Patron Member).
             </p>
 
             {pendingAlumni.length === 0 ? (
@@ -386,7 +399,6 @@ export default function AdminDashboardPage() {
                           </span>
                         </div>
 
-                        {/* UG / PG badges */}
                         <div className="flex flex-wrap gap-1.5 my-1">
                           {alumnus.ugBatchYear && (
                             <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-white border border-[#C5A059]/60 text-[#0F172A]">
@@ -412,7 +424,6 @@ export default function AdminDashboardPage() {
                       </div>
                     </div>
 
-                    {/* Admin Action: Assign Tier and Approve */}
                     <div className="flex flex-wrap items-center gap-2 flex-shrink-0">
                       <button
                         onClick={() => handleApproveAlumni(alumnus.id, "Non-Paid Member")}
@@ -447,7 +458,7 @@ export default function AdminDashboardPage() {
           </div>
         )}
 
-        {/* TAB 2: ALL REGISTERED ALUMNI LIST */}
+        {/* TAB 2: ALL REGISTERED ALUMNI LIST (With "Mark as Expired" option) */}
         {activeTab === "all_registered" && (
           <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
@@ -456,7 +467,7 @@ export default function AdminDashboardPage() {
                   Complete Registered Alumni Roster ({alumniList.length})
                 </h2>
                 <p className="text-xs text-slate-500">
-                  Full list of registered members. You can adjust their membership tiers or manage accounts.
+                  Manage memberships, adjust tiers, or mark alumni as expired upon demise (adds to Shradhanjali).
                 </p>
               </div>
 
@@ -477,25 +488,36 @@ export default function AdminDashboardPage() {
                 .map((a) => (
                   <div
                     key={a.id}
-                    className="p-4 rounded-2xl bg-[#FAF7F2] border border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs"
+                    className={`p-4 rounded-2xl border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+                      a.isDeceased
+                        ? "bg-slate-100 border-slate-300 opacity-80"
+                        : "bg-[#FAF7F2] border-slate-200"
+                    }`}
                   >
                     <div className="flex items-center gap-3">
                       <img
                         src={a.avatarUrl}
                         alt={a.fullName}
-                        className="w-12 h-12 rounded-xl object-cover border border-slate-300"
+                        className={`w-12 h-12 rounded-xl object-cover border ${a.isDeceased ? "grayscale" : ""}`}
                       />
                       <div>
                         <div className="flex items-center gap-2">
                           <span className="font-bold text-sm text-[#0F172A]">{a.fullName}</span>
                           <span className="font-mono text-[10px] text-slate-500">@{a.username}</span>
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              a.isVerified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
-                            }`}
-                          >
-                            {a.isVerified ? "Approved" : "Pending"}
-                          </span>
+                          
+                          {a.isDeceased ? (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-800 text-slate-200">
+                              स्वर्गवासी (Expired: {a.dateOfDemise})
+                            </span>
+                          ) : (
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                a.isVerified ? "bg-emerald-100 text-emerald-800" : "bg-amber-100 text-amber-800"
+                              }`}
+                            >
+                              {a.isVerified ? "Approved" : "Pending"}
+                            </span>
+                          )}
                         </div>
                         <div className="text-slate-600 mt-0.5">
                           {a.ugBatchYear ? `UG: ${a.ugBatchYear} ` : ""}
@@ -508,14 +530,31 @@ export default function AdminDashboardPage() {
                     <div className="flex items-center gap-2">
                       <select
                         value={a.membershipTier}
+                        disabled={a.isDeceased}
                         onChange={(e) => handleChangeTier(a.id, e.target.value as MembershipTier)}
-                        className="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none"
+                        className="bg-white border border-slate-300 rounded-xl px-2.5 py-1.5 text-xs font-semibold outline-none disabled:opacity-50"
                       >
                         <option value="Non-Paid Member">Non-Paid Member</option>
                         <option value="Life Member">Life Member</option>
                         <option value="Patron Member">Patron Member</option>
                         <option value="Annual Member">Annual Member</option>
                       </select>
+
+                      {/* MARK AS EXPIRED / DECEASED BUTTON */}
+                      {!a.isDeceased && (
+                        <button
+                          onClick={() => {
+                            setActiveDeceasedAlumnus(a);
+                            setDemiseDateInput(new Date().toISOString().split("T")[0]);
+                            setDemiseTributeInput(`श्रद्धेय डॉ. ${a.fullName} के असामयिक निधन पर ऋषिकुल पुरातन छात्र परिवार गहरा शोक व्यक्त करता है।`);
+                          }}
+                          className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 hover:bg-black text-[11px] font-bold uppercase transition-colors"
+                          title="Mark alumnus as Expired"
+                        >
+                          <Flower className="w-3.5 h-3.5 text-[#C5A059]" />
+                          Mark Expired
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -530,7 +569,7 @@ export default function AdminDashboardPage() {
               Alumni Password Reset Requests
             </h2>
             <p className="text-xs text-slate-500 mb-6">
-              सुरक्षा नियम: बिना अल्युम्नाई की आधिकारिक रिक्वेस्ट के पासवर्ड नहीं बदला जा सकता। जब कोई छात्र 'Forgot Password' सबमिट करता है, तभी यहाँ रिक्वेस्ट आती है।
+              बिना अल्युम्नाई की आधिकारिक रिक्वेस्ट के पासवर्ड नहीं बदला जा सकता। जब कोई छात्र 'Forgot Password' सबमिट करता है, तभी यहाँ रिक्वेस्ट आती है।
             </p>
 
             {resetRequests.length === 0 ? (
@@ -598,11 +637,7 @@ export default function AdminDashboardPage() {
             <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
               Patron Members Roster ({patronMembers.length})
             </h2>
-            <p className="text-xs text-slate-500 mb-6">
-              VIP Patrons who have contributed to the Rishikul Alumni Association corpus.
-            </p>
-
-            <div className="space-y-4">
+            <div className="space-y-4 mt-6">
               {patronMembers.map((patron) => (
                 <div
                   key={patron.id}
@@ -629,17 +664,15 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-2">
-                    <select
-                      value={patron.membershipTier}
-                      onChange={(e) => handleChangeTier(patron.id, e.target.value as MembershipTier)}
-                      className="text-xs bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-700 font-medium outline-none"
-                    >
-                      <option value="Patron Member">Patron Member</option>
-                      <option value="Life Member">Life Member</option>
-                      <option value="Non-Paid Member">Non-Paid Member</option>
-                    </select>
-                  </div>
+                  <select
+                    value={patron.membershipTier}
+                    onChange={(e) => handleChangeTier(patron.id, e.target.value as MembershipTier)}
+                    className="text-xs bg-white border border-slate-300 rounded-xl px-3 py-2 text-slate-700 font-medium outline-none"
+                  >
+                    <option value="Patron Member">Patron Member</option>
+                    <option value="Life Member">Life Member</option>
+                    <option value="Non-Paid Member">Non-Paid Member</option>
+                  </select>
                 </div>
               ))}
             </div>
@@ -720,10 +753,10 @@ export default function AdminDashboardPage() {
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
               <div>
                 <h2 className="font-serif-heading text-xl font-bold text-[#0F172A]">
-                  Shradhanjali (शोक श्रद्धांजलि) Memorials
+                  Shradhanjali (शोक श्रद्धांजलि) Memorials ({shradhanjaliList.length})
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
-                  Publish heartfelt memorials and condolences for departed vaidyas and batchmates.
+                  Memorials of departed vaidyas. (You can also mark any registered alumnus as expired from the 'All Registered Alumni' tab).
                 </p>
               </div>
 
@@ -785,6 +818,65 @@ export default function AdminDashboardPage() {
           </div>
         )}
       </div>
+
+      {/* Modal: MARK REGISTERED ALUMNUS AS EXPIRED / DECEASED */}
+      {activeDeceasedAlumnus && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in">
+          <div className="relative w-full max-w-md bg-white rounded-3xl p-6 sm:p-8 shadow-2xl border-2 border-red-400">
+            <h3 className="font-serif-heading text-2xl font-bold text-red-800 mb-1 flex items-center gap-2">
+              <Flower className="w-6 h-6 text-red-600" />
+              Mark Alumnus as Expired
+            </h3>
+            <p className="text-xs text-slate-500 mb-4">
+              Marking <strong>Dr. {activeDeceasedAlumnus.fullName}</strong> will automatically generate their tribute memorial in the Shradhanjali Hall and update their registration status to Expired.
+            </p>
+
+            <form onSubmit={handleConfirmMarkExpired} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  Date of Demise (स्वर्गवास तिथि) *
+                </label>
+                <input
+                  type="date"
+                  required
+                  value={demiseDateInput}
+                  onChange={(e) => setDemiseDateInput(e.target.value)}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-red-400"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  Shradhanjali Tribute Words *
+                </label>
+                <textarea
+                  rows={3}
+                  required
+                  value={demiseTributeInput}
+                  onChange={(e) => setDemiseTributeInput(e.target.value)}
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-xs outline-none focus:ring-2 focus:ring-red-400"
+                />
+              </div>
+
+              <div className="pt-2 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={() => setActiveDeceasedAlumnus(null)}
+                  className="px-4 py-2 text-xs font-bold uppercase text-slate-500"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-red-700 text-white text-xs font-bold uppercase tracking-wider hover:bg-red-800"
+                >
+                  Confirm & Move to Shradhanjali
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 
       {/* Modal: Admin Execute Password Reset */}
       {activeResetModalReq && (

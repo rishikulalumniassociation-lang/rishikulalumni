@@ -4,7 +4,7 @@ export type JobType = 'Private Practice' | 'Govt Job' | 'Retired' | 'Teaching / 
 
 export type MembershipTier = 'Non-Paid Member' | 'Life Member' | 'Patron Member' | 'Annual Member' | 'Student Member' | 'Honorary Fellow';
 
-export type ApprovalStatus = 'pending' | 'approved' | 'rejected';
+export type ApprovalStatus = 'pending' | 'approved' | 'rejected' | 'expired';
 
 export type Specialization = 
   | 'Kayachikitsa (Internal Medicine)'
@@ -22,12 +22,29 @@ export type Specialization =
   | 'Agada Tantra (Toxicology)'
   | 'General Ayurvedic Practice';
 
+export interface WorkExperience {
+  id: string;
+  institution: string; // Workplace / Hospital / Clinic
+  designation: string;
+  fromYear: string;
+  toYear: string; // or "Present"
+  location: string;
+  description?: string;
+}
+
+export type FamilyRelationType = 'Spouse' | 'Father' | 'Mother' | 'Brother' | 'Sister' | 'Son' | 'Daughter' | 'Relative';
+
+export interface AlumniFamilyRelation {
+  relatedAlumniId: string;
+  relationType: FamilyRelationType;
+}
+
 export interface AlumniProfile {
   id: string;
   fullName: string;
   fullNameHindi?: string;
   username: string; // for login
-  passwordHash?: string; // stored credentials
+  passwordHash?: string;
   email: string;
   mobile: string;
   whatsappNumber: string;
@@ -36,18 +53,18 @@ export interface AlumniProfile {
   
   // Education at Rishikul (UG / PG / BOTH)
   rishikulEducation: RishikulEducationType;
-  ugBatchYear?: number; // e.g. 1992
-  pgBatchYear?: number; // e.g. 1998
-  batchYear?: number; // fallback helper
-  ugDegree?: string; // e.g. BAMS
-  pgDegree?: string; // e.g. MD (Ayurveda), MS (Ayurveda)
-  degree?: string; // fallback helper
+  ugBatchYear?: number;
+  pgBatchYear?: number;
+  batchYear?: number; // helper
+  ugDegree?: string;
+  pgDegree?: string;
+  degree?: string; // helper
   specialization: Specialization;
   
   // Job & Professional Details
   jobType: JobType;
   designation: string;
-  workplace: string; // Institution / Hospital / Clinic name
+  workplace: string;
   
   // Address & Location
   city: string;
@@ -60,13 +77,23 @@ export interface AlumniProfile {
   achievements?: string[];
   bloodGroup?: string;
 
+  // Facebook-like Extended Profile Fields
+  workHistory?: WorkExperience[]; // work experiences from... to...
+  familyAlumniRelations?: AlumniFamilyRelation[]; // e.g. Wife, Son, Brother who are also alumni
+  teacherAlumniIds?: string[]; // teachers who taught them at Rishikul
+  connectedAlumniIds?: string[]; // batchmate / colleague friends
+
+  // Decease / Expired Tracking by Admin
+  isDeceased?: boolean;
+  dateOfDemise?: string; // YYYY-MM-DD
+  demiseTribute?: string;
+
   // Membership & Governance
   membershipId: string;
   membershipTier: MembershipTier;
   isVerified: boolean;
   approvalStatus: ApprovalStatus;
   joinedDate: string;
-  connectedAlumniIds?: string[];
 }
 
 export interface PasswordResetRequest {
@@ -106,6 +133,7 @@ export interface ShradhanjaliRecord {
   tribute: string;
   condolencesCount: number;
   postedBy?: string;
+  alumniId?: string; // linked if marked from registered list
 }
 
 export interface AssociationEvent {
