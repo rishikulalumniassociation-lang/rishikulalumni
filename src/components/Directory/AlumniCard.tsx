@@ -12,7 +12,8 @@ import {
   Share2,
   Users2,
   Cake,
-  Building
+  Building,
+  Medal
 } from "lucide-react";
 import { toggleAlumniConnection } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -141,6 +142,17 @@ export default function AlumniCard({
           {alumni.specialization && (
             <span className="inline-flex items-center text-[11px] font-medium px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43] line-clamp-1">
               PG: {alumni.specialization}
+            </span>
+          )}
+          {alumni.specialAchievements && alumni.specialAchievements.length > 0 && (
+            <span className="inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-md bg-amber-100 text-amber-900 border border-amber-300 shadow-xs">
+              <Medal className="w-3 h-3 text-amber-600" />
+              <span>
+                {alumni.specialAchievements[0].type.includes("Gold")
+                  ? "Gold Medalist"
+                  : alumni.specialAchievements[0].title}
+                {alumni.specialAchievements.length > 1 && ` (+${alumni.specialAchievements.length - 1})`}
+              </span>
             </span>
           )}
         </div>

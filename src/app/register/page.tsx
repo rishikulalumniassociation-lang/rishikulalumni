@@ -158,6 +158,7 @@ export default function RegisterPage() {
       joinedDate: new Date().toISOString().split("T")[0],
       bloodGroup: formData.bloodGroup,
       connectedAlumniIds: [],
+      specialAchievements: [],
     };
 
     const currentList = getAlumniList();

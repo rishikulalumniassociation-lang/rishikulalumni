@@ -39,6 +39,25 @@ export interface AlumniFamilyRelation {
   relationType: FamilyRelationType;
 }
 
+export type SpecialAchievementType = 
+  | 'Gold Medalist (UG)'
+  | 'Gold Medalist (PG)'
+  | 'Subject Topper / Merit'
+  | 'University Rank Holder'
+  | 'State / National Award'
+  | 'Research / Clinical Breakthrough'
+  | 'Other Special Honor';
+
+export interface SpecialAchievement {
+  id: string;
+  title: string; // e.g., "Gold Medalist in Dravyaguna (UG 2014)"
+  type: SpecialAchievementType;
+  subjectOrField?: string; // e.g., "Dravyaguna", "Shalya Tantra", "Overall Batch Topper"
+  year?: string; // e.g., "2014"
+  awardedBy?: string; // e.g., "Uttarakhand Ayurved University / HNBGU"
+  description?: string; // Optional description
+}
+
 export interface AlumniProfile {
   id: string;
   fullName: string;
@@ -82,6 +101,7 @@ export interface AlumniProfile {
   // Bio & Achievements
   bio?: string;
   achievements?: string[];
+  specialAchievements?: SpecialAchievement[]; // Gold medals, subject toppers, honors
   bloodGroup?: string;
 
   // Facebook-like Extended Profile Fields

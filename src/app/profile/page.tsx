@@ -23,18 +23,20 @@ import {
   Sparkles,
   Stethoscope,
   BookOpen,
-  LogOut
+  LogOut,
+  Medal,
+  Trophy
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
-import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType } from "@/types";
+import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType } from "@/types";
 import AlumniSearchSelect from "@/components/Common/AlumniSearchSelect";
 
 export default function AlumniProfilePage() {
   const router = useRouter();
   const [user, setUser] = useState<AlumniProfile | null>(null);
   const [allAlumni, setAllAlumni] = useState<AlumniProfile[]>([]);
-  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty">("work");
+  const [activeTab, setActiveTab] = useState<"about" | "work" | "family" | "teachers" | "friends" | "specialty" | "achievements">("achievements");
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // Editable fields
@@ -42,6 +44,24 @@ export default function AlumniProfilePage() {
   const [workHistory, setWorkHistory] = useState<WorkExperience[]>([]);
   const [familyRelations, setFamilyRelations] = useState<AlumniFamilyRelation[]>([]);
   const [teacherIds, setTeacherIds] = useState<string[]>([]);
+  const [specialAchievements, setSpecialAchievements] = useState<SpecialAchievement[]>([]);
+
+  // New Special Achievement item state
+  const [newAchievement, setNewAchievement] = useState<{
+    title: string;
+    type: SpecialAchievementType;
+    subjectOrField: string;
+    year: string;
+    awardedBy: string;
+    description: string;
+  }>({
+    title: "",
+    type: "Gold Medalist (UG)",
+    subjectOrField: "",
+    year: "",
+    awardedBy: "",
+    description: "",
+  });
 
   // New Work item state
   const [newWork, setNewWork] = useState<Partial<WorkExperience>>({
@@ -85,6 +105,7 @@ export default function AlumniProfilePage() {
     ]);
     setFamilyRelations(freshUser.familyAlumniRelations || []);
     setTeacherIds(freshUser.teacherAlumniIds || []);
+    setSpecialAchievements(freshUser.specialAchievements || []);
   }, [router]);
 
   if (!user) return null;
@@ -101,12 +122,48 @@ export default function AlumniProfilePage() {
       workHistory,
       familyAlumniRelations: familyRelations,
       teacherAlumniIds: teacherIds,
+      specialAchievements,
     };
     updateAlumniProfile(user.id, updates);
     setUser({ ...user, ...updates });
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);
     window.dispatchEvent(new Event("alumni_updated"));
+  };
+
+  const handleAddSpecialAchievement = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newAchievement.title.trim()) return;
+
+    const item: SpecialAchievement = {
+      id: `achieve-${Date.now()}`,
+      title: newAchievement.title.trim(),
+      type: newAchievement.type,
+      subjectOrField: newAchievement.subjectOrField.trim() || undefined,
+      year: newAchievement.year.trim() || undefined,
+      awardedBy: newAchievement.awardedBy.trim() || undefined,
+      description: newAchievement.description.trim() || undefined,
+    };
+
+    const updated = [item, ...specialAchievements];
+    setSpecialAchievements(updated);
+    setNewAchievement({
+      title: "",
+      type: "Gold Medalist (UG)",
+      subjectOrField: "",
+      year: "",
+      awardedBy: "",
+      description: "",
+    });
+    updateAlumniProfile(user.id, { specialAchievements: updated });
+    setUser({ ...user, specialAchievements: updated });
+  };
+
+  const handleDeleteSpecialAchievement = (id: string) => {
+    const updated = specialAchievements.filter((a) => a.id !== id);
+    setSpecialAchievements(updated);
+    updateAlumniProfile(user.id, { specialAchievements: updated });
+    setUser({ ...user, specialAchievements: updated });
   };
 
   const handleAddWork = (e: React.FormEvent) => {
@@ -232,6 +289,12 @@ export default function AlumniProfilePage() {
                       PG Specialization: {user.specialization}
                     </span>
                   )}
+                  {specialAchievements.length > 0 && (
+                    <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-500/15 text-amber-900 border border-amber-400 flex items-center gap-1 shadow-xs">
+                      <Medal className="w-3.5 h-3.5 text-amber-600" />
+                      {specialAchievements.length} Special Honor{specialAchievements.length > 1 ? "s" : ""}
+                    </span>
+                  )}
                 </div>
               </div>
 
@@ -268,6 +331,7 @@ export default function AlumniProfilePage() {
             {/* Navigation Tabs (Facebook-Style Profile Sections) */}
             <div className="flex items-center gap-2 overflow-x-auto pt-4 text-xs font-bold uppercase tracking-wider scrollbar-none">
               {[
+                { id: "achievements", label: `Special Honors & Gold Medals (${specialAchievements.length})`, icon: Medal },
                 { id: "work", label: "Work Timeline (कार्य अनुभव)", icon: Briefcase },
                 { id: "specialty", label: "Specialty & Shishya (विशेषज्ञता व शिष्य)", icon: Sparkles },
                 { id: "family", label: `Alumni Family (${familyRelations.length})`, icon: Heart },
@@ -291,6 +355,221 @@ export default function AlumniProfilePage() {
             </div>
           </div>
         </div>
+
+        {/* TAB: SPECIAL ACHIEVEMENTS (Gold Medals in UG/PG Subjects, Ranks & Honors) */}
+        {activeTab === "achievements" && (
+          <div className="space-y-6">
+            {/* Add New Special Achievement Card */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 shadow-sm">
+              <div className="border-b border-slate-100 pb-4 mb-6">
+                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-900 border border-amber-300 text-xs font-bold uppercase tracking-wider mb-2">
+                  <Medal className="w-3.5 h-3.5 text-amber-600" />
+                  Academic Excellence & Honors
+                </div>
+                <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A] flex items-center gap-2">
+                  <span>Special Achievements & Honors (विशिष्ट उपलब्धियां एवं पदक)</span>
+                </h3>
+                <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                  ऋषिकुल में अध्ययन (UG / PG) के दौरान किसी विशिष्ट विषय में प्राप्त <strong>स्वर्ण पदक (Gold Medal)</strong>, विश्वविद्यालय मेरिट, विषय टॉपर, राज्य/राष्ट्रीय पुरस्कार अथवा शोध उपलब्धि यहाँ दर्ज करें। यह आपकी प्रोफाइल और एल्युमनाई डायरेक्टरी में सभी को गौरवपूर्वक प्रदर्शित होगी।
+                </p>
+              </div>
+
+              <form onSubmit={handleAddSpecialAchievement} className="space-y-4">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      Achievement Type / उपलब्धि प्रकार *
+                    </label>
+                    <select
+                      value={newAchievement.type}
+                      onChange={(e) => setNewAchievement({ ...newAchievement, type: e.target.value as any })}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    >
+                      <option value="Gold Medalist (UG)">Gold Medalist (UG - BAMS)</option>
+                      <option value="Gold Medalist (PG)">Gold Medalist (PG - MD/MS)</option>
+                      <option value="Subject Topper / Merit">Subject Topper / Merit (विषय टॉपर)</option>
+                      <option value="University Rank Holder">University Rank Holder (विश्वविद्यालय रैंक)</option>
+                      <option value="State / National Award">State / National Award (राज्य/राष्ट्रीय सम्मान)</option>
+                      <option value="Research / Clinical Breakthrough">Research / Clinical Breakthrough (अनुसंधान/क्लिनिकल)</option>
+                      <option value="Other Special Honor">Other Special Honor (अन्य विशिष्ट सम्मान)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      Subject or Specific Field (विषय / क्षेत्र)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="उदा. द्रव्यगुण विज्ञान / शल्य तंत्र / BAMS Overall"
+                      value={newAchievement.subjectOrField}
+                      onChange={(e) => setNewAchievement({ ...newAchievement, subjectOrField: e.target.value })}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      Year / वर्ष
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="उदा. 2012 या 2018"
+                      value={newAchievement.year}
+                      onChange={(e) => setNewAchievement({ ...newAchievement, year: e.target.value })}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    />
+                  </div>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Achievement Title / उपाधि का शीर्षक *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="उदा. Gold Medal in Dravyaguna (UG Batch 2012) / University 1st Rank"
+                    value={newAchievement.title}
+                    onChange={(e) => setNewAchievement({ ...newAchievement, title: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                  {/* Quick suggestion tags */}
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    <span className="text-[11px] text-slate-400 self-center mr-1">त्वरित सुझाव:</span>
+                    {[
+                      "Gold Medalist in Dravyaguna (UG)",
+                      "Gold Medalist in Shalya Tantra (PG)",
+                      "Gold Medalist in Kayachikitsa",
+                      "University 1st Rank in Final BAMS",
+                      "Subject Topper in Rasa Shastra",
+                      "Best Clinical Thesis Award",
+                    ].map((sug) => (
+                      <button
+                        key={sug}
+                        type="button"
+                        onClick={() => setNewAchievement({ ...newAchievement, title: sug })}
+                        className="text-[11px] px-2 py-0.5 rounded-lg bg-slate-100 hover:bg-amber-100 text-slate-700 transition-colors"
+                      >
+                        + {sug}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      Awarded By / प्रदानकर्ता संस्था
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="उदा. Uttarakhand Ayurved University / HNB Garhwal University / आयुष मंत्रालय"
+                      value={newAchievement.awardedBy}
+                      onChange={(e) => setNewAchievement({ ...newAchievement, awardedBy: e.target.value })}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      Description / विवरण (वैकल्पिक)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="संक्षिप्त विवरण या प्रशस्ति..."
+                      value={newAchievement.description}
+                      onChange={(e) => setNewAchievement({ ...newAchievement, description: e.target.value })}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-end pt-2">
+                  <button
+                    type="submit"
+                    className="flex items-center gap-2 px-6 py-2.5 rounded-xl bg-[#0F172A] text-[#C5A059] text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] hover:text-white transition-all shadow-md active:scale-95"
+                  >
+                    <Plus className="w-4 h-4" />
+                    <span>Add Special Achievement</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+
+            {/* List of Special Achievements */}
+            <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 shadow-sm">
+              <h4 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-4 flex items-center gap-2">
+                <Trophy className="w-5 h-5 text-amber-600" />
+                <span>My Honors & Achievements ({specialAchievements.length})</span>
+              </h4>
+
+              {specialAchievements.length === 0 ? (
+                <div className="text-center py-12 text-slate-400 text-xs bg-[#FAF7F2] rounded-2xl border border-dashed border-slate-300 p-8">
+                  <Medal className="w-10 h-10 text-amber-500/40 mx-auto mb-2" />
+                  <p className="font-medium text-slate-600">अभी कोई विशेष उपलब्धि या पदक नहीं जोड़ा गया है।</p>
+                  <p className="text-slate-400 text-[11px] mt-1">
+                    यदि आपको UG/PG में गोल्ड मेडल, विषय मेरिट या अन्य पुरस्कार मिला है तो ऊपर दिए गए फॉर्म से जोड़ें।
+                  </p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {specialAchievements.map((item) => (
+                    <div
+                      key={item.id}
+                      className="p-5 rounded-2xl bg-gradient-to-br from-amber-50/70 via-white to-amber-100/30 border-2 border-amber-300/80 flex items-start justify-between gap-3 shadow-xs hover:border-amber-400 transition-all"
+                    >
+                      <div className="flex items-start gap-3.5">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-500 to-amber-600 text-white flex items-center justify-center font-bold shadow-md flex-shrink-0 mt-0.5">
+                          <Medal className="w-6 h-6" />
+                        </div>
+                        <div>
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span className="text-[10px] uppercase font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md border border-amber-300">
+                              {item.type}
+                            </span>
+                            {item.year && (
+                              <span className="text-[10px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                {item.year}
+                              </span>
+                            )}
+                          </div>
+                          <h5 className="font-serif-heading text-base font-bold text-[#0F172A] leading-snug">
+                            {item.title}
+                          </h5>
+                          {item.subjectOrField && (
+                            <p className="text-xs text-[#2D5A43] font-semibold mt-0.5">
+                              Subject/Field: {item.subjectOrField}
+                            </p>
+                          )}
+                          {item.awardedBy && (
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              Awarded by: {item.awardedBy}
+                            </p>
+                          )}
+                          {item.description && (
+                            <p className="text-xs text-slate-600 mt-1.5 italic font-light">
+                              "{item.description}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteSpecialAchievement(item.id)}
+                        className="p-1.5 text-red-500 hover:bg-red-50 rounded-lg transition-colors flex-shrink-0"
+                        title="हटाएं (Delete)"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        )}
 
         {/* TAB 1: WORK TIMELINE (Facebook-Style "Work Experience: From... To...") */}
         {activeTab === "work" && (

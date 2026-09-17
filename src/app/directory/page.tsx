@@ -28,6 +28,8 @@ import {
   Lock,
   ChevronRight,
   Stethoscope,
+  Medal,
+  Trophy
 } from "lucide-react";
 
 export default function DirectoryPage() {
@@ -36,7 +38,7 @@ export default function DirectoryPage() {
   const [filterDrawerOpen, setFilterDrawerOpen] = useState(false);
   const [selectedProfile, setSelectedProfile] = useState<AlumniProfile | null>(null);
   const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
-  const [modalTab, setModalTab] = useState<"info" | "connections" | "teachers" | "family" | "specialty" | "work">("info");
+  const [modalTab, setModalTab] = useState<"info" | "achievements" | "connections" | "teachers" | "family" | "specialty" | "work">("info");
 
   useEffect(() => {
     setAlumniList(getAlumniList());
@@ -429,6 +431,12 @@ export default function DirectoryPage() {
                         PG Specialization: {selectedProfile.specialization}
                       </span>
                     )}
+                    {selectedProfile.specialAchievements && selectedProfile.specialAchievements.length > 0 && (
+                      <span className="px-2.5 py-0.5 rounded-md bg-amber-100 text-amber-900 text-[11px] font-bold border border-amber-300 flex items-center gap-1 shadow-xs">
+                        <Medal className="w-3.5 h-3.5 text-amber-600" />
+                        {selectedProfile.specialAchievements.length} Special Honor{selectedProfile.specialAchievements.length > 1 ? "s" : ""}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -444,6 +452,18 @@ export default function DirectoryPage() {
                 >
                   Overview
                 </button>
+                {selectedProfile.specialAchievements && selectedProfile.specialAchievements.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setModalTab("achievements")}
+                    className={`px-3 py-1.5 rounded-xl transition-all whitespace-nowrap flex items-center gap-1.5 ${
+                      modalTab === "achievements" ? "bg-[#0F172A] text-[#C5A059] shadow-xs font-bold" : "text-amber-800 bg-amber-50/70 border border-amber-200 hover:bg-amber-100"
+                    }`}
+                  >
+                    <Medal className="w-3.5 h-3.5 text-amber-600" />
+                    <span>Honors & Medals ({selectedProfile.specialAchievements.length})</span>
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={() => setModalTab("connections")}
@@ -546,6 +566,34 @@ export default function DirectoryPage() {
                     </div>
                   )}
 
+                  {selectedProfile.specialAchievements && selectedProfile.specialAchievements.length > 0 && (
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-amber-50 via-white to-amber-100/40 border border-amber-300">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] uppercase font-bold text-amber-900 flex items-center gap-1.5">
+                          <Medal className="w-4 h-4 text-amber-600" />
+                          Academic Medals & Special Honors (विशिष्ट उपलब्धियां व पदक)
+                        </span>
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-200/80 text-amber-900">
+                          {selectedProfile.specialAchievements.length} Honors
+                        </span>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 mt-2">
+                        {selectedProfile.specialAchievements.map((item) => (
+                          <div key={item.id} className="p-2.5 rounded-xl bg-white border border-amber-200/80 shadow-xs flex items-start gap-2">
+                            <Medal className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                            <div>
+                              <div className="font-bold text-slate-900 text-xs">{item.title}</div>
+                              {item.subjectOrField && (
+                                <div className="text-[11px] text-[#2D5A43] font-semibold">Subject: {item.subjectOrField}</div>
+                              )}
+                              {item.year && <span className="text-[10px] text-slate-500">Year: {item.year}</span>}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
                   {/* Quick Network Summary Chips */}
                   <div className="grid grid-cols-3 gap-2 pt-1 text-center">
                     <button
@@ -573,6 +621,58 @@ export default function DirectoryPage() {
                       <span className="text-[10px] text-slate-500 uppercase font-semibold">Family</span>
                     </button>
                   </div>
+                </div>
+              )}
+
+              {/* TAB: ACHIEVEMENTS & MEDALS */}
+              {modalTab === "achievements" && (
+                <div className="mb-6 space-y-3 max-h-80 overflow-y-auto pr-1">
+                  {selectedProfile.specialAchievements && selectedProfile.specialAchievements.length > 0 ? (
+                    selectedProfile.specialAchievements.map((item) => (
+                      <div
+                        key={item.id}
+                        className="p-4 rounded-2xl bg-gradient-to-br from-amber-50/80 via-white to-amber-100/30 border-2 border-amber-300 shadow-xs flex items-start gap-3.5"
+                      >
+                        <div className="w-11 h-11 rounded-xl bg-amber-500 text-white flex items-center justify-center font-bold shrink-0 shadow-sm">
+                          <Medal className="w-6 h-6" />
+                        </div>
+                        <div className="flex-1">
+                          <div className="flex flex-wrap items-center gap-1.5 mb-1">
+                            <span className="text-[10px] uppercase font-bold text-amber-900 bg-amber-200/80 px-2 py-0.5 rounded-md border border-amber-300">
+                              {item.type}
+                            </span>
+                            {item.year && (
+                              <span className="text-[10px] font-bold text-slate-600 bg-white px-2 py-0.5 rounded-md border border-slate-200">
+                                {item.year}
+                              </span>
+                            )}
+                          </div>
+                          <h4 className="font-serif-heading text-base font-bold text-[#0F172A]">
+                            {item.title}
+                          </h4>
+                          {item.subjectOrField && (
+                            <p className="text-xs font-semibold text-[#2D5A43] mt-0.5">
+                              Subject / Field: {item.subjectOrField}
+                            </p>
+                          )}
+                          {item.awardedBy && (
+                            <p className="text-[11px] text-slate-500 mt-1">
+                              Awarded by: {item.awardedBy}
+                            </p>
+                          )}
+                          {item.description && (
+                            <p className="text-xs text-slate-600 mt-1.5 italic font-light">
+                              "{item.description}"
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-center py-10 text-slate-400 text-xs">
+                      कोई विशेष उपलब्धि उपलब्ध नहीं है।
+                    </div>
+                  )}
                 </div>
               )}
 

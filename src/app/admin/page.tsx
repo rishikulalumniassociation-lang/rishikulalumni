@@ -25,7 +25,8 @@ import {
   GraduationCap,
   Briefcase,
   Flower,
-  Trophy
+  Trophy,
+  Medal
 } from "lucide-react";
 import {
   getAlumniList,
@@ -755,6 +756,13 @@ export default function AdminDashboardPage() {
                               }`}
                             >
                               {a.isVerified ? "Approved" : "Pending"}
+                            </span>
+                          )}
+
+                          {a.specialAchievements && a.specialAchievements.length > 0 && (
+                            <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-900 border border-amber-300 flex items-center gap-1">
+                              <Medal className="w-3 h-3 text-amber-600" />
+                              {a.specialAchievements.length} Honor{a.specialAchievements.length > 1 ? "s" : ""}
                             </span>
                           )}
                         </div>
