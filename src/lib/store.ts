@@ -1,6 +1,6 @@
 "use client";
 
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest, CommunityAchievement, AssociationEvent } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, PasswordResetRequest, CommunityAchievement, AssociationEvent, AchieverNomination } from "@/types";
 import { MOCK_ALUMNI, INITIAL_ACHIEVERS, INITIAL_SHRADHANJALI, MOCK_EVENTS } from "./mockData";
 
 const STORAGE_KEYS = {
@@ -12,6 +12,7 @@ const STORAGE_KEYS = {
   LOGGED_IN_USER: "rishikul_logged_in_user_v5",
   COMMUNITY_ACHIEVEMENTS: "rishikul_community_achievements_v1",
   EVENTS: "rishikul_events_v2",
+  NOMINATIONS: "rishikul_achiever_nominations_v1",
 };
 
 export function getAlumniList(): AlumniProfile[] {
@@ -304,3 +305,77 @@ export function addEvent(event: Omit<AssociationEvent, "id" | "slug" | "attendee
   saveEvents([newEvent, ...list]);
   return newEvent;
 }
+
+export function getAchieverNominations(): AchieverNomination[] {
+  if (typeof window === "undefined") return [];
+  const stored = localStorage.getItem(STORAGE_KEYS.NOMINATIONS);
+  if (!stored) return [];
+  try {
+    return JSON.parse(stored);
+  } catch (e) {
+    return [];
+  }
+}
+
+export function saveAchieverNominations(list: AchieverNomination[]) {
+  if (typeof window === "undefined") return;
+  localStorage.setItem(STORAGE_KEYS.NOMINATIONS, JSON.stringify(list));
+  window.dispatchEvent(new Event("nominations_updated"));
+}
+
+export function submitAchieverNomination(nom: Omit<AchieverNomination, "id" | "submittedAt" | "status">): AchieverNomination {
+  const current = getAchieverNominations();
+  const newNom: AchieverNomination = {
+    ...nom,
+    id: `nom-${Date.now()}`,
+    submittedAt: new Date().toLocaleDateString("en-IN", {
+      day: "numeric",
+      month: "short",
+      year: "numeric"
+    }),
+    status: "pending",
+  };
+  saveAchieverNominations([newNom, ...current]);
+  return newNom;
+}
+
+export function approveAchieverNomination(nominationId: string, adminRemarks?: string) {
+  const nominations = getAchieverNominations();
+  const target = nominations.find((n) => n.id === nominationId);
+  if (!target) return;
+
+  // 1. Update nomination status to approved
+  const updatedNominations = nominations.map((n) =>
+    n.id === nominationId ? { ...n, status: "approved" as const, adminRemarks } : n
+  );
+  saveAchieverNominations(updatedNominations);
+
+  // 2. Automatically induct nominee into LifetimeAchiever list
+  const currentAchievers = getLifetimeAchievers();
+  const newAchiever: LifetimeAchiever = {
+    id: `achiever-${Date.now()}`,
+    name: target.nomineeName,
+    nameHindi: target.nomineeNameHindi,
+    batchYear: target.nomineeBatchYear || 1980,
+    degree: target.nomineeDegree || "BAMS",
+    photoUrl: target.nomineePhotoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=400&auto=format&fit=crop",
+    title: target.achievementTitle,
+    citation: target.citation,
+    awards: target.awards || [],
+    currentRole: target.nomineeWorkplace
+      ? `${target.nomineeWorkplace}${target.nomineeCity ? `, ${target.nomineeCity}` : ""}`
+      : "Distinguished Rishikul Alumnus",
+    orderIndex: currentAchievers.length + 1,
+  };
+  saveLifetimeAchievers([newAchiever, ...currentAchievers]);
+  window.dispatchEvent(new Event("achievers_updated"));
+}
+
+export function rejectAchieverNomination(nominationId: string, adminRemarks?: string) {
+  const nominations = getAchieverNominations();
+  const updatedNominations = nominations.map((n) =>
+    n.id === nominationId ? { ...n, status: "rejected" as const, adminRemarks } : n
+  );
+  saveAchieverNominations(updatedNominations);
+}
+

@@ -24,7 +24,8 @@ import {
   Lock,
   GraduationCap,
   Briefcase,
-  Flower
+  Flower,
+  Trophy
 } from "lucide-react";
 import {
   getAlumniList,
@@ -37,20 +38,26 @@ import {
   getPasswordResetRequests,
   savePasswordResetRequests,
   isAdminAuthenticated,
-  setAdminAuthenticated
+  setAdminAuthenticated,
+  getAchieverNominations,
+  approveAchieverNomination,
+  rejectAchieverNomination
 } from "@/lib/store";
-import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest } from "@/types";
+import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest, AchieverNomination } from "@/types";
 
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"approvals" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali">("approvals");
+  const [activeTab, setActiveTab] = useState<"approvals" | "nominations" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali">("approvals");
 
   // State
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
   const [resetRequests, setResetRequests] = useState<PasswordResetRequest[]>([]);
   const [achieversList, setAchieversList] = useState<LifetimeAchiever[]>([]);
   const [shradhanjaliList, setShradhanjaliList] = useState<ShradhanjaliRecord[]>([]);
+  const [nominationsList, setNominationsList] = useState<AchieverNomination[]>([]);
+  const [nominationFilter, setNominationFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
+  const [nominationSearch, setNominationSearch] = useState("");
 
   // Search filter
   const [searchQuery, setSearchQuery] = useState("");
@@ -100,6 +107,17 @@ export default function AdminDashboardPage() {
       return;
     }
     loadAllData();
+
+    const handleNomUpdate = () => {
+      setNominationsList(getAchieverNominations());
+      setAchieversList(getLifetimeAchievers());
+    };
+    window.addEventListener("nominations_updated", handleNomUpdate);
+    window.addEventListener("achievers_updated", handleNomUpdate);
+    return () => {
+      window.removeEventListener("nominations_updated", handleNomUpdate);
+      window.removeEventListener("achievers_updated", handleNomUpdate);
+    };
   }, [router]);
 
   const loadAllData = () => {
@@ -107,6 +125,21 @@ export default function AdminDashboardPage() {
     setResetRequests(getPasswordResetRequests());
     setAchieversList(getLifetimeAchievers());
     setShradhanjaliList(getShradhanjaliList());
+    setNominationsList(getAchieverNominations());
+  };
+
+  const handleApproveNomination = (nomId: string) => {
+    if (!confirm("क्या आप इस पूर्व छात्र का नामांकन स्वीकृत कर हॉल ऑफ फेम (Lifetime Achievers) में सम्मिलित करना चाहते हैं?")) return;
+    approveAchieverNomination(nomId);
+    setNominationsList(getAchieverNominations());
+    setAchieversList(getLifetimeAchievers());
+    alert("नामांकन सफलतापूर्वक स्वीकृत हो गया और पूर्व छात्र को 'हॉल ऑफ फेम' में जोड़ दिया गया है!");
+  };
+
+  const handleRejectNomination = (nomId: string) => {
+    if (!confirm("क्या आप इस नामांकन को अस्वीकार करना चाहते हैं?")) return;
+    rejectAchieverNomination(nomId);
+    setNominationsList(getAchieverNominations());
   };
 
   if (!mounted) return null;
@@ -272,6 +305,23 @@ export default function AdminDashboardPage() {
   const pendingPasswordResets = resetRequests.filter((r) => r.status === "pending");
   const patronMembers = alumniList.filter((a) => a.membershipTier === "Patron Member" && !a.isDeceased);
 
+  const pendingNominations = nominationsList.filter((n) => n.status === "pending");
+  const approvedNominations = nominationsList.filter((n) => n.status === "approved");
+  const rejectedNominations = nominationsList.filter((n) => n.status === "rejected");
+
+  const filteredNominations = nominationsList.filter((nom) => {
+    if (nominationFilter !== "all" && nom.status !== nominationFilter) return false;
+    if (!nominationSearch.trim()) return true;
+    const q = nominationSearch.toLowerCase().trim();
+    return (
+      nom.nomineeName.toLowerCase().includes(q) ||
+      (nom.nomineeNameHindi || "").toLowerCase().includes(q) ||
+      nom.achievementTitle.toLowerCase().includes(q) ||
+      nom.nominatorName.toLowerCase().includes(q) ||
+      (nom.nomineeCity || "").toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-12">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -286,7 +336,7 @@ export default function AdminDashboardPage() {
               Association Admin Dashboard
             </h1>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              Approve registrations, assign tiers, mark deceased alumni into Shradhanjali, and resolve password reset requests.
+              Approve registrations, review Hall of Fame nominations, assign tiers, mark deceased alumni into Shradhanjali, and resolve password reset requests.
             </p>
           </div>
 
@@ -302,7 +352,7 @@ export default function AdminDashboardPage() {
         </div>
 
         {/* Counters */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-2 lg:grid-cols-5 gap-4 mb-8">
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
             <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
               Pending Approvals
@@ -311,6 +361,16 @@ export default function AdminDashboardPage() {
               {pendingAlumni.length}
             </div>
             <span className="text-[11px] text-slate-500">New registration requests</span>
+          </div>
+
+          <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">
+              Achiever Nominations
+            </span>
+            <div className="text-3xl font-serif-heading font-bold text-[#C5A059] mt-1">
+              {pendingNominations.length}
+            </div>
+            <span className="text-[11px] text-slate-500">Pending review</span>
           </div>
 
           <div className="bg-white p-5 rounded-2xl border border-[#C5A059]/30 shadow-sm">
@@ -347,7 +407,8 @@ export default function AdminDashboardPage() {
         {/* Tab Navigation */}
         <div className="flex items-center gap-2 overflow-x-auto pb-2 mb-6 border-b border-slate-200">
           {[
-            { id: "approvals", label: `Pending Approvals (${pendingAlumni.length})`, icon: Users },
+            { id: "approvals", label: `Registration Approvals (${pendingAlumni.length})`, icon: Users },
+            { id: "nominations", label: `Achiever Nominations (${pendingNominations.length})`, icon: Trophy },
             { id: "all_registered", label: `All Registered Alumni (${alumniList.length})`, icon: Users },
             { id: "password_resets", label: `Password Resets (${pendingPasswordResets.length})`, icon: KeyRound },
             { id: "patrons", label: `Patron Roster (${patronMembers.length})`, icon: Star },
@@ -458,6 +519,176 @@ export default function AdminDashboardPage() {
                       >
                         <XCircle className="w-5 h-5" />
                       </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* TAB: ACHIEVER NOMINATIONS */}
+        {activeTab === "nominations" && (
+          <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm space-y-6">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+              <div>
+                <h2 className="font-serif-heading text-xl font-bold text-[#0F172A] flex items-center gap-2">
+                  <Trophy className="w-5 h-5 text-[#C5A059]" />
+                  <span>Hall of Fame Nominations (नामांकन समीक्षा)</span>
+                </h2>
+                <p className="text-xs text-slate-500 mt-0.5">
+                  Review recommendations submitted by alumni for the Lifetime Achievers Hall of Fame.
+                </p>
+              </div>
+
+              {/* Status Filter Chips */}
+              <div className="flex items-center gap-1.5 overflow-x-auto">
+                {[
+                  { id: "pending", label: `Pending (${pendingNominations.length})` },
+                  { id: "approved", label: `Approved (${approvedNominations.length})` },
+                  { id: "rejected", label: `Rejected (${rejectedNominations.length})` },
+                  { id: "all", label: `All (${nominationsList.length})` },
+                ].map(({ id, label }) => (
+                  <button
+                    key={id}
+                    type="button"
+                    onClick={() => setNominationFilter(id as any)}
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                      nominationFilter === id
+                        ? "bg-[#0F172A] text-[#C5A059] shadow-xs"
+                        : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                    }`}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Search Box */}
+            <div className="relative max-w-md">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                placeholder="Search by nominee doctor, nominator, or title..."
+                value={nominationSearch}
+                onChange={(e) => setNominationSearch(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 bg-[#FAF7F2] border border-slate-300 rounded-xl text-xs sm:text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+              />
+            </div>
+
+            {/* List of Nominations */}
+            {filteredNominations.length === 0 ? (
+              <div className="text-center py-12 text-slate-500 text-xs">
+                <Trophy className="w-8 h-8 text-slate-300 mx-auto mb-2" />
+                No nominations found matching current filter.
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {filteredNominations.map((nom) => (
+                  <div
+                    key={nom.id}
+                    className="p-5 sm:p-6 rounded-2xl bg-[#FAF7F2] border border-slate-300 space-y-4 shadow-xs"
+                  >
+                    {/* Header: Nominee & Status */}
+                    <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
+                      <div className="flex items-start gap-3.5">
+                        <img
+                          src={nom.nomineePhotoUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
+                          alt={nom.nomineeName}
+                          className="w-16 h-16 rounded-2xl object-cover border-2 border-[#C5A059]/40 shadow-xs flex-shrink-0"
+                        />
+                        <div>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <h4 className="font-serif-heading font-bold text-lg text-[#0F172A]">
+                              Dr. {nom.nomineeName}
+                            </h4>
+                            {nom.nomineeNameHindi && (
+                              <span className="text-xs text-slate-500">({nom.nomineeNameHindi})</span>
+                            )}
+                            <span className="text-[11px] font-bold px-2 py-0.5 rounded-md bg-[#2D5A43]/10 text-[#2D5A43]">
+                              Batch: {nom.nomineeBatchYear} • {nom.nomineeDegree}
+                            </span>
+                          </div>
+                          <p className="text-xs text-slate-600 mt-0.5">
+                            {nom.nomineeWorkplace} • {nom.nomineeCity}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Status Badge */}
+                      <div>
+                        {nom.status === "pending" && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-amber-100 text-amber-900 border border-amber-300">
+                            लंबित • Pending Review
+                          </span>
+                        )}
+                        {nom.status === "approved" && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-emerald-100 text-emerald-900 border border-emerald-300 flex items-center gap-1">
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            Approved & Inducted
+                          </span>
+                        )}
+                        {nom.status === "rejected" && (
+                          <span className="px-3 py-1 rounded-full text-xs font-bold uppercase bg-rose-100 text-rose-900 border border-rose-300 flex items-center gap-1">
+                            <XCircle className="w-3.5 h-3.5 text-rose-600" />
+                            Rejected
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Achievement Details */}
+                    <div className="p-4 bg-white rounded-xl border border-slate-200 space-y-2">
+                      <div className="text-xs font-bold text-[#2D5A43] uppercase tracking-wide">
+                        🏆 {nom.achievementTitle}
+                      </div>
+                      <p className="text-xs sm:text-sm text-slate-700 leading-relaxed italic">
+                        "{nom.citation}"
+                      </p>
+                      {nom.awards && nom.awards.length > 0 && (
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {nom.awards.map((aw, i) => (
+                            <span
+                              key={i}
+                              className="px-2 py-0.5 bg-amber-50 border border-amber-200 text-amber-900 rounded text-[11px] font-semibold"
+                            >
+                              ★ {aw}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Nominator Information & Actions */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs text-slate-500 pt-2 border-t border-slate-200">
+                      <div>
+                        प्रस्तावक (Nominated by): <strong className="text-slate-800">{nom.nominatorName}</strong>
+                        {nom.nominatorMobile && ` • 📞 ${nom.nominatorMobile}`}
+                        {nom.nominatorEmail && ` • ✉️ ${nom.nominatorEmail}`}
+                        {nom.nominatorBatchText && ` (${nom.nominatorBatchText})`}
+                        <span className="ml-2 text-slate-400">दिनांक: {nom.submittedAt}</span>
+                      </div>
+
+                      {/* Admin Actions */}
+                      {nom.status === "pending" && (
+                        <div className="flex items-center gap-2 shrink-0">
+                          <button
+                            type="button"
+                            onClick={() => handleApproveNomination(nom.id)}
+                            className="px-4 py-2 rounded-xl bg-emerald-700 text-white font-bold text-xs uppercase tracking-wider hover:bg-emerald-800 transition-colors shadow-xs"
+                          >
+                            Approve & Induct (हॉल ऑफ फेम में जोड़ें)
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => handleRejectNomination(nom.id)}
+                            className="px-3 py-2 rounded-xl bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 font-semibold text-xs uppercase transition-colors"
+                          >
+                            Reject (अस्वीकार)
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </div>
                 ))}

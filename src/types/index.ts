@@ -198,3 +198,30 @@ export interface CommunityAchievement {
   datePosted: string;
   likesCount?: number;
 }
+
+export interface AchieverNomination {
+  id: string;
+  nomineeAlumniId: string;
+  nomineeName: string;
+  nomineeNameHindi?: string;
+  nomineeDegree?: string;
+  nomineeBatchYear?: number;
+  nomineeWorkplace?: string;
+  nomineeCity?: string;
+  nomineePhotoUrl?: string;
+  
+  achievementTitle: string; // e.g. Padma Awardee, Eminent Director, etc.
+  citation: string;
+  awards?: string[];
+  
+  nominatorId?: string;
+  nominatorName: string;
+  nominatorEmail?: string;
+  nominatorMobile?: string;
+  nominatorBatchText?: string;
+  
+  submittedAt: string;
+  status: 'pending' | 'approved' | 'rejected';
+  adminRemarks?: string;
+}
+
