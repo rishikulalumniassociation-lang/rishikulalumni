@@ -377,6 +377,11 @@ export function setLoggedInAlumni(user: AlumniProfile | null) {
   if (typeof window === "undefined") return;
   if (user) {
     localStorage.setItem(SESSION_KEY, JSON.stringify(user));
+    // If admin is currently logged in, automatically log out admin when user logs in
+    if (localStorage.getItem(ADMIN_KEY)) {
+      localStorage.removeItem(ADMIN_KEY);
+      window.dispatchEvent(new Event("admin_auth_changed"));
+    }
   } else {
     localStorage.removeItem(SESSION_KEY);
   }
@@ -392,6 +397,11 @@ export function setAdminAuthenticated(val: boolean) {
   if (typeof window === "undefined") return;
   if (val) {
     localStorage.setItem(ADMIN_KEY, "true");
+    // If user is currently logged in, automatically log out user when admin logs in
+    if (localStorage.getItem(SESSION_KEY)) {
+      localStorage.removeItem(SESSION_KEY);
+      window.dispatchEvent(new Event("user_auth_changed"));
+    }
   } else {
     localStorage.removeItem(ADMIN_KEY);
   }
