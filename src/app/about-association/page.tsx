@@ -149,10 +149,17 @@ export default function AboutAssociationPage() {
                 </span>
                 <a
                   href="mailto:sudhakar01919@gmail.com"
-                  className="font-medium text-[#2D5A43] hover:text-[#0F172A] text-base hover:underline transition-colors flex items-center gap-2"
+                  className="font-medium text-[#2D5A43] hover:text-[#0F172A] text-sm hover:underline transition-colors flex items-center gap-2"
                 >
                   <Mail className="w-4 h-4 text-[#C5A059]" />
                   <span>sudhakar01919@gmail.com</span>
+                </a>
+                <a
+                  href="mailto:rishikulsesaharidwar@gmail.com"
+                  className="font-medium text-[#2D5A43] hover:text-[#0F172A] text-sm hover:underline transition-colors flex items-center gap-2"
+                >
+                  <Mail className="w-4 h-4 text-[#C5A059]" />
+                  <span>rishikulsesaharidwar@gmail.com</span>
                 </a>
               </div>
             </div>
@@ -347,6 +354,13 @@ export default function AboutAssociationPage() {
                 >
                   <Mail className="w-4 h-4 text-[#C5A059] shrink-0" />
                   <span>sudhakar01919@gmail.com</span>
+                </a>
+                <a
+                  href="mailto:rishikulsesaharidwar@gmail.com"
+                  className="text-white hover:text-amber-300 font-medium underline underline-offset-4 transition-colors flex items-center gap-2 break-all"
+                >
+                  <Mail className="w-4 h-4 text-[#C5A059] shrink-0" />
+                  <span>rishikulsesaharidwar@gmail.com</span>
                 </a>
               </div>
 

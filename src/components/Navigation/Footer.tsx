@@ -117,13 +117,20 @@ export default function Footer() {
             </div>
 
             {/* Email */}
-            <div className="text-xs text-slate-300 pt-1">
+            <div className="text-xs text-slate-300 pt-1 space-y-1">
               <a
                 href="mailto:sudhakar01919@gmail.com"
                 className="inline-flex items-center gap-1.5 text-amber-300 hover:text-white transition-colors break-all"
               >
                 <Mail className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
-                <span>Email - sudhakar01919@gmail.com</span>
+                <span>sudhakar01919@gmail.com</span>
+              </a>
+              <a
+                href="mailto:rishikulsesaharidwar@gmail.com"
+                className="inline-flex items-center gap-1.5 text-amber-300 hover:text-white transition-colors break-all"
+              >
+                <Mail className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                <span>rishikulsesaharidwar@gmail.com</span>
               </a>
             </div>
 
