@@ -263,18 +263,13 @@ export default function HomePage() {
           {todaysBirthdays.length > 0 ? (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {todaysBirthdays.map((alumnus) => {
-                const isSelf = Boolean(currentUser && currentUser.id === alumnus.id);
-                // Format DOB: show full YYYY-MM-DD only to self, show only Date & Month (e.g. 17 September) to others
+                // Format DOB: show only Date & Month (e.g. 17 Sep) to protect birth year privacy
                 let dobDisplay = "Today";
                 if (alumnus.dateOfBirth) {
-                  if (isSelf) {
-                    dobDisplay = alumnus.dateOfBirth;
-                  } else {
-                    const parts = alumnus.dateOfBirth.split("-");
-                    if (parts.length >= 3) {
-                      const dateObj = new Date(2000, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
-                      dobDisplay = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
-                    }
+                  const parts = alumnus.dateOfBirth.split("-");
+                  if (parts.length >= 3) {
+                    const dateObj = new Date(2000, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                    dobDisplay = dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
                   }
                 }
 

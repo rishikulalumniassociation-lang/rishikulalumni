@@ -212,7 +212,15 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
           <div className="relative z-10 pt-2 border-t border-white/15 flex items-center justify-between">
             <div className="text-[9px] text-slate-400">
               <p>Blood Group: <span className="text-white font-semibold">{alumni.bloodGroup || "O+"}</span></p>
-              <p>DOB: <span className="text-slate-200 font-medium">{alumni.dateOfBirth}</span></p>
+              <p>DOB: <span className="text-slate-200 font-medium">{(() => {
+                if (!alumni.dateOfBirth) return "—";
+                const parts = alumni.dateOfBirth.split("-");
+                if (parts.length >= 3) {
+                  const dateObj = new Date(2000, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                  return dateObj.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+                }
+                return alumni.dateOfBirth;
+              })()}</span></p>
             </div>
 
             <div className="flex items-center gap-2">
