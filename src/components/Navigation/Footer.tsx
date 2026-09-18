@@ -1,6 +1,6 @@
 import React from "react";
 import Link from "next/link";
-import { Mail, Phone, MapPin, Heart, Lock, Award, Cake, Users } from "lucide-react";
+import { Mail, Phone, Heart, Lock } from "lucide-react";
 
 export default function Footer() {
   return (
@@ -82,22 +82,51 @@ export default function Footer() {
             </ul>
           </div>
 
-          {/* Column 3: Association Secretariat & Admin */}
+          {/* Column 3: Contact Us & Admin */}
           <div className="space-y-3">
             <h4 className="font-serif-heading text-base font-semibold text-[#C5A059] mb-4 tracking-wider uppercase">
-              Secretariat
+              Contact Us
             </h4>
-            <div className="flex items-start gap-2.5 text-xs text-slate-300">
-              <MapPin className="w-4 h-4 text-[#C5A059] flex-shrink-0 mt-0.5" />
-              <span>
-                Association Office, Rishikul Campus,
-                Haridwar, Uttarakhand - 249401, India
-              </span>
+
+            {/* President */}
+            <div className="text-xs text-slate-300 space-y-0.5">
+              <p className="font-medium text-white">
+                Prof. (Dr.) Vineet Kumar Agnihotri, President
+              </p>
+              <a
+                href="tel:9897284154"
+                className="inline-flex items-center gap-1.5 text-amber-300 hover:text-white transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Mob - 9897284154</span>
+              </a>
             </div>
-            <div className="flex items-center gap-2.5 text-xs text-slate-300">
-              <Mail className="w-4 h-4 text-[#C5A059] flex-shrink-0" />
-              <span>contact@rishikulalumni.org</span>
+
+            {/* Secretary */}
+            <div className="text-xs text-slate-300 space-y-0.5 pt-1">
+              <p className="font-medium text-white">
+                Dr. Ved Bhushan Sharma, Secretary
+              </p>
+              <a
+                href="tel:9045951442"
+                className="inline-flex items-center gap-1.5 text-amber-300 hover:text-white transition-colors"
+              >
+                <Phone className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>Mob - 9045951442</span>
+              </a>
             </div>
+
+            {/* Email */}
+            <div className="text-xs text-slate-300 pt-1">
+              <a
+                href="mailto:sudhakar01919@gmail.com"
+                className="inline-flex items-center gap-1.5 text-amber-300 hover:text-white transition-colors break-all"
+              >
+                <Mail className="w-3.5 h-3.5 text-[#C5A059] shrink-0" />
+                <span>Email - sudhakar01919@gmail.com</span>
+              </a>
+            </div>
+
             <div className="pt-2">
               <Link
                 href="/admin/login"
