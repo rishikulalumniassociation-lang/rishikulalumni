@@ -60,8 +60,10 @@ export default function Navbar() {
     }
   };
 
+    const homeHref = loggedInUser && loggedInUser.approvalStatus === "approved" ? "/feed" : "/";
+
   const navLinks = [
-    { name: "Home", href: "/", icon: GraduationCap },
+    { name: "Home", href: homeHref, icon: GraduationCap },
     { name: "Directory", href: "/directory", icon: Users },
     { name: "Gallery / गैलरी", href: "/community", icon: Camera },
     { name: "Lifetime Member", href: "/membership/permanent", icon: Crown },
@@ -125,7 +127,7 @@ export default function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-20">
           {/* Logo & Brand Name: ऋषिकुल संगम */}
-          <Link href="/" className="flex items-center gap-2 sm:gap-3 group shrink-0 mr-1 sm:mr-2">
+          <Link href={homeHref} className="flex items-center gap-2 sm:gap-3 group shrink-0 mr-1 sm:mr-2">
             <div className="w-10 h-10 sm:w-13 sm:h-13 md:w-14 md:h-14 rounded-full border-2 border-[#C5A059] overflow-hidden shadow-md group-hover:scale-105 transition-transform shrink-0 bg-white">
               <img
                 src="/images/rishikul-sangam-logo.jpg"

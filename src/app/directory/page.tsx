@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useMemo } from "react";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import FilterDrawer from "@/components/Directory/FilterDrawer";
+import StaggerReveal from "@/components/Motion/StaggerReveal";
 import { SPECIALIZATION_OPTIONS, BATCH_YEARS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
 import { getAlumniList, getLoggedInAlumni, toggleAlumniConnection } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -384,7 +385,11 @@ export default function DirectoryPage() {
 
         {/* Directory Grid */}
         {filteredAlumni.length > 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <StaggerReveal
+            staggerMs={45}
+            durationMs={500}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
             {filteredAlumni.map((alumni) => (
               <AlumniCard
                 key={alumni.id}
@@ -398,7 +403,7 @@ export default function DirectoryPage() {
                 }}
               />
             ))}
-          </div>
+          </StaggerReveal>
         ) : (
           <div className="text-center py-20 px-4 bg-white rounded-3xl border border-[#C5A059]/30 max-w-md mx-auto my-8">
             <div className="w-16 h-16 rounded-full bg-[#FAF7F2] border border-[#C5A059] flex items-center justify-center mx-auto mb-4 text-[#C5A059]">

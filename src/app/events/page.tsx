@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { getEvents, addEvent, getLoggedInAlumni, isAdminAuthenticated } from "@/lib/store";
 import { AssociationEvent, AlumniProfile } from "@/types";
+import { StackingCardsContainer, StackingCardItem } from "@/components/Motion/StackingCards";
 import {
   Calendar,
   MapPin,
@@ -252,14 +253,20 @@ export default function EventsPage() {
             </p>
           </div>
         ) : (
-          <div className="space-y-10">
-            {filteredEvents.map((event) => {
+          <StackingCardsContainer className="space-y-6">
+            {filteredEvents.map((event, idx) => {
               const isRegistered = registeredEventIds.includes(event.id);
 
               return (
-                <div
+                <StackingCardItem
                   key={event.id}
-                  className="bg-white rounded-3xl overflow-hidden border-2 border-[#C5A059]/30 shadow-lg hover:shadow-xl transition-all grid grid-cols-1 lg:grid-cols-12"
+                  index={idx}
+                  totalCards={filteredEvents.length}
+                  topOffset={88}
+                  stepOffset={16}
+                >
+                <div
+                  className="bg-white rounded-3xl overflow-hidden border-2 border-[#C5A059]/30 shadow-xl hover:shadow-2xl transition-all grid grid-cols-1 lg:grid-cols-12"
                 >
                   {/* Left Media Banner */}
                   <div className="lg:col-span-5 relative min-h-[240px] lg:min-h-full bg-slate-900">
@@ -384,9 +391,10 @@ export default function EventsPage() {
                     </div>
                   </div>
                 </div>
+                </StackingCardItem>
               );
             })}
-          </div>
+          </StackingCardsContainer>
         )}
       </div>
 

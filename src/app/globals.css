@@ -8,6 +8,41 @@
   --color-sand: #F3ECE2;
   --color-charcoal: #1E293B;
   --color-muted-slate: #64748B;
+  
+  /* Motion & Animation Tokens */
+  --ease-editorial: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out-smooth: cubic-bezier(0.65, 0, 0.35, 1);
+  --duration-fast: 200ms;
+  --duration-normal: 400ms;
+  --duration-slow: 700ms;
+  --duration-cinematic: 1000ms;
+}
+
+/* Reduced motion preference */
+@media (prefers-reduced-motion: reduce) {
+  *, ::before, ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Stacking Card utilities */
+.stacking-card-sticky {
+  position: sticky;
+  transition: transform 0.4s var(--ease-editorial), box-shadow 0.4s var(--ease-editorial), opacity 0.4s var(--ease-editorial);
+  will-change: transform, opacity;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.transform-gpu {
+  transform: translate3d(0, 0, 0);
+  backface-visibility: hidden;
 }
 
 body {

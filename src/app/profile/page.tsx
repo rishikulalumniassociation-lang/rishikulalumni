@@ -435,12 +435,12 @@ export default function AlumniProfilePage() {
                 <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                   {user.ugBatchYear && (
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
-                      UG: {user.ugBatchYear}{user.ugPassoutYear || (user.ugBatchYear ? `-${user.ugBatchYear + 5}` : "")}
+                      UG Batch: {user.ugBatchYear}
                     </span>
                   )}
                   {user.pgBatchYear && (
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30 shadow-xs">
-                      PG: {user.pgBatchYear}{user.pgPassoutYear || (user.pgBatchYear ? `-${user.pgBatchYear + 3}` : "")} ({user.pgDegree || "MD"})
+                      PG Batch: {user.pgBatchYear} ({user.pgDegree || "MD"})
                     </span>
                   )}
                   {user.rishikulEducation !== "UG" && user.specialization && user.specialization !== "General Ayurvedic Practice" && (

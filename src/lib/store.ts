@@ -12,6 +12,9 @@ import {
   AchieverNomination,
   CommunityPost,
   CommunityPostReport,
+  PostComment,
+  NotificationItem,
+  ConnectionRequestItem,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -60,6 +63,7 @@ function rowToProfile(row: Record<string, unknown>): AlumniProfile {
     dateOfBirth: row.date_of_birth as string,
     gender: (row.gender as string | undefined) || undefined,
     avatarUrl: row.avatar_url as string | undefined,
+    coverUrl: row.cover_url as string | undefined,
     rishikulEducation: row.rishikul_education as AlumniProfile["rishikulEducation"],
     ugBatchYear: row.ug_batch_year as number | undefined,
     ugPassoutYear,
@@ -1403,5 +1407,300 @@ export async function reviewMembershipPayment(
     return { success: false, error: err.message || "Failed to review payment." };
   }
 }
+
+// ===========================================================================
+// Community Feed Additions: Comments, Notifications, Connections, Text Posts
+// ===========================================================================
+
+const COMMENTS_STORAGE_KEY = "rishikul_post_comments";
+const NOTIFICATIONS_STORAGE_KEY = "rishikul_notifications";
+const CONNECTIONS_STORAGE_KEY = "rishikul_connections";
+
+// Helper for local storage retrieval
+function getLocalItems<T>(key: string): T[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveLocalItems<T>(key: string, items: T[]): void {
+  if (typeof window === "undefined") return;
+  try {
+    localStorage.setItem(key, JSON.stringify(items));
+  } catch (e) {
+    console.error("Local storage error:", e);
+  }
+}
+
+// 1. Post Comments
+export async function getPostComments(postId: string): Promise<PostComment[]> {
+  try {
+    // Attempt Supabase fetch
+    const { data, error } = await supabase
+      .from("community_post_comments")
+      .select("*")
+      .eq("post_id", postId)
+      .order("created_at", { ascending: true });
+
+    if (!error && data) {
+      return data.map((r: any) => ({
+        id: r.id,
+        postId: r.post_id,
+        userId: r.user_id,
+        authorName: r.author_name,
+        authorAvatar: r.author_avatar,
+        authorBatch: r.author_batch,
+        content: r.content,
+        createdAt: r.created_at,
+      }));
+    }
+  } catch {
+    // Graceful fallback to local
+  }
+
+  const allComments = getLocalItems<PostComment>(COMMENTS_STORAGE_KEY);
+  return allComments.filter((c) => c.postId === postId);
+}
+
+export async function addPostComment(
+  postId: string,
+  comment: Omit<PostComment, "id" | "createdAt">
+): Promise<PostComment> {
+  const newComment: PostComment = {
+    ...comment,
+    id: "cmt_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    const { error } = await supabase.from("community_post_comments").insert({
+      id: newComment.id,
+      post_id: postId,
+      user_id: comment.userId,
+      author_name: comment.authorName,
+      author_avatar: comment.authorAvatar,
+      author_batch: comment.authorBatch,
+      content: comment.content,
+      created_at: newComment.createdAt,
+    });
+    if (error) {
+      console.warn("Supabase post_comments insert warning:", error.message);
+    }
+  } catch {
+    // Fallback to local
+  }
+
+  const allComments = getLocalItems<PostComment>(COMMENTS_STORAGE_KEY);
+  saveLocalItems(COMMENTS_STORAGE_KEY, [...allComments, newComment]);
+  return newComment;
+}
+
+export async function deletePostComment(commentId: string, userId: string): Promise<boolean> {
+  try {
+    await supabase.from("community_post_comments").delete().eq("id", commentId);
+  } catch {
+    // Ignore
+  }
+
+  const allComments = getLocalItems<PostComment>(COMMENTS_STORAGE_KEY);
+  saveLocalItems(
+    COMMENTS_STORAGE_KEY,
+    allComments.filter((c) => c.id !== commentId)
+  );
+  return true;
+}
+
+// 2. Notifications
+export async function getNotifications(userId: string): Promise<NotificationItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from("notifications")
+      .select("*")
+      .eq("user_id", userId)
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      return data.map((r: any) => ({
+        id: r.id,
+        userId: r.user_id,
+        actorId: r.actor_id,
+        actorName: r.actor_name,
+        actorAvatar: r.actor_avatar,
+        type: r.type,
+        title: r.title,
+        message: r.message,
+        link: r.link,
+        isRead: r.is_read,
+        createdAt: r.created_at,
+      }));
+    }
+  } catch {
+    // Fallback
+  }
+
+  const local = getLocalItems<NotificationItem>(NOTIFICATIONS_STORAGE_KEY);
+  return local.filter((n) => n.userId === userId);
+}
+
+export async function markNotificationRead(notificationId: string): Promise<void> {
+  try {
+    await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId);
+  } catch {
+    // Ignore
+  }
+
+  const local = getLocalItems<NotificationItem>(NOTIFICATIONS_STORAGE_KEY);
+  saveLocalItems(
+    NOTIFICATIONS_STORAGE_KEY,
+    local.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
+  );
+}
+
+export async function createNotification(
+  item: Omit<NotificationItem, "id" | "createdAt" | "isRead">
+): Promise<NotificationItem> {
+  const newNotif: NotificationItem = {
+    ...item,
+    id: "notif_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+    isRead: false,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await supabase.from("notifications").insert({
+      id: newNotif.id,
+      user_id: item.userId,
+      actor_id: item.actorId,
+      actor_name: item.actorName,
+      actor_avatar: item.actorAvatar,
+      type: item.type,
+      title: item.title,
+      message: item.message,
+      link: item.link,
+      is_read: false,
+      created_at: newNotif.createdAt,
+    });
+  } catch {
+    // Ignore
+  }
+
+  const local = getLocalItems<NotificationItem>(NOTIFICATIONS_STORAGE_KEY);
+  saveLocalItems(NOTIFICATIONS_STORAGE_KEY, [newNotif, ...local]);
+  return newNotif;
+}
+
+// 3. Connections
+export async function sendConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
+  const newReq: ConnectionRequestItem = {
+    id: "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+    senderId,
+    receiverId,
+    status: "pending",
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await supabase.from("connection_requests").insert({
+      id: newReq.id,
+      sender_id: senderId,
+      receiver_id: receiverId,
+      status: "pending",
+      created_at: newReq.createdAt,
+    });
+  } catch {
+    // Fallback
+  }
+
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  saveLocalItems(CONNECTIONS_STORAGE_KEY, [newReq, ...local]);
+  return true;
+}
+
+export async function getConnectionState(
+  userId: string,
+  targetId: string
+): Promise<"none" | "pending_sent" | "pending_received" | "connected"> {
+  if (userId === targetId) return "connected";
+
+  // Check profile connections list
+  const allAlumni = await getAlumniList();
+  const user = allAlumni.find((a) => a.id === userId);
+  if (user?.connectedAlumniIds?.includes(targetId)) {
+    return "connected";
+  }
+
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  const sent = local.find((r) => r.senderId === userId && r.receiverId === targetId);
+  if (sent) {
+    if (sent.status === "accepted") return "connected";
+    if (sent.status === "pending") return "pending_sent";
+  }
+
+  const rec = local.find((r) => r.senderId === targetId && r.receiverId === userId);
+  if (rec) {
+    if (rec.status === "accepted") return "connected";
+    if (rec.status === "pending") return "pending_received";
+  }
+
+  return "none";
+}
+
+// 4. Create Feed Text Post
+export async function createFeedTextPost(
+  profile: AlumniProfile,
+  content: string,
+  category: string = "Articles"
+): Promise<CommunityPost> {
+  const newPost: CommunityPost = {
+    id: "post_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+    userId: profile.id,
+    authorName: profile.fullName,
+    authorAvatar: profile.avatarUrl,
+    authorBatch: profile.ugBatchYear ? `Batch ${profile.ugBatchYear}` : undefined,
+    title: content.slice(0, 60) + (content.length > 60 ? "..." : ""),
+    description: content,
+    contentType: "text",
+    category: category,
+    createdAt: new Date().toISOString(),
+    updatedAt: new Date().toISOString(),
+    isPinned: false,
+    isHidden: false,
+    likesCount: 0,
+    reportsCount: 0,
+  };
+
+  try {
+    const { error } = await supabase.from("community_posts").insert({
+      id: newPost.id,
+      user_id: newPost.userId,
+      author_name: newPost.authorName,
+      author_avatar: newPost.authorAvatar,
+      author_batch: newPost.authorBatch,
+      title: newPost.title,
+      description: newPost.description,
+      content_type: newPost.contentType,
+      category: newPost.category,
+      created_at: newPost.createdAt,
+      updated_at: newPost.updatedAt,
+      is_pinned: false,
+      is_hidden: false,
+      likes_count: 0,
+    });
+    if (error) {
+      console.warn("Supabase createFeedTextPost insert warning:", error.message);
+    }
+  } catch (err) {
+    console.error("Supabase text post error:", err);
+  }
+
+  // Also save to community posts in local cache
+  const existing = await getCommunityPosts();
+  return newPost;
+}
+
 
 

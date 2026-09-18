@@ -44,7 +44,7 @@ export default function AlumniLoginPage() {
     }
 
     setLoggedInAlumni(user);
-    router.push("/profile");
+    router.push("/feed");
   };
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {

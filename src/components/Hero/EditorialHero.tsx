@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { ArrowRight, Search, ShieldCheck, Award, Sparkles, HeartHandshake, ChevronLeft, ChevronRight, Camera, Users } from "lucide-react";
 import { getAlumniList } from "@/lib/store";
+import AnimatedCounter from "@/components/Motion/AnimatedCounter";
 
 const heroSlides = [
   {
@@ -203,7 +204,9 @@ export default function EditorialHero({ registeredCount: propRegisteredCount }: 
               <Sparkles className="w-4 h-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">Foundation</span>
             </div>
-            <div className="font-serif-heading text-2xl sm:text-3xl font-bold text-white">1919 AD</div>
+            <div className="font-serif-heading text-2xl sm:text-3xl font-bold text-white">
+              <AnimatedCounter end={1919} duration={1400} suffix=" AD" />
+            </div>
             <div className="text-[11px] text-slate-300">Over 106 years of legacy</div>
           </div>
 
@@ -213,7 +216,11 @@ export default function EditorialHero({ registeredCount: propRegisteredCount }: 
               <span className="text-xs font-semibold uppercase tracking-wider">Alumni Registered</span>
             </div>
             <div className="font-serif-heading text-2xl sm:text-3xl font-bold text-white">
-              {registeredCount > 0 ? registeredCount.toLocaleString("en-IN") : "..."}
+              {registeredCount > 0 ? (
+                <AnimatedCounter end={registeredCount} duration={1600} />
+              ) : (
+                "..."
+              )}
             </div>
             <div className="text-[11px] text-slate-300">Verified members on portal</div>
           </div>

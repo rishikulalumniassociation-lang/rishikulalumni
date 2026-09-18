@@ -2,8 +2,11 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import EditorialHero from "@/components/Hero/EditorialHero";
 import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
+import WhyRishikulStack from "@/components/Motion/WhyRishikulStack";
+import RevealOnScroll from "@/components/Motion/RevealOnScroll";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import { EXECUTIVE_MEMBERS } from "@/lib/mockData";
 import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents, getCommunityPosts, getLoggedInAlumni, getMembershipSettings } from "@/lib/store";
@@ -30,6 +33,7 @@ import {
 import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, AssociationEvent, CommunityPost } from "@/types";
 
 export default function HomePage() {
+  const router = useRouter();
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
   const [achievers, setAchievers] = useState<LifetimeAchiever[]>([]);
   const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
@@ -38,7 +42,14 @@ export default function HomePage() {
   const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
 
   useEffect(() => {
-    setCurrentUser(getLoggedInAlumni());
+    const user = getLoggedInAlumni();
+    setCurrentUser(user);
+    if (user && user.approvalStatus === "approved") {
+      // Smoothly redirect approved alumnus to their private community feed
+      router.push("/feed");
+      return;
+    }
+
     Promise.all([
       getAlumniList(),
       getLifetimeAchievers(),
@@ -54,11 +65,15 @@ export default function HomePage() {
     });
 
     const handleAuthChange = () => {
-      setCurrentUser(getLoggedInAlumni());
+      const u = getLoggedInAlumni();
+      setCurrentUser(u);
+      if (u && u.approvalStatus === "approved") {
+        router.push("/feed");
+      }
     };
     window.addEventListener("user_auth_changed", handleAuthChange);
     return () => window.removeEventListener("user_auth_changed", handleAuthChange);
-  }, []);
+  }, [router]);
 
   // Compute Today's Birthday count
   const today = new Date();
@@ -120,6 +135,9 @@ export default function HomePage() {
 
       {/* 3. FOUNDER & MARTYR STUDENT HERITAGE PILLARS (Malaviya Ji & Shaheed Jagdish Vats) */}
       <FounderHeritageSection />
+
+      {/* 3.5 SIGNATURE STACKING CARDS: WHY RISHIKUL SANGAM */}
+      <WhyRishikulStack />
 
       {/* 4. LIFETIME ACHIEVERS (Admin Updated Section) */}
       <section className="py-16 md:py-20 bg-white border-b border-[#C5A059]/20">

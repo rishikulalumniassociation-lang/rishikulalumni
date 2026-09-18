@@ -108,6 +108,7 @@ export interface AlumniProfile {
   bloodGroup?: string;
 
   // Facebook-like Extended Profile Fields
+  coverUrl?: string; // cover/banner photo
   workHistory?: WorkExperience[]; // work experiences from... to...
   familyAlumniRelations?: AlumniFamilyRelation[]; // e.g. Wife, Son, Brother who are also alumni
   teacherAlumniIds?: string[]; // teachers who taught them at Rishikul
@@ -253,6 +254,7 @@ export interface AchieverNomination {
 // ---------------------------------------------------------------------------
 
 export type PostContentType =
+  | 'text'
   | 'photo'
   | 'video'
   | 'poem'
@@ -263,6 +265,40 @@ export type PostContentType =
   | 'memory'
   | 'link'
   | 'other';
+
+export interface PostComment {
+  id: string;
+  postId: string;
+  userId: string;
+  authorName: string;
+  authorAvatar?: string;
+  authorBatch?: string;
+  content: string;
+  createdAt: string;
+}
+
+export interface NotificationItem {
+  id: string;
+  userId: string;
+  actorId?: string;
+  actorName: string;
+  actorAvatar?: string;
+  type: 'connection_request' | 'connection_accepted' | 'post_like' | 'post_comment' | 'birthday' | 'announcement' | 'event';
+  title: string;
+  message: string;
+  link?: string;
+  isRead: boolean;
+  createdAt: string;
+}
+
+export interface ConnectionRequestItem {
+  id: string;
+  senderId: string;
+  receiverId: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
+  senderProfile?: AlumniProfile;
+}
 
 export type PostCategory =
   | 'All'
