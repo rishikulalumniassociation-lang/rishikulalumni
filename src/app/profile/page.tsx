@@ -53,6 +53,8 @@ export default function AlumniProfilePage() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [editingPost, setEditingPost] = useState<CommunityPost | null>(null);
   const [lightboxPost, setLightboxPost] = useState<CommunityPost | null>(null);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState<boolean>(false);
+  const [photoUploadMsg, setPhotoUploadMsg] = useState<string>("");
 
   // Editable fields
   const [formData, setFormData] = useState<Partial<AlumniProfile>>({});
@@ -157,6 +159,36 @@ export default function AlumniProfilePage() {
 
   if (!user) return null;
 
+  const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file || !user) return;
+    try {
+      setIsUploadingPhoto(true);
+      setPhotoUploadMsg("");
+      const { dataUrl } = await compressImageTo50Kb(file, 50);
+      setFormData((prev) => ({ ...prev, avatarUrl: dataUrl }));
+      setUser((prev) => (prev ? { ...prev, avatarUrl: dataUrl } : prev));
+      await updateAlumniProfile(user.id, { avatarUrl: dataUrl });
+      const currentSession = getLoggedInAlumni();
+      if (currentSession && currentSession.id === user.id) {
+        setLoggedInAlumni({ ...currentSession, avatarUrl: dataUrl });
+      }
+      setSavedSuccess(true);
+      setPhotoUploadMsg("प्रोफाइल फोटो सफलतापूर्वक अपडेट हो गई!");
+      setTimeout(() => {
+        setSavedSuccess(false);
+        setPhotoUploadMsg("");
+      }, 4000);
+      window.dispatchEvent(new Event("alumni_updated"));
+    } catch (err) {
+      console.error("Failed to upload new photo:", err);
+      alert("फोटो बदलने में त्रुटि हुई। कृपया कोई अन्य फोटो चुनें।");
+    } finally {
+      setIsUploadingPhoto(false);
+      e.target.value = "";
+    }
+  };
+
   const handleSaveProfile = async () => {
     const hasExpertise = Boolean(
       formData.isExpert ||
@@ -179,6 +211,8 @@ export default function AlumniProfilePage() {
       whatsappNumber: updatedMobile,
       username: newUsername || user.username,
       isExpert: hasExpertise,
+      gender: formData.gender || user.gender || "Male",
+      dateOfBirth: formData.dateOfBirth || user.dateOfBirth,
       workHistory,
       familyAlumniRelations: familyRelations,
       teacherAlumniIds: teacherIds,
@@ -319,21 +353,56 @@ export default function AlumniProfilePage() {
 
             {/* Avatar & Name in Dark Portion */}
             <div className="flex items-center gap-4 sm:gap-6">
-              <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl sm:rounded-3xl overflow-hidden border-3 sm:border-4 border-white shadow-2xl bg-slate-900 shrink-0 relative">
+              <div className="w-20 h-20 sm:w-28 sm:h-28 md:w-32 md:h-32 rounded-2xl sm:rounded-3xl overflow-hidden border-3 sm:border-4 border-white shadow-2xl bg-slate-900 shrink-0 relative group">
                 <img
                   src={user.avatarUrl}
                   alt={user.fullName}
-                  className="w-full h-full object-cover"
+                  className="w-full h-full object-cover transition duration-300 group-hover:scale-105"
                 />
+                <label className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex flex-col items-center justify-center cursor-pointer transition-opacity duration-200 text-white text-[10px] sm:text-xs font-bold gap-1 p-1 text-center">
+                  <Camera className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300" />
+                  <span>फोटो बदलें</span>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handlePhotoChange}
+                    className="hidden"
+                    disabled={isUploadingPhoto}
+                  />
+                </label>
+                {isUploadingPhoto && (
+                  <div className="absolute inset-0 bg-slate-950/80 flex flex-col items-center justify-center text-amber-300 text-[10px] sm:text-xs font-bold p-1 text-center">
+                    <span className="text-sm mb-0.5">⏳</span>
+                    अपलोडिंग...
+                  </div>
+                )}
               </div>
 
               <div className="flex-1 min-w-0 pr-1">
-                <h1 className="font-serif-heading text-xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight drop-shadow-md break-words">
-                  {user.fullName}
-                </h1>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h1 className="font-serif-heading text-xl sm:text-3xl md:text-4xl font-bold text-white tracking-tight leading-tight drop-shadow-md break-words">
+                    {user.fullName}
+                  </h1>
+                  <label className="sm:hidden inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-white/20 text-white text-[10px] font-bold cursor-pointer hover:bg-white/30 transition">
+                    <Camera className="w-3 h-3 text-amber-300" />
+                    <span>फोटो बदलें</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handlePhotoChange}
+                      className="hidden"
+                      disabled={isUploadingPhoto}
+                    />
+                  </label>
+                </div>
                 {user.fullNameHindi && (
                   <p className="text-xs sm:text-sm text-amber-200 font-semibold mt-1 drop-shadow-xs">
                     {user.fullNameHindi}
+                  </p>
+                )}
+                {photoUploadMsg && (
+                  <p className="text-xs text-emerald-300 font-medium mt-1">
+                    ✓ {photoUploadMsg}
                   </p>
                 )}
               </div>
@@ -1327,8 +1396,51 @@ export default function AlumniProfilePage() {
             <div className="space-y-4 p-5 rounded-2xl bg-white border border-slate-200">
               <h4 className="text-xs font-bold uppercase text-[#0F172A] flex items-center gap-1.5 tracking-wider">
                 <User className="w-4 h-4 text-[#C5A059]" />
-                3. Personal & Contact Details (व्यक्तिगत एवं संपर्क विवरण)
+                3. Personal, Photo & Contact Details (व्यक्तिगत, फोटो एवं संपर्क विवरण)
               </h4>
+
+              {/* Profile Photo Change Box */}
+              <div className="p-4 rounded-2xl border-2 border-dashed border-[#C5A059]/60 bg-[#FAF7F2] flex flex-col sm:flex-row items-center gap-4">
+                <div className="relative shrink-0">
+                  <img
+                    src={formData.avatarUrl || user.avatarUrl}
+                    alt="Profile Photo"
+                    className="w-20 h-20 rounded-2xl object-cover border-2 border-[#2D5A43] shadow-md"
+                  />
+                  {isUploadingPhoto && (
+                    <div className="absolute inset-0 bg-black/60 rounded-2xl flex items-center justify-center text-white text-[10px] font-bold">
+                      अपलोडिंग...
+                    </div>
+                  )}
+                </div>
+                <div className="flex-1 text-center sm:text-left">
+                  <h4 className="text-xs font-bold uppercase text-[#2D5A43] flex items-center justify-center sm:justify-start gap-1.5 tracking-wider">
+                    <Camera className="w-4 h-4 text-[#C5A059]" />
+                    Profile Photo (प्रोफाइल फोटो बदलें)
+                  </h4>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    अपनी स्पष्ट फोटो अपलोड करें। सिस्टम इसे अधिकतम 50KB में स्वतः कंप्रेस कर देगा और प्रोफाइल व डिजिटल आईडी पर तुरंत प्रदर्शित होगी।
+                  </p>
+                  <div className="mt-2.5 flex flex-wrap items-center justify-center sm:justify-start gap-2">
+                    <label className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-[#0F172A] text-white hover:bg-[#2D5A43] cursor-pointer text-xs font-semibold transition shadow-sm">
+                      <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
+                      {isUploadingPhoto ? "अपलोड हो रहा है..." : "नई फोटो अपलोड करें (Change Photo)"}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handlePhotoChange}
+                        className="hidden"
+                        disabled={isUploadingPhoto}
+                      />
+                    </label>
+                    {photoUploadMsg && (
+                      <span className="text-xs text-emerald-700 font-bold bg-emerald-100 px-2.5 py-1 rounded-lg">
+                        ✓ {photoUploadMsg}
+                      </span>
+                    )}
+                  </div>
+                </div>
+              </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -1357,7 +1469,7 @@ export default function AlumniProfilePage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 <div>
                   <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center justify-between">
                     <span>WhatsApp Mobile (Login)</span>
@@ -1395,6 +1507,39 @@ export default function AlumniProfilePage() {
                   />
                   <p className="text-[10px] text-slate-500 mt-1">
                     महत्वपूर्ण संचार एवं सूचनाओं हेतु।
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Date of Birth (जन्मतिथि)
+                  </label>
+                  <input
+                    type="date"
+                    value={formData.dateOfBirth || ""}
+                    onChange={(e) => setFormData({ ...formData, dateOfBirth: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    जन्मदिन शुभकामनाओं हेतु।
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Gender (लिंग)
+                  </label>
+                  <select
+                    value={formData.gender || "Male"}
+                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  >
+                    <option value="Male">Male / पुरुष</option>
+                    <option value="Female">Female / महिला</option>
+                    <option value="Other">Other / अन्य</option>
+                  </select>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    प्रोफाइल पहचान हेतु।
                   </p>
                 </div>
 

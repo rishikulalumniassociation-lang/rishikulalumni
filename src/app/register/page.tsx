@@ -44,6 +44,7 @@ export default function RegisterPage() {
     mobile: "",
     whatsappNumber: "",
     dateOfBirth: "",
+    gender: "Male",
     bloodGroup: "O+",
 
     // Step 2: Rishikul Education (UG / PG / BOTH)
@@ -93,6 +94,14 @@ export default function RegisterPage() {
         alert("कृपया सभी आवश्यक फ़ील्ड (नाम, व्हाट्सएप मोबाइल नंबर, पासवर्ड, वास्तविक जन्मतिथि) भरें।");
         return;
       }
+      if (!formData.gender) {
+        alert("कृपया अपना लिंग (Gender) चुनें।");
+        return;
+      }
+      if (!photoDataUrl) {
+        alert("कृपया अपनी प्रोफाइल फोटो अपलोड करें (फोटो अपलोड करना अनिवार्य है)।");
+        return;
+      }
       if (formData.password !== formData.confirmPassword) {
         alert("पासवर्ड और कन्फर्म पासवर्ड मेल नहीं खाते। कृपया पुनः जांचें।");
         return;
@@ -134,6 +143,7 @@ export default function RegisterPage() {
       mobile: cleanMobile,
       whatsappNumber: cleanMobile, // Unified WhatsApp mobile
       dateOfBirth: formData.dateOfBirth,
+      gender: formData.gender || "Male",
       avatarUrl: photoDataUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop",
       
       // Rishikul Education
@@ -371,11 +381,11 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* Email, Date of Birth & Blood Group */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Email & Date of Birth */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                        Email ID *
+                        Email ID (ईमेल) *
                       </label>
                       <input
                         type="email"
@@ -391,7 +401,7 @@ export default function RegisterPage() {
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
                         <Cake className="w-3.5 h-3.5 text-[#C5A059]" />
-                        Date of Birth *
+                        Date of Birth (जन्मतिथि) *
                       </label>
                       <input
                         type="date"
@@ -402,11 +412,32 @@ export default function RegisterPage() {
                         className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-medium"
                       />
                     </div>
+                  </div>
+
+                  {/* Gender & Blood Group */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
+                        <User className="w-3.5 h-3.5 text-[#C5A059]" />
+                        Gender (लिंग) *
+                      </label>
+                      <select
+                        name="gender"
+                        required
+                        value={formData.gender}
+                        onChange={handleChange}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-3 py-2.5 text-sm focus:ring-2 focus:ring-[#2D5A43] outline-none font-bold text-slate-800"
+                      >
+                        <option value="Male">Male / पुरुष</option>
+                        <option value="Female">Female / महिला</option>
+                        <option value="Other">Other / अन्य</option>
+                      </select>
+                    </div>
 
                     <div>
                       <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
                         <span className="text-rose-600 font-black">🩸</span>
-                        Blood Group *
+                        Blood Group (रक्त समूह) *
                       </label>
                       <select
                         name="bloodGroup"
@@ -428,11 +459,22 @@ export default function RegisterPage() {
                     </div>
                   </div>
 
-                  {/* PHOTO UPLOAD (Auto compressed to max 50KB) */}
-                  <div className="p-4 rounded-2xl border-2 border-dashed border-[#C5A059]/60 bg-[#FAF7F2]">
-                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1.5">
-                      <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
-                      Profile Photo (Auto-compressed to Max 50KB)
+                  {/* PHOTO UPLOAD (Mandatory, Auto compressed to max 50KB) */}
+                  <div className={`p-4 rounded-2xl border-2 border-dashed ${photoDataUrl ? "border-[#2D5A43] bg-emerald-50/40" : "border-rose-400 bg-rose-50/30"}`}>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center justify-between">
+                      <span className="flex items-center gap-1.5">
+                        <Upload className="w-3.5 h-3.5 text-[#C5A059]" />
+                        Profile Photo / प्रोफाइल फोटो * <span className="text-rose-600 font-bold">(अनिवार्य / Mandatory)</span>
+                      </span>
+                      {photoDataUrl ? (
+                        <span className="text-[10px] text-emerald-700 font-bold bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-1">
+                          <CheckCircle2 className="w-3 h-3" /> अपलोडेड
+                        </span>
+                      ) : (
+                        <span className="text-[10px] text-rose-600 font-bold bg-rose-100 px-2 py-0.5 rounded-full">
+                          अपलोड अनिवार्य है
+                        </span>
+                      )}
                     </label>
 
                     <div className="flex items-center gap-4 mt-2">
@@ -441,15 +483,16 @@ export default function RegisterPage() {
                           <img
                             src={photoDataUrl}
                             alt="Uploaded"
-                            className="w-16 h-16 rounded-xl object-cover border-2 border-[#2D5A43]"
+                            className="w-16 h-16 rounded-xl object-cover border-2 border-[#2D5A43] shadow-md"
                           />
-                          <span className="text-[10px] bg-[#2D5A43] text-white px-1.5 py-0.5 rounded-full absolute -bottom-2 -right-1">
+                          <span className="text-[10px] bg-[#2D5A43] text-white px-1.5 py-0.5 rounded-full absolute -bottom-2 -right-1 font-mono font-bold">
                             {photoSizeKb} KB
                           </span>
                         </div>
                       ) : (
-                        <div className="w-16 h-16 rounded-xl bg-slate-200 border border-slate-300 flex items-center justify-center text-slate-400">
-                          <User className="w-8 h-8" />
+                        <div className="w-16 h-16 rounded-xl bg-white border-2 border-dashed border-rose-300 flex flex-col items-center justify-center text-rose-400 shadow-inner">
+                          <User className="w-7 h-7 text-rose-300" />
+                          <span className="text-[8px] font-bold mt-0.5 text-rose-600">फोटो चुनें</span>
                         </div>
                       )}
 
@@ -457,11 +500,12 @@ export default function RegisterPage() {
                         <input
                           type="file"
                           accept="image/*"
+                          required
                           onChange={handlePhotoUpload}
                           className="text-xs text-slate-600 file:mr-3 file:py-2 file:px-3 file:rounded-xl file:border-0 file:text-xs file:font-semibold file:bg-[#0F172A] file:text-white hover:file:bg-[#2D5A43] cursor-pointer"
                         />
                         <p className="text-[10px] text-slate-500 mt-1">
-                          {isCompressing ? "Compressing image..." : "किसी भी आकार की फोटो चुनें, सिस्टम उसे 50KB के अंदर ऑटो-कंप्रेस कर देगा।"}
+                          {isCompressing ? "फोटो कंप्रेस हो रही है..." : "कृपया अपनी स्पष्ट फोटो चुनें, सिस्टम उसे 50KB में स्वतः कंप्रेस कर देगा।"}
                         </p>
                       </div>
                     </div>

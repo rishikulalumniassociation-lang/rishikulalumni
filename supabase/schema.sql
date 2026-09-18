@@ -20,6 +20,7 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     mobile TEXT NOT NULL,
     whatsapp_number TEXT NOT NULL,
     date_of_birth DATE NOT NULL,
+    gender TEXT DEFAULT 'Male',
     avatar_url TEXT,
 
     -- Rishikul Education (UG / PG / Both)
@@ -89,6 +90,7 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS connected_alumni_ids TEXT[]
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_deceased BOOLEAN DEFAULT FALSE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_demise DATE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS demise_tribute TEXT;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'Male';
 
 -- Drop NOT NULL constraint on specialization (for UG alumni who do not have PG specialization)
 ALTER TABLE public.profiles ALTER COLUMN specialization DROP NOT NULL;

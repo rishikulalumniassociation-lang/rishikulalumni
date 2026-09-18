@@ -62,6 +62,7 @@ export interface AlumniProfile {
   id: string;
   fullName: string;
   fullNameHindi?: string;
+  gender?: 'Male' | 'Female' | 'Other' | string;
   username: string; // for login
   passwordHash?: string;
   email: string;

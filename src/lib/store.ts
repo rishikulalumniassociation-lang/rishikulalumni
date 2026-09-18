@@ -58,6 +58,7 @@ function rowToProfile(row: Record<string, unknown>): AlumniProfile {
     mobile: row.mobile as string,
     whatsappNumber: row.whatsapp_number as string,
     dateOfBirth: row.date_of_birth as string,
+    gender: (row.gender as string | undefined) || undefined,
     avatarUrl: row.avatar_url as string | undefined,
     rishikulEducation: row.rishikul_education as AlumniProfile["rishikulEducation"],
     ugBatchYear: row.ug_batch_year as number | undefined,
@@ -112,6 +113,7 @@ function profileToRow(p: AlumniProfile): Record<string, unknown> {
     mobile: p.mobile,
     whatsapp_number: p.whatsappNumber,
     date_of_birth: p.dateOfBirth,
+    gender: p.gender ?? "Male",
     avatar_url: p.avatarUrl ?? null,
     rishikul_education: p.rishikulEducation,
     ug_batch_year: p.ugBatchYear ?? null,
@@ -268,7 +270,13 @@ export async function getAlumniByUsername(username: string): Promise<AlumniProfi
 }
 
 export async function registerAlumni(profile: AlumniProfile): Promise<{ success: boolean; error?: string }> {
-  const { error } = await supabase.from("profiles").insert(profileToRow(profile));
+  const row = profileToRow(profile);
+  let { error } = await supabase.from("profiles").insert(row);
+  if (error && (error.message.includes("gender") || error.code === "PGRST204")) {
+    const { gender, ...rest } = row;
+    const retry = await supabase.from("profiles").insert(rest);
+    error = retry.error;
+  }
   if (error) return { success: false, error: error.message };
   if (typeof window !== "undefined") window.dispatchEvent(new Event("alumni_updated"));
   return { success: true };
@@ -279,6 +287,7 @@ export async function updateAlumniProfile(id: string, updates: Partial<AlumniPro
   const snakeUpdates: Record<string, unknown> = {};
   if (updates.fullName !== undefined) snakeUpdates.full_name = updates.fullName;
   if (updates.fullNameHindi !== undefined) snakeUpdates.full_name_hindi = updates.fullNameHindi;
+  if (updates.gender !== undefined) snakeUpdates.gender = updates.gender;
   if (updates.email !== undefined) snakeUpdates.email = updates.email;
   if (updates.mobile !== undefined) snakeUpdates.mobile = updates.mobile;
   if (updates.whatsappNumber !== undefined) snakeUpdates.whatsapp_number = updates.whatsappNumber;
@@ -327,7 +336,12 @@ export async function updateAlumniProfile(id: string, updates: Partial<AlumniPro
   if (updates.passwordHash !== undefined) snakeUpdates.password_hash = updates.passwordHash;
   snakeUpdates.updated_at = new Date().toISOString();
 
-  const { error } = await supabase.from("profiles").update(snakeUpdates).eq("id", id);
+  let { error } = await supabase.from("profiles").update(snakeUpdates).eq("id", id);
+  if (error && (error.message.includes("gender") || error.code === "PGRST204")) {
+    delete snakeUpdates.gender;
+    const retry = await supabase.from("profiles").update(snakeUpdates).eq("id", id);
+    error = retry.error;
+  }
   if (error) { console.error("updateAlumniProfile:", error.message); return; }
 
   // Refresh session if this is the logged-in user
