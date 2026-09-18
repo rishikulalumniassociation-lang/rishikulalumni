@@ -250,6 +250,56 @@ export default function FeedPage() {
     });
   }, [alumniList]);
 
+  // ── Social Network Groups ──────────────────────────────────────────────────
+
+  // Connections: alumni connected to currentUser
+  const myConnections = useMemo(() => {
+    if (!currentUser?.connectedAlumniIds?.length) return [];
+    const ids = new Set(currentUser.connectedAlumniIds);
+    return alumniList.filter((a) => ids.has(a.id));
+  }, [currentUser, alumniList]);
+
+  // Family: alumni linked as family members
+  const myFamily = useMemo(() => {
+    if (!currentUser?.familyAlumniRelations?.length) return [];
+    const relMap = new Map(
+      (currentUser.familyAlumniRelations || []).map((r) => [r.relatedAlumniId, r.relationType])
+    );
+    return alumniList
+      .filter((a) => relMap.has(a.id))
+      .map((a) => ({ ...a, _relationType: relMap.get(a.id)! }));
+  }, [currentUser, alumniList]);
+
+  // My Teachers: alumni whose ID is in currentUser.teacherAlumniIds
+  const myTeachers = useMemo(() => {
+    if (!currentUser?.teacherAlumniIds?.length) return [];
+    const ids = new Set(currentUser.teacherAlumniIds);
+    return alumniList.filter((a) => ids.has(a.id));
+  }, [currentUser, alumniList]);
+
+  // UG Batchmates: same ugBatchYear (excluding self)
+  const ugBatchmates = useMemo(() => {
+    if (!currentUser?.ugBatchYear) return [];
+    return alumniList.filter(
+      (a) => a.id !== currentUser.id && a.ugBatchYear === currentUser.ugBatchYear
+    );
+  }, [currentUser, alumniList]);
+
+  // PG Batchmates: same pgBatchYear (excluding self); if also same specialization, sort first
+  const pgBatchmates = useMemo(() => {
+    if (!currentUser?.pgBatchYear) return [];
+    return alumniList
+      .filter(
+        (a) => a.id !== currentUser.id && a.pgBatchYear === currentUser.pgBatchYear
+      )
+      .sort((a, b) => {
+        // Same specialization = higher priority
+        const aMatch = a.specialization === currentUser.specialization ? -1 : 0;
+        const bMatch = b.specialization === currentUser.specialization ? -1 : 0;
+        return aMatch - bMatch;
+      });
+  }, [currentUser, alumniList]);
+
   // Quick Filtered Global Search Results
   const searchResults = useMemo(() => {
     if (!searchQuery.trim()) return [];
@@ -461,6 +511,181 @@ export default function FeedPage() {
                 <span>आजीवन सदस्यता</span>
               </Link>
             </nav>
+
+            {/* ── My Network Sidebar Cards (Desktop) ─────────────────────── */}
+
+            {/* UG Batchmates */}
+            {currentUser.ugBatchYear && (
+              <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-sky-700 uppercase tracking-wide">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>UG Batchmates</span>
+                  </div>
+                  <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                    View All
+                  </Link>
+                </div>
+                <p className="text-[11px] text-slate-500">BAMS Batch {currentUser.ugBatchYear} • {ugBatchmates.length} alumni</p>
+                <div className="space-y-2">
+                  {ugBatchmates.slice(0, 4).map((a) => (
+                    <div key={a.id} className="flex items-center gap-2.5">
+                      <img
+                        src={a.avatarUrl || "/images/default-avatar.png"}
+                        alt={a.fullName}
+                        className="w-7 h-7 rounded-full object-cover border border-sky-200 shrink-0"
+                      />
+                      <div className="truncate">
+                        <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
+                        <span className="text-[10px] text-slate-400">{a.city || a.state}</span>
+                      </div>
+                    </div>
+                  ))}
+                  {ugBatchmates.length === 0 && (
+                    <p className="text-[11px] text-slate-400 text-center py-1">No batchmates registered yet.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* PG Batchmates */}
+            {currentUser.pgBatchYear && (
+              <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-violet-700 uppercase tracking-wide">
+                    <Users className="w-3.5 h-3.5" />
+                    <span>PG Batchmates</span>
+                  </div>
+                  <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                    View All
+                  </Link>
+                </div>
+                <p className="text-[11px] text-slate-500">
+                  PG Batch {currentUser.pgBatchYear}
+                  {currentUser.specialization ? ` • ${currentUser.specialization.split(" (")[0]}` : ""}
+                  {" "}• {pgBatchmates.length} alumni
+                </p>
+                <div className="space-y-2">
+                  {pgBatchmates.slice(0, 4).map((a) => (
+                    <div key={a.id} className="flex items-center gap-2.5">
+                      <img
+                        src={a.avatarUrl || "/images/default-avatar.png"}
+                        alt={a.fullName}
+                        className="w-7 h-7 rounded-full object-cover border border-violet-200 shrink-0"
+                      />
+                      <div className="truncate">
+                        <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
+                        <span className="text-[10px] text-slate-400">
+                          {a.specialization ? a.specialization.split(" (")[0] : a.city}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                  {pgBatchmates.length === 0 && (
+                    <p className="text-[11px] text-slate-400 text-center py-1">No PG batchmates found.</p>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Connections */}
+            <div className="bg-white rounded-2xl p-4 border border-slate-200/80 shadow-sm space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-xs font-bold text-[#2D5A43] uppercase tracking-wide">
+                  <UserCheck className="w-3.5 h-3.5" />
+                  <span>Connections</span>
+                </div>
+                <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                  Find More
+                </Link>
+              </div>
+              {myConnections.length > 0 ? (
+                <>
+                  <div className="flex -space-x-2">
+                    {myConnections.slice(0, 6).map((c) => (
+                      <img
+                        key={c.id}
+                        src={c.avatarUrl || "/images/default-avatar.png"}
+                        alt={c.fullName}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                        title={c.fullName}
+                      />
+                    ))}
+                  </div>
+                  <p className="text-[11px] text-slate-500">{myConnections.length} connected alumni</p>
+                </>
+              ) : (
+                <div className="text-center py-2">
+                  <UserCheck className="w-7 h-7 text-slate-300 mx-auto mb-1" />
+                  <p className="text-[11px] text-slate-400">Connect with batchmates from the Directory.</p>
+                </div>
+              )}
+            </div>
+
+            {/* Family */}
+            {myFamily.length > 0 && (
+              <div className="bg-white rounded-2xl p-4 border border-rose-100 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-rose-700 uppercase tracking-wide">
+                    <Heart className="w-3.5 h-3.5" />
+                    <span>Alumni Family</span>
+                  </div>
+                  <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                    View All
+                  </Link>
+                </div>
+                <div className="space-y-2">
+                  {myFamily.slice(0, 4).map((a) => (
+                    <div key={a.id} className="flex items-center gap-2.5">
+                      <img
+                        src={a.avatarUrl || "/images/default-avatar.png"}
+                        alt={a.fullName}
+                        className="w-7 h-7 rounded-full object-cover border border-rose-200 shrink-0"
+                      />
+                      <div className="truncate">
+                        <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
+                        <span className="text-[10px] text-rose-500 font-medium">
+                          {(a as typeof a & { _relationType?: string })._relationType}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* My Teachers */}
+            {myTeachers.length > 0 && (
+              <div className="bg-white rounded-2xl p-4 border border-amber-100 shadow-sm space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5 text-xs font-bold text-amber-700 uppercase tracking-wide">
+                    <Sparkles className="w-3.5 h-3.5" />
+                    <span>My Teachers</span>
+                  </div>
+                  <Link href="/experts" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                    View All
+                  </Link>
+                </div>
+                <div className="space-y-2">
+                  {myTeachers.slice(0, 4).map((a) => (
+                    <div key={a.id} className="flex items-center gap-2.5">
+                      <img
+                        src={a.avatarUrl || "/images/default-avatar.png"}
+                        alt={a.fullName}
+                        className="w-7 h-7 rounded-full object-cover border border-amber-200 shrink-0"
+                      />
+                      <div className="truncate">
+                        <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
+                        <span className="text-[10px] text-amber-700 font-medium">
+                          {a.specialization ? a.specialization.split(" (")[0] : "Faculty"}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
           </aside>
 
           {/* ============================================================== */}
@@ -515,6 +740,166 @@ export default function FeedPage() {
                   </button>
                 </div>
               </form>
+            </div>
+
+            {/* ─────────────────────────────────────────────────────────────── */}
+            {/* MY NETWORK — Mobile-first horizontal scroll (visible on all)   */}
+            {/* Desktop: collapsed pill row; sidebar has full cards            */}
+            {/* ─────────────────────────────────────────────────────────────── */}
+            <div className="bg-white rounded-3xl border border-slate-200/80 shadow-sm overflow-hidden">
+              <div className="flex items-center justify-between px-5 pt-4 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <Users className="w-4 h-4 text-[#2D5A43]" />
+                  <span className="text-xs font-bold text-[#0F172A] uppercase tracking-wide">
+                    My Network
+                  </span>
+                </div>
+                <Link
+                  href="/directory"
+                  className="text-[11px] font-semibold text-[#C5A059] hover:underline flex items-center gap-0.5"
+                >
+                  Full Directory <ChevronRight className="w-3 h-3" />
+                </Link>
+              </div>
+
+              {/* Horizontal scroll group pills */}
+              <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 no-scrollbar">
+
+                {/* Connections */}
+                <Link
+                  href="/directory"
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-[#FAF7F2] hover:bg-amber-50 border border-[#C5A059]/30 hover:border-[#C5A059] rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                >
+                  <div className="flex -space-x-2">
+                    {myConnections.slice(0, 3).map((c) => (
+                      <img
+                        key={c.id}
+                        src={c.avatarUrl || "/images/default-avatar.png"}
+                        alt={c.fullName}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                      />
+                    ))}
+                    {myConnections.length === 0 && (
+                      <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
+                        <UserCheck className="w-4 h-4 text-slate-400" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-bold text-[#2D5A43] leading-tight">Connections</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {myConnections.length > 0 ? `${myConnections.length} Connected` : "Find Alumni"}
+                  </span>
+                </Link>
+
+                {/* UG Batchmates */}
+                <Link
+                  href="/directory"
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-sky-50 hover:bg-sky-100 border border-sky-200/60 hover:border-sky-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                >
+                  <div className="flex -space-x-2">
+                    {ugBatchmates.slice(0, 3).map((c) => (
+                      <img
+                        key={c.id}
+                        src={c.avatarUrl || "/images/default-avatar.png"}
+                        alt={c.fullName}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                      />
+                    ))}
+                    {ugBatchmates.length === 0 && (
+                      <div className="w-8 h-8 rounded-full bg-sky-200 flex items-center justify-center">
+                        <Users className="w-4 h-4 text-sky-500" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-bold text-sky-700 leading-tight">UG Batch</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {currentUser.ugBatchYear
+                      ? `${ugBatchmates.length} Batchmates`
+                      : "No UG Batch"}
+                  </span>
+                </Link>
+
+                {/* PG Batchmates */}
+                {currentUser.pgBatchYear && (
+                  <Link
+                    href="/directory"
+                    className="flex-shrink-0 flex flex-col items-center gap-2 bg-violet-50 hover:bg-violet-100 border border-violet-200/60 hover:border-violet-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                  >
+                    <div className="flex -space-x-2">
+                      {pgBatchmates.slice(0, 3).map((c) => (
+                        <img
+                          key={c.id}
+                          src={c.avatarUrl || "/images/default-avatar.png"}
+                          alt={c.fullName}
+                          className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                        />
+                      ))}
+                      {pgBatchmates.length === 0 && (
+                        <div className="w-8 h-8 rounded-full bg-violet-200 flex items-center justify-center">
+                          <Users className="w-4 h-4 text-violet-500" />
+                        </div>
+                      )}
+                    </div>
+                    <span className="text-[11px] font-bold text-violet-700 leading-tight">PG Batch</span>
+                    <span className="text-[10px] text-slate-500 font-medium">
+                      {pgBatchmates.length} Batchmates
+                    </span>
+                  </Link>
+                )}
+
+                {/* Family */}
+                <Link
+                  href="/directory"
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 hover:border-rose-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                >
+                  <div className="flex -space-x-2">
+                    {myFamily.slice(0, 3).map((c) => (
+                      <img
+                        key={c.id}
+                        src={c.avatarUrl || "/images/default-avatar.png"}
+                        alt={c.fullName}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                      />
+                    ))}
+                    {myFamily.length === 0 && (
+                      <div className="w-8 h-8 rounded-full bg-rose-200 flex items-center justify-center">
+                        <Heart className="w-4 h-4 text-rose-400" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-bold text-rose-700 leading-tight">Family</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {myFamily.length > 0 ? `${myFamily.length} Members` : "Link Alumni"}
+                  </span>
+                </Link>
+
+                {/* My Teachers */}
+                <Link
+                  href="/experts"
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 hover:border-[#C5A059] rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                >
+                  <div className="flex -space-x-2">
+                    {myTeachers.slice(0, 3).map((c) => (
+                      <img
+                        key={c.id}
+                        src={c.avatarUrl || "/images/default-avatar.png"}
+                        alt={c.fullName}
+                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
+                      />
+                    ))}
+                    {myTeachers.length === 0 && (
+                      <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center">
+                        <Sparkles className="w-4 h-4 text-amber-600" />
+                      </div>
+                    )}
+                  </div>
+                  <span className="text-[11px] font-bold text-amber-800 leading-tight">My Teachers</span>
+                  <span className="text-[10px] text-slate-500 font-medium">
+                    {myTeachers.length > 0 ? `${myTeachers.length} Gurus` : "Find Experts"}
+                  </span>
+                </Link>
+
+              </div>
             </div>
 
             {/* Filter Pills */}
