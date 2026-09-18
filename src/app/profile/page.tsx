@@ -33,7 +33,8 @@ import {
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
-import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType, CommunityPost } from "@/types";
+import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType, CommunityPost, JobType } from "@/types";
+import { JOB_TYPE_OPTIONS } from "@/lib/mockData";
 import AlumniSearchSelect from "@/components/Common/AlumniSearchSelect";
 import DigitalIdCard from "@/components/Membership/DigitalIdCard";
 import CreatePostModal from "@/components/Community/CreatePostModal";
@@ -320,8 +321,24 @@ export default function AlumniProfilePage() {
           <div className="px-5 sm:px-10 py-5 relative bg-white">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 pb-5 border-b border-slate-100">
               <div>
-                <p className="text-xs sm:text-sm text-slate-600 font-medium">
-                  @{user.username} • {user.city}, {user.state}
+                <p className="text-sm font-bold text-[#0F172A] flex flex-wrap items-center gap-1.5">
+                  <Briefcase className="w-4 h-4 text-[#2D5A43] shrink-0" />
+                  <span>{user.designation || "Ayurvedic Physician"}</span>
+                  {user.workplace && <span className="text-slate-500 font-normal">at {user.workplace}</span>}
+                </p>
+                <p className="text-xs text-slate-500 font-medium flex flex-wrap items-center gap-1.5 mt-1">
+                  <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                  <span>{user.city}, {user.state}</span>
+                  <span className="text-slate-300">•</span>
+                  <span>@{user.username}</span>
+                  {user.jobType && (
+                    <>
+                      <span className="text-slate-300">•</span>
+                      <span className="px-2 py-0.5 rounded bg-slate-100 text-slate-700 font-medium text-[11px]">
+                        {user.jobType}
+                      </span>
+                    </>
+                  )}
                 </p>
                 <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                   {user.ugBatchYear && (
@@ -349,6 +366,20 @@ export default function AlumniProfilePage() {
               </div>
 
               <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto pt-2 sm:pt-0">
+                <button
+                  type="button"
+                  onClick={() => setActiveTab("about")}
+                  className={`flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl border text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95 whitespace-nowrap ${
+                    activeTab === "about"
+                      ? "bg-[#2D5A43] text-white border-[#2D5A43]"
+                      : "bg-[#2D5A43]/10 hover:bg-[#2D5A43]/20 text-[#2D5A43] border-[#2D5A43]/30"
+                  }`}
+                  title="अपनी प्रोफाइल व पद विवरण संपादित करें"
+                >
+                  <Edit className="w-3.5 h-3.5" />
+                  <span>Edit Profile</span>
+                </button>
+
                 <Link
                   href="/membership"
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 text-xs font-bold uppercase tracking-wider transition-all shadow-xs active:scale-95 whitespace-nowrap"
@@ -402,6 +433,7 @@ export default function AlumniProfilePage() {
               <div className="flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs font-bold uppercase tracking-wider scroll-smooth">
                 {[
                   { id: "idcard", label: "My Digital ID (आईडी कार्ड)", icon: CreditCard },
+                  { id: "about", label: "Edit Profile & Work (प्रोफाइल एडिट)", icon: Edit },
                   { id: "community", label: `Contributions (${myPosts.length})`, icon: Camera },
                   { id: "achievements", label: `Honors & Awards (${specialAchievements.length})`, icon: Medal },
                   { id: "work", label: "Work Timeline", icon: Briefcase },
@@ -409,7 +441,6 @@ export default function AlumniProfilePage() {
                   { id: "family", label: `Family (${familyRelations.length})`, icon: Heart },
                   { id: "teachers", label: `Teachers (${teacherIds.length})`, icon: GraduationCap },
                   { id: "friends", label: `Batchmates (${connectedFriends.length})`, icon: Users2 },
-                  { id: "about", label: "Bio & Details", icon: User },
                 ].map(({ id, label, icon: Icon }) => (
                   <button
                     key={id}
@@ -1146,148 +1177,293 @@ export default function AlumniProfilePage() {
           </div>
         )}
 
-        {/* TAB 5: BASIC INFO & BIO */}
+        {/* TAB 2: EDIT PROFILE & WORK DETAILS */}
         {activeTab === "about" && (
-          <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm space-y-4">
-            <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1">
-              Personal Bio & Contact Details
-            </h3>
-
-            <div>
-              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                Full Name
-              </label>
-              <input
-                type="text"
-                value={formData.fullName || ""}
-                onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                About Me / Bio (अपनी जीवन यात्रा एवं क्लिनिकल अनुभव)
-              </label>
-              <textarea
-                rows={4}
-                value={formData.bio || ""}
-                onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
-                placeholder="Share your Ayurvedic achievements, memorable teachers, batch experiences..."
-                className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm outline-none"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center justify-between">
-                  <span>WhatsApp Mobile (Login)</span>
-                  <span className="text-[10px] text-[#2D5A43] font-bold lowercase">(@{user.username})</span>
-                </label>
-                <input
-                  type="tel"
-                  placeholder="10 digit mobile"
-                  value={formData.mobile || ""}
-                  onChange={(e) => {
-                    const val = e.target.value;
-                    setFormData({
-                      ...formData,
-                      mobile: val,
-                      whatsappNumber: val,
-                    });
-                  }}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#2D5A43]"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  यही आपका लॉगिन यूज़रनेम भी है।
-                </p>
+          <div className="bg-white rounded-3xl p-6 sm:p-8 border border-[#C5A059]/30 shadow-sm space-y-6">
+            <div className="border-b border-slate-100 pb-4">
+              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2D5A43]/10 text-[#2D5A43] text-xs font-bold uppercase tracking-wider mb-2">
+                <Edit className="w-3.5 h-3.5 text-[#C5A059]" />
+                Edit Profile & Workplace Details
               </div>
+              <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A]">
+                Profile, Current Job & Location Settings (प्रोफाइल व पद विवरण)
+              </h3>
+              <p className="text-xs sm:text-sm text-slate-500 mt-1 leading-relaxed">
+                यहाँ से आप अपनी वर्तमान पदवी, संस्था, जॉब प्रकार, शहर, पता, संपर्क नंबर एवं रक्त समूह बदल सकते हैं। यह जानकारी आपकी डायरेक्टरी और डिजिटल आईडी कार्ड पर भी अपडेट होगी।
+              </p>
+            </div>
 
-              <div>
-                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  Email ID (ईमेल)
-                </label>
-                <input
-                  type="email"
-                  placeholder="doctor@example.com"
-                  value={formData.email || ""}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
-                />
-                <p className="text-[10px] text-slate-500 mt-1">
-                  महत्वपूर्ण संचार एवं सूचनाओं हेतु।
-                </p>
+            {/* SECTION 1: PROFESSIONAL & WORKPLACE DETAILS */}
+            <div className="space-y-4 p-5 rounded-2xl bg-[#FAF7F2] border border-slate-200">
+              <h4 className="text-xs font-bold uppercase text-[#2D5A43] flex items-center gap-1.5 tracking-wider">
+                <Briefcase className="w-4 h-4" />
+                1. Current Professional & Job Details (वर्तमान पद एवं कार्यस्थल)
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Current Job Type (कार्य का प्रकार) *
+                  </label>
+                  <select
+                    value={formData.jobType || "Private Practice"}
+                    onChange={(e) => setFormData({ ...formData, jobType: e.target.value as JobType })}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-medium text-slate-800 outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  >
+                    {JOB_TYPE_OPTIONS.filter((j) => j !== "All Job Types").map((job) => (
+                      <option key={job} value={job}>
+                        {job}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Current Designation / Role (वर्तमान पदनाम) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="उदा. Senior Medical Officer / Consultant Physician / Professor"
+                    value={formData.designation || ""}
+                    onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
-                  <span className="text-rose-600 font-bold">🩸</span> Blood Group (रक्त समूह)
+                  <Building className="w-3.5 h-3.5 text-slate-500" />
+                  Institution / Hospital / Organization / Clinic Name (संस्थान / चिकित्सालय का नाम) *
                 </label>
-                <select
-                  value={formData.bloodGroup || "O+"}
-                  onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2D5A43]"
-                >
-                  <option value="A+">A+ (Positive)</option>
-                  <option value="A-">A- (Negative)</option>
-                  <option value="B+">B+ (Positive)</option>
-                  <option value="B-">B- (Negative)</option>
-                  <option value="AB+">AB+ (Positive)</option>
-                  <option value="AB-">AB- (Negative)</option>
-                  <option value="O+">O+ (Positive)</option>
-                  <option value="O-">O- (Negative)</option>
-                  <option value="Unknown">Unknown / ज्ञात नहीं</option>
-                </select>
-                <p className="text-[10px] text-slate-500 mt-1">
-                  डिजिटल आईडी कार्ड पर भी अपडेट होगा।
-                </p>
+                <input
+                  type="text"
+                  required
+                  placeholder="उदा. Govt Ayurvedic Hospital Haridwar / Aarogyam Clinic / Patanjali Yogpeeth"
+                  value={formData.workplace || ""}
+                  onChange={(e) => setFormData({ ...formData, workplace: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                />
               </div>
             </div>
 
-            {(user.rishikulEducation === "PG" || user.rishikulEducation === "BOTH") && (
+            {/* SECTION 2: LOCATION & ADDRESS */}
+            <div className="space-y-4 p-5 rounded-2xl bg-[#FAF7F2] border border-slate-200">
+              <h4 className="text-xs font-bold uppercase text-[#2D5A43] flex items-center gap-1.5 tracking-wider">
+                <MapPin className="w-4 h-4" />
+                2. City, State & Address (शहर, राज्य व कार्यस्थल पता)
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    City (शहर) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="उदा. Haridwar"
+                    value={formData.city || ""}
+                    onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    State (राज्य) *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="उदा. Uttarakhand"
+                    value={formData.state || ""}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="w-full bg-white border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                </div>
+              </div>
+
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                  PG Specialization / स्नातकोत्तर विशेषता (MD/MS)
+                  Clinic / Residential Address (क्लीनिक या आवास का पूरा पता)
                 </label>
-                <select
-                  value={formData.specialization || ""}
-                  onChange={(e) => setFormData({ ...formData, specialization: e.target.value as any })}
-                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
-                >
-                  <option value="">Select PG Specialization</option>
-                  {[
-                    "Kayachikitsa (Internal Medicine)",
-                    "Panchakarma",
-                    "Shalya Tantra (Surgery)",
-                    "Shalakya Tantra (ENT & Ophthalmology)",
-                    "Prasuti & Stri Roga (Obstetrics & Gynecology)",
-                    "Kaumarbhritya (Pediatrics)",
-                    "Dravyaguna (Pharmacology)",
-                    "Rasa Shastra & Bhaishajya Kalpana",
-                    "Sharir Kriya (Physiology)",
-                    "Sharir Rachana (Anatomy)",
-                    "Samhita & Siddhanta",
-                    "Swasthavritta & Yoga",
-                    "Agada Tantra (Toxicology)",
-                    "General Ayurvedic Practice"
-                  ].map((spec) => (
-                    <option key={spec} value={spec}>{spec}</option>
-                  ))}
-                </select>
-                <p className="text-[11px] text-slate-500 mt-1">
-                  यह वह विषय है जिसमें आपने स्नातकोत्तर (MD/MS) किया है।
-                </p>
+                <textarea
+                  rows={2}
+                  placeholder="मकान/दुकान/क्लीनिक संख्या, मार्ग, कॉलोनी, लैंडमार्क..."
+                  value={formData.address || ""}
+                  onChange={(e) => setFormData({ ...formData, address: e.target.value })}
+                  className="w-full bg-white border border-slate-300 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                />
               </div>
-            )}
+            </div>
 
-            <div className="pt-2">
+            {/* SECTION 3: PERSONAL & CONTACT DETAILS */}
+            <div className="space-y-4 p-5 rounded-2xl bg-white border border-slate-200">
+              <h4 className="text-xs font-bold uppercase text-[#0F172A] flex items-center gap-1.5 tracking-wider">
+                <User className="w-4 h-4 text-[#C5A059]" />
+                3. Personal & Contact Details (व्यक्तिगत एवं संपर्क विवरण)
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Full Name (अंग्रेजी में नाम) *
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.fullName || ""}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Full Name in Hindi (हिंदी में नाम)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="उदा. डॉ. कुलदीप पाण्डेय"
+                    value={formData.fullNameHindi || ""}
+                    onChange={(e) => setFormData({ ...formData, fullNameHindi: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center justify-between">
+                    <span>WhatsApp Mobile (Login)</span>
+                    <span className="text-[10px] text-[#2D5A43] font-bold lowercase">(@{user.username})</span>
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="10 digit mobile"
+                    value={formData.mobile || ""}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setFormData({
+                        ...formData,
+                        mobile: val,
+                        whatsappNumber: val,
+                      });
+                    }}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-medium outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    यही आपका लॉगिन यूज़रनेम भी रहेगा।
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    Email ID (ईमेल)
+                  </label>
+                  <input
+                    type="email"
+                    placeholder="doctor@example.com"
+                    value={formData.email || ""}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  />
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    महत्वपूर्ण संचार एवं सूचनाओं हेतु।
+                  </p>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1 flex items-center gap-1">
+                    <span className="text-rose-600 font-bold">🩸</span> Blood Group (रक्त समूह)
+                  </label>
+                  <select
+                    value={formData.bloodGroup || "O+"}
+                    onChange={(e) => setFormData({ ...formData, bloodGroup: e.target.value })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm font-bold text-slate-800 outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  >
+                    <option value="A+">A+ (Positive)</option>
+                    <option value="A-">A- (Negative)</option>
+                    <option value="B+">B+ (Positive)</option>
+                    <option value="B-">B- (Negative)</option>
+                    <option value="AB+">AB+ (Positive)</option>
+                    <option value="AB-">AB- (Negative)</option>
+                    <option value="O+">O+ (Positive)</option>
+                    <option value="O-">O- (Negative)</option>
+                    <option value="Unknown">Unknown / ज्ञात नहीं</option>
+                  </select>
+                  <p className="text-[10px] text-slate-500 mt-1">
+                    डिजिटल आईडी कार्ड पर भी अपडेट होगा।
+                  </p>
+                </div>
+              </div>
+
+              {(user.rishikulEducation === "PG" || user.rishikulEducation === "BOTH") && (
+                <div>
+                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                    PG Specialization / स्नातकोत्तर विशेषता (MD/MS)
+                  </label>
+                  <select
+                    value={formData.specialization || ""}
+                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value as any })}
+                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                  >
+                    <option value="">Select PG Specialization</option>
+                    {[
+                      "Kayachikitsa (Internal Medicine)",
+                      "Panchakarma",
+                      "Shalya Tantra (Surgery)",
+                      "Shalakya Tantra (ENT & Ophthalmology)",
+                      "Prasuti & Stri Roga (Obstetrics & Gynecology)",
+                      "Kaumarbhritya (Pediatrics)",
+                      "Dravyaguna (Pharmacology)",
+                      "Rasa Shastra & Bhaishajya Kalpana",
+                      "Sharir Kriya (Physiology)",
+                      "Sharir Rachana (Anatomy)",
+                      "Samhita & Siddhanta",
+                      "Swasthavritta & Yoga",
+                      "Agada Tantra (Toxicology)",
+                      "General Ayurvedic Practice"
+                    ].map((spec) => (
+                      <option key={spec} value={spec}>{spec}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  About Me / Bio (अपनी जीवन यात्रा एवं क्लिनिकल अनुभव)
+                </label>
+                <textarea
+                  rows={3}
+                  value={formData.bio || ""}
+                  onChange={(e) => setFormData({ ...formData, bio: e.target.value })}
+                  placeholder="Share your Ayurvedic achievements, memorable teachers, batch experiences..."
+                  className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                />
+              </div>
+            </div>
+
+            {/* SAVE BUTTON */}
+            <div className="pt-2 flex items-center justify-between">
               <button
                 type="button"
                 onClick={handleSaveProfile}
-                className="px-6 py-2.5 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43]"
+                className="inline-flex items-center gap-2 px-8 py-3 rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-all shadow-md active:scale-95"
               >
-                Save Bio & Info
+                <Save className="w-4 h-4 text-[#C5A059]" />
+                Save Profile & Job Details / सुरक्षित करें
               </button>
+
+              {savedSuccess && (
+                <div className="text-xs font-bold text-emerald-700 flex items-center gap-1.5 animate-in fade-in">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  <span>सफलतापूर्वक अपडेट हो गया!</span>
+                </div>
+              )}
             </div>
           </div>
         )}

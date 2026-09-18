@@ -91,8 +91,5 @@ export const SPECIALIZATION_OPTIONS = [
 
 export const BATCH_YEARS = [
   "All Batches",
-  "2024", "2023", "2022", "2021", "2020",
-  "2019", "2018", "2017", "2016", "2015",
-  "2010-2014", "2005-2009", "2000-2004",
-  "1990-1999", "1980-1989", "1970-1979", "Before 1970"
+  ...Array.from({ length: 2026 - 1950 + 1 }, (_, i) => String(2026 - i))
 ];

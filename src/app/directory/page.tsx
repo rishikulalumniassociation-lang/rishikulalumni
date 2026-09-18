@@ -287,6 +287,84 @@ export default function DirectoryPage() {
           </div>
         </div>
 
+        {/* Active Filters Badges */}
+        {activeFiltersCount > 0 && (
+          <div className="flex flex-wrap items-center gap-2 mb-4 bg-white/80 backdrop-blur-sm p-2.5 rounded-2xl border border-[#C5A059]/25 shadow-xs">
+            <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider pl-1">
+              Active Filters:
+            </span>
+            {filters.ugBatchYear && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-950 text-xs font-bold border border-amber-300 shadow-xs">
+                🎓 UG Batch: {filters.ugBatchYear}
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange("ugBatchYear", "")}
+                  className="hover:text-rose-600 rounded-full p-0.5"
+                  title="Remove filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.pgBatchYear && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2D5A43]/10 text-[#2D5A43] text-xs font-bold border border-[#2D5A43]/30 shadow-xs">
+                🎓 PG Batch: {filters.pgBatchYear}
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange("pgBatchYear", "")}
+                  className="hover:text-rose-600 rounded-full p-0.5"
+                  title="Remove filter"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.jobType && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-medium border border-slate-300">
+                💼 {filters.jobType}
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange("jobType", "")}
+                  className="hover:text-rose-600 rounded-full p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.specialization && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-medium border border-slate-300">
+                🩺 {filters.specialization}
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange("specialization", "")}
+                  className="hover:text-rose-600 rounded-full p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            {filters.city && (
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-800 text-xs font-medium border border-slate-300">
+                📍 {filters.city}
+                <button
+                  type="button"
+                  onClick={() => handleFilterChange("city", "")}
+                  className="hover:text-rose-600 rounded-full p-0.5"
+                >
+                  <X className="w-3 h-3" />
+                </button>
+              </span>
+            )}
+            <button
+              type="button"
+              onClick={handleReset}
+              className="text-xs text-rose-600 font-semibold hover:underline ml-auto pr-1"
+            >
+              Reset All
+            </button>
+          </div>
+        )}
+
         {/* Results Counter */}
         <div className="flex items-center justify-between text-xs text-[#64748B] mb-6">
           <span>
@@ -298,7 +376,7 @@ export default function DirectoryPage() {
               onClick={handleReset}
               className="text-[#2D5A43] hover:underline font-semibold"
             >
-              Clear filters ({activeFiltersCount})
+              Clear all filters ({activeFiltersCount})
             </button>
           )}
         </div>

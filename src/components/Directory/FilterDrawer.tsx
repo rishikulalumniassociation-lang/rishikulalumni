@@ -80,40 +80,86 @@ export default function FilterDrawer({
 
           {/* UG Batch Year Filter */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-1.5 flex items-center gap-1.5">
-              <GraduationCap className="w-4 h-4 text-[#C5A059]" />
-              UG Entrance / Batch Year
-            </label>
-            <select
-              value={filters.ugBatchYear}
-              onChange={(e) => onFilterChange("ugBatchYear", e.target.value)}
-              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-2.5 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
-            >
-              {BATCH_YEARS.map((year) => (
-                <option key={`ug-${year}`} value={year === "All Batches" ? "" : year}>
-                  {year === "All Batches" ? "Any UG Batch" : `UG Batch ${year}`}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+                UG Batch Year (सटीक बैच वर्ष)
+              </label>
+              {filters.ugBatchYear && (
+                <button
+                  type="button"
+                  onClick={() => onFilterChange("ugBatchYear", "")}
+                  className="text-[11px] font-semibold text-rose-600 hover:underline"
+                >
+                  Clear ({filters.ugBatchYear})
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={filters.ugBatchYear}
+                onChange={(e) => onFilterChange("ugBatchYear", e.target.value)}
+                className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-3 py-2 text-xs text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
+              >
+                <option value="">Select UG Batch...</option>
+                {BATCH_YEARS.filter((y) => y !== "All Batches").map((year) => (
+                  <option key={`ug-${year}`} value={year}>
+                    UG Batch {year}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="या वर्ष लिखें (उदा. 1994)"
+                value={filters.ugBatchYear}
+                onChange={(e) => onFilterChange("ugBatchYear", e.target.value)}
+                min="1940"
+                max="2026"
+                className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-3 py-2 text-xs text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
+              />
+            </div>
           </div>
 
           {/* PG Batch Year Filter */}
           <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] mb-1.5 flex items-center gap-1.5">
-              <GraduationCap className="w-4 h-4 text-[#2D5A43]" />
-              PG Entrance / Batch Year
-            </label>
-            <select
-              value={filters.pgBatchYear}
-              onChange={(e) => onFilterChange("pgBatchYear", e.target.value)}
-              className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-4 py-2.5 text-sm text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
-            >
-              {BATCH_YEARS.map((year) => (
-                <option key={`pg-${year}`} value={year === "All Batches" ? "" : year}>
-                  {year === "All Batches" ? "Any PG Batch" : `PG Batch ${year}`}
-                </option>
-              ))}
-            </select>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-[#0F172A] flex items-center gap-1.5">
+                <GraduationCap className="w-4 h-4 text-[#2D5A43]" />
+                PG Batch Year (सटीक बैच वर्ष)
+              </label>
+              {filters.pgBatchYear && (
+                <button
+                  type="button"
+                  onClick={() => onFilterChange("pgBatchYear", "")}
+                  className="text-[11px] font-semibold text-rose-600 hover:underline"
+                >
+                  Clear ({filters.pgBatchYear})
+                </button>
+              )}
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <select
+                value={filters.pgBatchYear}
+                onChange={(e) => onFilterChange("pgBatchYear", e.target.value)}
+                className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-3 py-2 text-xs text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
+              >
+                <option value="">Select PG Batch...</option>
+                {BATCH_YEARS.filter((y) => y !== "All Batches").map((year) => (
+                  <option key={`pg-${year}`} value={year}>
+                    PG Batch {year}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="number"
+                placeholder="या वर्ष लिखें (उदा. 2005)"
+                value={filters.pgBatchYear}
+                onChange={(e) => onFilterChange("pgBatchYear", e.target.value)}
+                min="1940"
+                max="2026"
+                className="w-full bg-white border border-[#C5A059]/40 rounded-xl px-3 py-2 text-xs text-[#0F172A] focus:ring-2 focus:ring-[#2D5A43] outline-none"
+              />
+            </div>
           </div>
 
           {/* Job Type Filter */}
