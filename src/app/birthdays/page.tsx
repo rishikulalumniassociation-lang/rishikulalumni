@@ -4,19 +4,54 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock, Crown } from "lucide-react";
-import { getAlumniList, getLoggedInAlumni } from "@/lib/store";
+import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock, Crown, ChevronRight } from "lucide-react";
+import { getAlumniList, getLoggedInAlumni, isAdminAuthenticated } from "@/lib/store";
 import { AlumniProfile } from "@/types";
 
 export default function BirthdaysPage() {
   const router = useRouter();
   const [alumni, setAlumni] = useState<AlumniProfile[]>([]);
   const [currentUser, setCurrentUser] = useState<AlumniProfile | null>(null);
+  const [isAuthChecked, setIsAuthChecked] = useState(false);
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [wishedIds, setWishedIds] = useState<string[]>([]);
 
   useEffect(() => {
-    getAlumniList().then((list) => setAlumni(list));
-    setCurrentUser(getLoggedInAlumni());
+    const checkAuthAndLoad = () => {
+      const user = getLoggedInAlumni();
+      const admin = isAdminAuthenticated();
+      const isApprovedUser = Boolean(user && user.approvalStatus === "approved");
+      const authorized = Boolean(admin || isApprovedUser);
+      const pending = Boolean(user && user.approvalStatus !== "approved");
+
+      setCurrentUser(user);
+      setIsAuthorized(authorized);
+      setIsPendingApproval(pending);
+      setIsAuthChecked(true);
+
+      // Exclusively fetch alumni list when authorized — never for public visitors
+      if (authorized) {
+        getAlumniList().then((list) => setAlumni(list));
+      } else {
+        setAlumni([]);
+      }
+    };
+
+    checkAuthAndLoad();
+
+    const handleUpdate = () => {
+      checkAuthAndLoad();
+    };
+
+    window.addEventListener("alumni_updated", handleUpdate);
+    window.addEventListener("user_auth_changed", handleUpdate);
+    window.addEventListener("admin_auth_changed", handleUpdate);
+    return () => {
+      window.removeEventListener("alumni_updated", handleUpdate);
+      window.removeEventListener("user_auth_changed", handleUpdate);
+      window.removeEventListener("admin_auth_changed", handleUpdate);
+    };
   }, []);
 
   // Compute Today's Month-Day
@@ -75,6 +110,156 @@ export default function BirthdaysPage() {
     if (a.pgBatchYear) return `PG Batch: ${a.pgBatchYear}`;
     return `Batch: ${a.batchYear || ""}`;
   };
+
+  // 1. Loading state while checking local session auth
+  if (!isAuthChecked) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center py-24">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-[#C5A059] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold text-slate-600">सुरक्षा जांच की जा रही है...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // 2. Member Authorization Gate: Protect alumni birthdays from public viewing
+  if (!isAuthorized) {
+    if (isPendingApproval && currentUser) {
+      return (
+        <div className="min-h-screen bg-[#FAF7F2] py-12 sm:py-16">
+          <div className="max-w-xl mx-auto px-4 sm:px-6 text-center">
+            <div className="bg-white rounded-3xl p-8 sm:p-10 border-2 border-amber-300 shadow-xl relative overflow-hidden">
+              <div className="w-16 h-16 rounded-2xl bg-amber-100 text-amber-700 flex items-center justify-center mx-auto mb-4 border border-amber-200 shadow-sm">
+                <Lock className="w-8 h-8" />
+              </div>
+
+              <span className="inline-block px-3 py-1 rounded-full bg-amber-100 text-amber-800 text-[11px] font-bold uppercase tracking-wider mb-3">
+                पंजीकरण सत्यापन प्रक्रियाधीन • Verification Pending
+              </span>
+
+              <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A] mb-2">
+                खाता अनुमोदन की प्रतीक्षा है
+              </h2>
+
+              <p className="text-xs sm:text-sm text-slate-600 mb-6 leading-relaxed">
+                नमस्ते <strong className="text-[#0F172A]">{currentUser.fullName}</strong> जी! आपका ऋषिकुल पूर्व छात्र पंजीकरण प्राप्त हो चुका है। पूर्व छात्रों के जन्मदिवस व संपर्क सूत्रों की सुरक्षा हेतु एक्सेस व्यवस्थापक (Admin) द्वारा अनुमोदन के उपरांत ही सक्रिय होता है।
+              </p>
+
+              <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#C5A059]/30 text-left text-xs text-slate-600 mb-6 space-y-1.5">
+                <p><strong>यूज़रनेम:</strong> {currentUser.username}</p>
+                <p><strong>मोबाइल:</strong> {currentUser.mobile}</p>
+                <p><strong>बैच:</strong> {currentUser.ugBatchYear ? `UG ${currentUser.ugBatchYear}` : ""} {currentUser.pgBatchYear ? `PG ${currentUser.pgBatchYear}` : ""}</p>
+                <p className="text-amber-800 font-medium pt-1">अनुमोदन सामान्यतः 24-48 घंटों के भीतर पूर्ण हो जाता है।</p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                <Link
+                  href="/profile"
+                  className="px-6 py-3 rounded-xl bg-[#0F172A] text-white hover:bg-[#2D5A43] text-xs font-bold uppercase tracking-wider transition-all shadow-md"
+                >
+                  मेरी प्रोफ़ाइल देखें
+                </Link>
+                <Link
+                  href="/about-association"
+                  className="px-6 py-3 rounded-xl bg-slate-100 text-slate-700 hover:bg-slate-200 text-xs font-bold uppercase tracking-wider transition-all"
+                >
+                  संस्था से संपर्क करें
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    // Public / Unauthenticated Guest screen
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] py-12 sm:py-20">
+        <div className="max-w-2xl mx-auto px-4 sm:px-6">
+          <div className="bg-white rounded-3xl p-8 sm:p-12 border-2 border-[#C5A059]/40 shadow-xl relative overflow-hidden text-center">
+            {/* Heritage Lock Badge */}
+            <div className="w-20 h-20 rounded-3xl bg-gradient-to-br from-[#0F172A] to-[#2D5A43] text-[#C5A059] flex items-center justify-center mx-auto mb-6 border-2 border-[#C5A059] shadow-lg">
+              <Cake className="w-10 h-10" />
+            </div>
+
+            <div className="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-amber-50 text-amber-900 border border-[#C5A059]/40 text-xs font-bold uppercase tracking-wider mb-4">
+              <span>🔒 केवल सत्यापित सदस्यों के लिए • Members Only Access</span>
+            </div>
+
+            <h1 className="font-serif-heading text-2xl sm:text-4xl font-bold text-[#0F172A] tracking-tight mb-3">
+              ऋषिकुल एल्युमनाई जन्मदिन रडार
+            </h1>
+
+            <p className="text-xs sm:text-sm text-slate-600 max-w-lg mx-auto mb-8 leading-relaxed">
+              गोपनीयता, डेटा सुरक्षा एवं हमारे पूर्व छात्रों की व्यक्तिगत जानकारी की रक्षा हेतु जन्मदिन उत्सव, सहपाठियों की सूची एवं शुभकामनाएं भेजने की सुविधा केवल <strong>सत्यापित लॉग-इन सदस्यों</strong> के लिए ही उपलब्ध है।
+            </p>
+
+            {/* Privacy highlights */}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 mb-8 text-left text-xs">
+              <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-slate-200/80 flex items-start gap-2.5">
+                <Gift className="w-4 h-4 text-pink-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-[#0F172A] block">आज के जन्मदिवस</span>
+                  <span className="text-slate-500 text-[11px]">सहपाठियों को मंगलकामनाएं प्रेषित करें</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-slate-200/80 flex items-start gap-2.5">
+                <Calendar className="w-4 h-4 text-[#2D5A43] shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-[#0F172A] block">इस माह के सभी जन्मदिन</span>
+                  <span className="text-slate-500 text-[11px]">माहवार आगामी जन्मदिन सूची</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-slate-200/80 flex items-start gap-2.5">
+                <MessageCircle className="w-4 h-4 text-emerald-600 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-[#0F172A] block">WhatsApp बधाई संदेश</span>
+                  <span className="text-slate-500 text-[11px]">एक क्लिक में सीधे शुभकामनाएं भेजें</span>
+                </div>
+              </div>
+
+              <div className="p-3.5 rounded-2xl bg-[#FAF7F2] border border-slate-200/80 flex items-start gap-2.5">
+                <Users className="w-4 h-4 text-sky-700 shrink-0 mt-0.5" />
+                <div>
+                  <span className="font-bold text-[#0F172A] block">बैचमेट्स व गुरुजन जुड़ाव</span>
+                  <span className="text-slate-500 text-[11px]">ऋषिकुल परिवार से निरंतर संपर्क</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 justify-center mb-6">
+              <Link
+                href="/login?redirect=/birthdays"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#0F172A] hover:bg-[#2D5A43] text-[#C5A059] hover:text-white text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-md"
+              >
+                <Lock className="w-4 h-4" />
+                <span>सदस्य लॉगिन करें (Member Login)</span>
+              </Link>
+
+              <Link
+                href="/register"
+                className="inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-2xl bg-[#C5A059] hover:bg-amber-500 text-slate-950 text-xs sm:text-sm font-bold uppercase tracking-wider transition-all shadow-md"
+              >
+                <span>नया पंजीकरण करें (Register)</span>
+                <ChevronRight className="w-4 h-4" />
+              </Link>
+            </div>
+
+            <p className="text-[11px] text-slate-400">
+              एसोसिएशन व्यवस्थापक हैं?{" "}
+              <Link href="/admin/login" className="text-[#2D5A43] font-semibold hover:underline">
+                एडमिन लॉगिन यहाँ करें
+              </Link>
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] py-8 sm:py-16">
@@ -220,10 +405,13 @@ export default function BirthdaysPage() {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             {thisMonthBirthdays.map((alumnus) => {
-              const bdayDate = alumnus.dateOfBirth ? new Date(alumnus.dateOfBirth) : null;
-              const formattedDate = bdayDate
-                ? bdayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
-                : "";
+              const formattedDate = (() => {
+                if (!alumnus.dateOfBirth) return "";
+                const parts = alumnus.dateOfBirth.split("-");
+                if (parts.length < 3) return "";
+                const d = new Date(2000, parseInt(parts[1], 10) - 1, parseInt(parts[2], 10));
+                return d.toLocaleDateString("en-US", { month: "short", day: "numeric" });
+              })();
 
               return (
                 <div
