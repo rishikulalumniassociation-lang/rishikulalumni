@@ -220,7 +220,7 @@ export default function CreatePostModal({
     }
 
     if (!isApprovedAlumni) {
-      setUploadError("केवल स्वीकृत एवं सत्यापित पूर्व छात्र ही सामग्री पोस्ट कर सकते हैं।");
+      setUploadError("केवल स्वीकृत एवं सत्यापित पूर्व स्नातक / स्नातकोत्तर ही सामग्री पोस्ट कर सकते हैं।");
       return;
     }
 
@@ -367,7 +367,7 @@ export default function CreatePostModal({
               <div>
                 <p className="font-bold">सत्यापन आवश्यक (Approval Required):</p>
                 <p className="mt-0.5 text-slate-700">
-                  संगम पटल पर सामग्री साझा करने के लिए आपका पूर्व छात्र खाता एसोसिएशन एडमिन द्वारा सत्यापित एवं अनुमोदित होना आवश्यक है।
+                  संगम पटल पर सामग्री साझा करने के लिए आपका पूर्व स्नातक / स्नातकोत्तर खाता एसोसिएशन एडमिन द्वारा सत्यापित एवं अनुमोदित होना आवश्यक है।
                 </p>
               </div>
             </div>

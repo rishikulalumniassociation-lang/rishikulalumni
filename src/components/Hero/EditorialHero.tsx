@@ -85,19 +85,19 @@ export default function EditorialHero() {
           </div>
 
           <h2 className="text-sm sm:text-base md:text-lg font-semibold tracking-widest text-[#C5A059] uppercase font-sans drop-shadow-md">
-            ऋषिकुल राजकीय आयुर्वेद महाविद्यालय एवं चिकित्सालय
+            ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन
           </h2>
           <h1 className="font-serif-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-[#FAF7F2] leading-[0.95] drop-shadow-lg mt-1">
-            RISHIKUL SANGAM
+            ऋषिकुल संगम
           </h1>
           <p className="text-base sm:text-lg md:text-xl font-medium text-amber-200 tracking-wide drop-shadow-md mt-2">
-            Official Alumni Network of Rishikul Government Ayurvedic College, Haridwar
+            Verified Alumni Network of Rishikul Government Ayurvedic College, Haridwar
           </p>
         </div>
 
         {/* Sacred Motto */}
-        <p className="font-serif-heading text-xl sm:text-2xl md:text-3xl text-amber-100 font-semibold max-w-2xl mt-1 mb-3 drop-shadow-md tracking-wide">
-          एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+        <p className="font-serif-heading text-xl sm:text-2xl md:text-3xl text-amber-100 font-semibold max-w-3xl mt-1 mb-3 drop-shadow-md tracking-wide">
+          ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक
         </p>
 
         {/* Supporting Narrative */}
@@ -197,7 +197,9 @@ export default function EditorialHero() {
               <Award className="w-4 h-4" />
               <span className="text-xs font-semibold uppercase tracking-wider">Degrees</span>
             </div>
-            <div className="font-serif-heading text-2xl sm:text-3xl font-bold text-white">BAMS & MD</div>
+            <div className="font-serif-heading text-lg sm:text-xl md:text-2xl font-bold text-white leading-snug">
+              BAMS, MD (Ay.), MS (Ay.)
+            </div>
             <div className="text-[11px] text-slate-300">14 Specializations</div>
           </div>
 

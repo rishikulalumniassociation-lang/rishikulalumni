@@ -109,7 +109,7 @@ export default function ShradhanjaliPage() {
           <div className="max-w-xl mx-auto mb-10 p-4 rounded-2xl bg-amber-50 border border-amber-300 flex items-center gap-3">
             <LogIn className="w-5 h-5 text-[#C5A059] flex-shrink-0" />
             <p className="text-xs text-amber-900 leading-relaxed flex-1">
-              <strong>श्रद्धांजलि अर्पित करने के लिए लॉगिन करें।</strong> पुष्पांजलि (Offer Flowers) बटन केवल लॉगिन किए हुए पूर्व छात्रों के लिए उपलब्ध है।{" "}
+              <strong>श्रद्धांजलि अर्पित करने के लिए लॉगिन करें।</strong> पुष्पांजलि (Offer Flowers) बटन केवल लॉगिन किए हुए पूर्व स्नातक / स्नातकोत्तरों के लिए उपलब्ध है।{" "}
               <Link href="/login?redirect=/shradhanjali" className="underline font-semibold text-[#2D5A43]">
                 लॉगिन करें →
               </Link>

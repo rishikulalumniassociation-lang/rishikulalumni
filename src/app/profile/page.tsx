@@ -948,7 +948,7 @@ export default function AlumniProfilePage() {
             <div className="bg-white rounded-3xl p-6 border border-[#C5A059]/30 shadow-sm">
               <h3 className="font-serif-heading text-xl font-bold text-[#0F172A] mb-1 flex items-center gap-2">
                 <Heart className="w-5 h-5 text-red-500" />
-                Rishikul Alumni Family (परिवार के अन्य सदस्य जो पूर्व छात्र हैं)
+                Rishikul Alumni Family (परिवार के अन्य सदस्य जो पूर्व स्नातक / स्नातकोत्तर हैं)
               </h3>
               <p className="text-xs text-slate-500 mb-6">
                 यदि आपके पति/पत्नी, भाई, बहन, माता-पिता, बेटा या बेटी भी ऋषिकुल से पढ़े हैं, तो उन्हें यहाँ अपने रिश्ते के साथ मार्क करें:
@@ -957,7 +957,7 @@ export default function AlumniProfilePage() {
               <div className="p-4 sm:p-5 rounded-2xl bg-[#FAF7F2] border border-slate-300 space-y-4">
                 <div>
                   <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1.5">
-                    Search & Select Family Member (पूर्व छात्र परिवार के सदस्य को खोजें)
+                    Search & Select Family Member (पूर्व स्नातक / स्नातकोत्तर परिवार के सदस्य को खोजें)
                   </label>
                   <AlumniSearchSelect
                     alumniList={allAlumni}
@@ -1693,7 +1693,7 @@ export default function AlumniProfilePage() {
                     />
                   </div>
                   <div className="text-[11px] text-amber-800 bg-amber-100/60 p-2.5 rounded-xl border border-amber-200">
-                    💡 कनिष्ठ छात्र आपके प्रोफाइल पर दिए गए व्हाट्सएप नंबर पर सीधे आपसे संपर्क कर शिष्य बनने का अनुरोध कर सकेंगे।
+                    💡 कनिष्ठ चिकित्सक/स्नातक आपके प्रोफाइल पर दिए गए व्हाट्सएप नंबर पर सीधे आपसे संपर्क कर शिष्य बनने का अनुरोध कर सकेंगे।
                   </div>
                 </div>
               )}

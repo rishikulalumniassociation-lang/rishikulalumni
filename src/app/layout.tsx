@@ -13,14 +13,14 @@ export const viewport: Viewport = {
 };
 
 export const metadata: Metadata = {
-  title: "RISHIKUL SANGAM | Official Alumni Network",
+  title: "ऋषिकुल संगम | Verified Alumni Network | ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन",
   description:
-    "Official Alumni Network of Rishikul Government Ayurvedic College, Haridwar. एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार",
+    "Verified Alumni Network of Rishikul Government Ayurvedic College, Haridwar. ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड (पंजी. संख्या: UK06803112023012256). ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक",
   manifest: "/manifest.json",
   appleWebApp: {
     capable: true,
     statusBarStyle: "black-translucent",
-    title: "RISHIKUL SANGAM",
+    title: "ऋषिकुल संगम",
   },
   icons: {
     icon: [
@@ -32,16 +32,19 @@ export const metadata: Metadata = {
     ],
   },
   keywords: [
+    "ऋषिकुल संगम",
     "RISHIKUL SANGAM",
+    "ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन",
     "Rishikul Alumni",
     "Rishikul Government Ayurvedic College Haridwar",
-    "BAMS Alumni",
-    "MD Ayurveda Alumni",
+    "BAMS",
+    "MD (Ay.)",
+    "MS (Ay.)",
     "Ayurveda Doctors Directory",
-    "एक ऋषिकुल अनेक पीढ़ियाँ एक परिवार",
+    "ऋषिकुल एक पीढ़ियाँ अनेक कुटुंब एक विचार अनेक",
     "Haridwar Ayurveda",
   ],
-  authors: [{ name: "Rishikul Snatak Evam Snatkottar Association" }],
+  authors: [{ name: "ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड" }],
 };
 
 export default function RootLayout({
@@ -56,7 +59,7 @@ export default function RootLayout({
         <meta name="mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="RISHIKUL SANGAM" />
+        <meta name="apple-mobile-web-app-title" content="ऋषिकुल संगम" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
       </head>
       <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#0F172A] selection:bg-[#C5A059]/30 selection:text-[#0F172A]">

@@ -8,27 +8,35 @@ export default function Footer() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
           {/* Column 1: Brand & Alumni Fraternity: RISHIKUL SANGAM */}
-          <div className="space-y-4">
+          <div className="space-y-3">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full border border-[#C5A059] overflow-hidden flex items-center justify-center bg-white shadow-md flex-shrink-0">
                 <img
                   src="/images/rishikul-sangam-logo.jpg"
-                  alt="RISHIKUL SANGAM"
+                  alt="ऋषिकुल संगम"
                   className="w-full h-full object-cover"
                 />
               </div>
               <div>
                 <h3 className="font-serif-heading text-lg font-bold tracking-tight text-white">
-                  RISHIKUL SANGAM
+                  ऋषिकुल संगम
                 </h3>
-                <p className="text-xs text-[#C5A059]">Official Alumni Network of Rishikul</p>
+                <p className="text-xs text-[#C5A059]">Verified Alumni Network</p>
               </div>
             </div>
+            <div>
+              <p className="text-xs font-semibold text-amber-200">
+                ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड
+              </p>
+              <p className="text-[11px] text-slate-300 font-mono mt-0.5">
+                पंजीकरण संख्या: <span className="text-white font-bold">UK06803112023012256</span>
+              </p>
+            </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Official Alumni Network of Rishikul Government Ayurvedic College, Haridwar. Connecting generations of Ayurvedic doctors, vaidyas, and scholars across India and abroad.
+              Verified Alumni Network of Rishikul Government Ayurvedic College, Haridwar. Connecting generations of Ayurvedic doctors, vaidyas, and scholars across India and abroad.
             </p>
             <div className="text-[11px] text-amber-200/90 font-medium italic">
-              एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+              ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक
             </div>
           </div>
 
@@ -96,7 +104,7 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
-          <p>© {new Date().getFullYear()} Rishikul Snatak Evam Snatkottar Association. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड. All rights reserved.</p>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[11px] text-slate-400 font-medium">
               Developed by <strong className="text-amber-300 font-semibold">Vd KK Pandey</strong>

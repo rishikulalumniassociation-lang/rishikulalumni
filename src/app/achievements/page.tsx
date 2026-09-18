@@ -129,7 +129,7 @@ export default function CommunityAchievementsPage() {
               Rishikulian Achievements
             </h1>
             <p className="text-xs sm:text-sm text-[#64748B] mt-2 max-w-2xl leading-relaxed">
-              ऋषिकुल पुरातन छात्र परिवार के सभी पंजीकृत वैद्य/सदस्य यहाँ अपनी व्यक्तिगत, क्लिनिकल, शोध, सम्मान या सेवा उपलब्धियों को शीर्षक व विवरण के साथ साझा कर सकते हैं।
+              ऋषिकुल स्नातक एवं स्नातकोत्तर परिवार के सभी पंजीकृत वैद्य/सदस्य यहाँ अपनी व्यक्तिगत, क्लिनिकल, शोध, सम्मान या सेवा उपलब्धियों को शीर्षक व विवरण के साथ साझा कर सकते हैं।
             </p>
           </div>
 
@@ -248,7 +248,7 @@ export default function CommunityAchievementsPage() {
                     कृपया पहले लॉग-इन करें
                   </h4>
                   <p className="text-xs text-slate-500 max-w-md mx-auto mt-1">
-                    अपनी उपलब्धि साझा करने के लिए आपका ऋषिकुल पुरातन छात्र पोर्टल पर पंजीकृत एवं लॉग-इन होना अनिवार्य है।
+                    अपनी उपलब्धि साझा करने के लिए आपका ऋषिकुल स्नातक एवं स्नातकोत्तर पोर्टल पर पंजीकृत एवं लॉग-इन होना अनिवार्य है।
                   </p>
                 </div>
                 <div className="flex items-center justify-center gap-3 pt-2">

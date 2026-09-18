@@ -209,7 +209,7 @@ export default function AyurvedaExpertsPage() {
               Ayurveda Clinical Experts
             </h1>
             <p className="text-xs sm:text-sm text-[#64748B] mt-2.5 leading-relaxed">
-              ऋषिकुल के अनुभवी वैद्यों की रोग-विशिष्ट क्लिनिकल विशेषता (Disease Specialization) डायरेक्टरी। यहाँ केवल वही पूर्व छात्र प्रदर्शित होते हैं जिन्होंने अपनी क्लिनिकल रोग-विशेषज्ञता घोषित की है तथा जो कनिष्ठों को सिखाने हेतु <strong>शिष्य स्वीकार (Join me as a Shishya)</strong> कर रहे हैं।
+              ऋषिकुल के अनुभवी वैद्यों की रोग-विशिष्ट क्लिनिकल विशेषता (Disease Specialization) डायरेक्टरी। यहाँ केवल वही पूर्व स्नातक / स्नातकोत्तर प्रदर्शित होते हैं जिन्होंने अपनी क्लिनिकल रोग-विशेषज्ञता घोषित की है तथा जो कनिष्ठों को सिखाने हेतु <strong>शिष्य स्वीकार (Join me as a Shishya)</strong> कर रहे हैं।
             </p>
           </div>
 
@@ -391,7 +391,7 @@ export default function AyurvedaExpertsPage() {
                         <div className="text-[11px] font-bold text-[#0F172A] leading-tight">
                           ✨ Accepting Shishya (शिष्य स्वीकार्य)
                           <span className="block text-[10px] font-normal text-slate-600">
-                            कनिष्ठ छात्रों को विशेषता सिखाने हेतु उपलब्ध
+                            कनिष्ठ चिकित्सकों/स्नातकों को विशेषता सिखाने हेतु उपलब्ध
                           </span>
                         </div>
                       </div>

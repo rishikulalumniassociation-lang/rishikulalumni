@@ -31,16 +31,22 @@ export default function AboutPage() {
             </div>
             <div>
               <span className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A] block">
-                RISHIKUL SANGAM
+                ऋषिकुल संगम
               </span>
-              <span className="text-xs sm:text-sm font-semibold text-[#2D5A43]">
-                एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+              <p className="text-xs font-semibold text-[#C5A059] mt-0.5">
+                ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड
+              </p>
+              <p className="text-[11px] font-mono text-slate-500">
+                पंजीकरण संख्या: UK06803112023012256
+              </p>
+              <span className="text-xs sm:text-sm font-semibold text-[#2D5A43] mt-1 block">
+                ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक
               </span>
             </div>
           </div>
 
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
-            <span>महाविद्यालय एवं एसोसिएशन का गौरवशाली इतिहास</span>
+            <span>ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन एवं महाविद्यालय का इतिहास</span>
             <span>•</span>
             <span>Estd. 1919</span>
           </div>

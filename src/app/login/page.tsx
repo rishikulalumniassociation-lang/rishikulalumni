@@ -80,13 +80,19 @@ export default function AlumniLoginPage() {
             />
           </div>
           <h2 className="font-serif-heading text-3xl font-bold text-[#0F172A]">
-            RISHIKUL SANGAM
+            ऋषिकुल संगम
           </h2>
-          <p className="text-xs font-semibold text-[#2D5A43] mt-0.5">
-            Official Alumni Network • Login
+          <p className="text-xs font-semibold text-[#C5A059] mt-0.5">
+            ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड
+          </p>
+          <p className="text-[11px] font-mono text-slate-500">
+            पंजीकरण संख्या: UK06803112023012256
+          </p>
+          <p className="text-xs font-semibold text-[#2D5A43] mt-1">
+            Verified Alumni Network • Login
           </p>
           <p className="mt-1.5 text-[11px] text-slate-500 italic">
-            एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+            ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक
           </p>
         </div>
 

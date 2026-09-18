@@ -241,12 +241,12 @@ export default function AdminDashboardPage() {
   };
 
   const handleApproveNomination = async (nomId: string) => {
-    if (!confirm("क्या आप इस पूर्व छात्र का नामांकन स्वीकृत कर हॉल ऑफ फेम (Lifetime Achievers) में सम्मिलित करना चाहते हैं?")) return;
+    if (!confirm("क्या आप इस पूर्व स्नातक / स्नातकोत्तर का नामांकन स्वीकृत कर हॉल ऑफ फेम (Lifetime Achievers) में सम्मिलित करना चाहते हैं?")) return;
     await approveAchieverNomination(nomId);
     const [noms, ach] = await Promise.all([getAchieverNominations(), getLifetimeAchievers()]);
     setNominationsList(noms);
     setAchieversList(ach);
-    alert("नामांकन सफलतापूर्वक स्वीकृत हो गया और पूर्व छात्र को 'हॉल ऑफ फेम' में जोड़ दिया गया है!");
+    alert("नामांकन सफलतापूर्वक स्वीकृत हो गया और पूर्व स्नातक / स्नातकोत्तर को 'हॉल ऑफ फेम' में जोड़ दिया गया है!");
   };
 
   const handleRejectNomination = async (nomId: string) => {
@@ -919,7 +919,7 @@ export default function AdminDashboardPage() {
                           onClick={() => {
                             setActiveDeceasedAlumnus(a);
                             setDemiseDateInput(new Date().toISOString().split("T")[0]);
-                            setDemiseTributeInput(`श्रद्धेय डॉ. ${a.fullName} के असामयिक निधन पर ऋषिकुल पुरातन छात्र परिवार गहरा शोक व्यक्त करता है।`);
+                            setDemiseTributeInput(`श्रद्धेय डॉ. ${a.fullName} के असामयिक निधन पर ऋषिकुल स्नातक एवं स्नातकोत्तर परिवार गहरा शोक व्यक्त करता है।`);
                           }}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 hover:bg-black text-[11px] font-bold uppercase transition-colors"
                           title="Mark alumnus as Expired"

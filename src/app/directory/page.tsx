@@ -196,7 +196,7 @@ export default function DirectoryPage() {
         {/* Page Header */}
         <div className="mb-8">
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-2">
-            <span>ऋषिकुल पुरातन छात्र डायरेक्टरी</span>
+            <span>ऋषिकुल पूर्व स्नातक / स्नातकोत्तर डायरेक्टरी</span>
             <span>•</span>
             <span>UG & PG Alumni Network</span>
           </div>
@@ -773,7 +773,7 @@ export default function DirectoryPage() {
                       <Lock className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
                       <h4 className="font-bold text-sm text-[#0F172A] mb-1">लॉगिन आवश्यक है (Login Required)</h4>
                       <p className="text-xs text-slate-600 mb-4 max-w-md mx-auto">
-                        पूर्व छात्रों के आपसी कनेक्शन्स व बैचमेट नेटवर्क देखने के लिए कृपया अपने एल्युमनाई खाते से लॉगिन करें।
+                        पूर्व स्नातक / स्नातकोत्तरों के आपसी कनेक्शन्स व बैचमेट नेटवर्क देखने के लिए कृपया अपने एल्युमनाई खाते से लॉगिन करें।
                       </p>
                       <button
                         type="button"
@@ -821,7 +821,7 @@ export default function DirectoryPage() {
                       ) : (
                         <div className="p-8 rounded-2xl bg-[#FAF7F2] border border-slate-200 text-center text-xs text-slate-500">
                           <Users2 className="w-8 h-8 text-slate-400 mx-auto mb-2" />
-                          <span>इस पूर्व छात्र के अभी कोई सार्वजनिक कनेक्शन्स नहीं हैं।</span>
+                          <span>इस पूर्व स्नातक / स्नातकोत्तर के अभी कोई सार्वजनिक कनेक्शन्स नहीं हैं।</span>
                         </div>
                       )}
                     </div>
@@ -901,7 +901,7 @@ export default function DirectoryPage() {
                       <Lock className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
                       <h4 className="font-bold text-sm text-[#0F172A] mb-1">लॉगिन आवश्यक है (Login Required)</h4>
                       <p className="text-xs text-slate-600 mb-4 max-w-md mx-auto">
-                        ऋषिकुल परिवार के पूर्व छात्र सदस्यों (पति/पत्नी, भाई, माता-पिता, संतान) के संबंध देखने हेतु कृपया लॉगिन करें।
+                        ऋषिकुल परिवार के पूर्व स्नातक / स्नातकोत्तर सदस्यों (पति/पत्नी, भाई, माता-पिता, संतान) के संबंध देखने हेतु कृपया लॉगिन करें।
                       </p>
                       <button
                         type="button"
@@ -949,7 +949,7 @@ export default function DirectoryPage() {
                       ) : (
                         <div className="p-8 rounded-2xl bg-[#FAF7F2] border border-slate-200 text-center text-xs text-slate-500">
                           <Heart className="w-8 h-8 text-rose-400 mx-auto mb-2" />
-                          <span>अभी इस प्रोफाइल पर परिवार का कोई पूर्व छात्र सदस्य लिंक नहीं है।</span>
+                          <span>अभी इस प्रोफाइल पर परिवार का कोई पूर्व स्नातक / स्नातकोत्तर सदस्य लिंक नहीं है।</span>
                         </div>
                       )}
                     </div>

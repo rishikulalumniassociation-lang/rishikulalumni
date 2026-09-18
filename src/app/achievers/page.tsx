@@ -135,7 +135,7 @@ export default function AchieversPage() {
   const handleSubmitNomination = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedNominee) {
-      alert("कृपया पहले किसी पंजीकृत पूर्व छात्र का चयन करें।");
+      alert("कृपया पहले किसी पंजीकृत पूर्व स्नातक / स्नातकोत्तर का चयन करें।");
       return;
     }
     if (!nomForm.achievementTitle.trim() || !nomForm.citation.trim()) {
@@ -190,7 +190,7 @@ export default function AchieversPage() {
               Hall of Fame & Patrons
             </h1>
             <p className="text-xs sm:text-sm text-[#64748B] mt-2.5 leading-relaxed">
-              ऋषिकुल राजकीय आयुर्वेद महाविद्यालय के गौरवशाली पूर्व छात्रों एवं संरक्षक मंडल (Patrons) का आधिकारिक सम्मान पटल।
+              ऋषिकुल राजकीय आयुर्वेद महाविद्यालय के गौरवशाली पूर्व स्नातकों / स्नातकोत्तरों एवं संरक्षक मंडल (Patrons) का आधिकारिक सम्मान पटल।
             </p>
           </div>
 
@@ -340,7 +340,7 @@ export default function AchieversPage() {
                       <span>क्या आप किसी अन्य विशिष्ट विभूति का नाम सुझाना चाहते हैं?</span>
                     </h4>
                     <p className="text-xs text-slate-500 mt-1 max-w-xl">
-                      यदि ऋषिकुल के किसी पंजीकृत पूर्व छात्र ने राष्ट्रीय अथवा अंतरराष्ट्रीय स्तर पर असाधारण योगदान दिया है, तो उनका नाम समिति के पास नामांकित करें।
+                      यदि ऋषिकुल के किसी पंजीकृत पूर्व स्नातक / स्नातकोत्तर ने राष्ट्रीय अथवा अंतरराष्ट्रीय स्तर पर असाधारण योगदान दिया है, तो उनका नाम समिति के पास नामांकित करें।
                     </p>
                   </div>
                   <button
@@ -361,7 +361,7 @@ export default function AchieversPage() {
                   Lifetime Achievers Hall of Fame
                 </h3>
                 <p className="text-sm text-slate-600 leading-relaxed mb-6">
-                  ऋषिकुल राजकीय आयुर्वेद महाविद्यालय के जिन सम्मानित पूर्व छात्रों ने राष्ट्रीय अथवा अंतरराष्ट्रीय स्तर पर पद्म सम्मान, राजकीय पुरस्कार, ग्रंथ लेखन अथवा विशिष्ट चिकित्सा अनुसंधान में अभूतपूर्व योगदान दिया है, उनकी अधिकृत प्रविष्टियां एसोसिएशन एडमिन द्वारा सत्यापित कर यहाँ प्रदर्शित की जाती हैं।
+                  ऋषिकुल राजकीय आयुर्वेद महाविद्यालय के जिन सम्मानित पूर्व स्नातकों / स्नातकोत्तरों ने राष्ट्रीय अथवा अंतरराष्ट्रीय स्तर पर पद्म सम्मान, राजकीय पुरस्कार, ग्रंथ लेखन अथवा विशिष्ट चिकित्सा अनुसंधान में अभूतपूर्व योगदान दिया है, उनकी अधिकृत प्रविष्टियां एसोसिएशन एडमिन द्वारा सत्यापित कर यहाँ प्रदर्शित की जाती हैं।
                 </p>
 
                 <div className="p-4 rounded-2xl bg-[#FAF7F2] border border-[#C5A059]/30 text-xs text-slate-700 mb-6 text-left space-y-1.5">
@@ -401,10 +401,10 @@ export default function AchieversPage() {
                   संरक्षक मंडल • Council of Patrons
                 </span>
                 <h2 className="font-serif-heading text-2xl sm:text-4xl font-bold text-white mb-2">
-                  ऋषिकुल एल्युमनाई संरक्षक मंडल
+                  ऋषिकुल स्नातक एवं स्नातकोत्तर संरक्षक मंडल
                 </h2>
                 <p className="text-xs sm:text-sm text-slate-300 leading-relaxed font-light">
-                  ऋषिकुल एल्युमनाई एसोसिएशन का संरक्षक मंडल संस्थान के मार्गदर्शन, दीर्घकालिक संवर्धन और विकास का मुख्य आधार स्तंभ है। इसमें हमारे पूज्य संस्थापक महामना जी की प्रेरणा और वे सभी सम्मानित पूर्व छात्र व वरिष्ठ चिकित्सक सम्मिलित हैं, जिन्होंने संरक्षक के रूप में संस्थान को अपना अमूल्य सहयोग प्रदान किया है।
+                  ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन का संरक्षक मंडल संस्थान के मार्गदर्शन, दीर्घकालिक संवर्धन और विकास का मुख्य आधार स्तंभ है। इसमें हमारे पूज्य संस्थापक महामना जी की प्रेरणा और वे सभी सम्मानित पूर्व स्नातक / स्नातकोत्तर व वरिष्ठ चिकित्सक सम्मिलित हैं, जिन्होंने संरक्षक के रूप में संस्थान को अपना अमूल्य सहयोग प्रदान किया है।
                 </p>
               </div>
             </div>
@@ -439,7 +439,7 @@ export default function AchieversPage() {
                     संस्थापक: ऋषिकुल ब्रह्मचर्याश्रम एवं ऋषिकुल आयुर्वेद महाविद्यालय, हरिद्वार (स्थापना वर्ष 1919)
                   </p>
                   <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-light mb-4">
-                    "आयुर्वेद केवल चिकित्सा पद्धति नहीं अपितु संपूर्ण जीवन का विज्ञान है।" महामना जी ने भारतीय ज्ञान परंपरा, वैदिक संस्कृति और आयुर्वेद के संरक्षण हेतु हरिद्वार की पुण्यभूमि पर ऋषिकुल की स्थापना की। समस्त ऋषिकुल एल्युमनाई परिवार उनके पावन संकल्प एवं उच्च आदर्शों के प्रति नतमस्तक है।
+                    "आयुर्वेद केवल चिकित्सा पद्धति नहीं अपितु संपूर्ण जीवन का विज्ञान है।" महामना जी ने भारतीय ज्ञान परंपरा, वैदिक संस्कृति और आयुर्वेद के संरक्षण हेतु हरिद्वार की पुण्यभूमि पर ऋषिकुल की स्थापना की। समस्त ऋषिकुल स्नातक एवं स्नातकोत्तर परिवार उनके पावन संकल्प एवं उच्च आदर्शों के प्रति नतमस्तक है।
                   </p>
                   <div className="inline-flex items-center gap-2 text-xs font-bold text-amber-900 bg-amber-50 px-3 py-1.5 rounded-xl border border-amber-200">
                     <span>सदा स्मरणीय संस्थापक संरक्षक</span>
@@ -457,7 +457,7 @@ export default function AchieversPage() {
                     <span>संरक्षक सदस्य गण (Patron Members)</span>
                   </h3>
                   <p className="text-xs text-slate-500 mt-1">
-                    वे विशिष्ट पूर्व छात्र जिन्होंने 'Patron Member' सदस्यता ग्रहण कर संस्थान के संरक्षण में सहभागिता की है।
+                    वे विशिष्ट पूर्व स्नातक / स्नातकोत्तर जिन्होंने 'Patron Member' सदस्यता ग्रहण कर संस्थान के संरक्षण में सहभागिता की है।
                   </p>
                 </div>
 
@@ -568,7 +568,7 @@ export default function AchieversPage() {
                   विशिष्ट विभूति का नाम सुझाएं (Nominate an Alumnus)
                 </h3>
                 <p className="text-xs text-slate-500 mt-1">
-                  हॉल ऑफ फेम हेतु केवल वही पूर्व छात्र नामांकित हो सकते हैं जो इस पोर्टल पर पंजीकृत हैं। नामांकन सीधे एडमिन समिति को भेजा जाएगा।
+                  हॉल ऑफ फेम हेतु केवल वही पूर्व स्नातक / स्नातकोत्तर नामांकित हो सकते हैं जो इस पोर्टल पर पंजीकृत हैं। नामांकन सीधे एडमिन समिति को भेजा जाएगा।
                 </p>
               </div>
 
@@ -598,7 +598,7 @@ export default function AchieversPage() {
                   <div>
                     <label className="block text-xs font-bold uppercase text-slate-700 mb-1.5 flex items-center gap-1.5">
                       <Search className="w-4 h-4 text-[#2D5A43]" />
-                      <span>1. पूर्व छात्र खोजें एवं चुनें (Search Registered Alumnus) *</span>
+                      <span>1. पूर्व स्नातक / स्नातकोत्तर खोजें एवं चुनें (Search Registered Alumnus) *</span>
                     </label>
 
                     {selectedNominee ? (
@@ -612,7 +612,7 @@ export default function AchieversPage() {
                           />
                           <div className="min-w-0">
                             <span className="text-[10px] font-bold uppercase px-2 py-0.5 rounded bg-[#2D5A43] text-white">
-                              पंजीकृत पूर्व छात्र ✓
+                              पंजीकृत पूर्व स्नातक / स्नातकोत्तर ✓
                             </span>
                             <h5 className="font-serif-heading font-bold text-base text-[#0F172A] mt-1 truncate">
                               Dr. {selectedNominee.fullName} {selectedNominee.fullNameHindi && `(${selectedNominee.fullNameHindi})`}
@@ -697,11 +697,11 @@ export default function AchieversPage() {
                           <div className="p-4 rounded-2xl bg-amber-50 border-2 border-amber-300 text-xs text-amber-950 space-y-2.5 animate-in fade-in">
                             <div className="font-bold flex items-center gap-1.5 text-amber-900 text-sm">
                               <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
-                              <span>पूर्व छात्र पोर्टल पर पंजीकृत नहीं हैं (Alumnus Not Registered)!</span>
+                              <span>पूर्व स्नातक / स्नातकोत्तर पोर्टल पर पंजीकृत नहीं हैं (Alumnus Not Registered)!</span>
                             </div>
                             <p className="leading-relaxed">
-                              आप जिस पूर्व छात्र <strong>"{searchAlumniQuery}"</strong> का नाम सुझाना चाहते हैं, वे अभी तक इस पोर्टल पर पंजीकृत नहीं हैं। 
-                              हॉल ऑफ फेम नामांकन हेतु पूर्व छात्र का पोर्टल पर पंजीकृत होना अनिवार्य है।
+                              आप जिस पूर्व स्नातक / स्नातकोत्तर <strong>"{searchAlumniQuery}"</strong> का नाम सुझाना चाहते हैं, वे अभी तक इस पोर्टल पर पंजीकृत नहीं हैं। 
+                              हॉल ऑफ फेम नामांकन हेतु पूर्व स्नातक / स्नातकोत्तर का पोर्टल पर पंजीकृत होना अनिवार्य है।
                             </p>
                             <div className="flex flex-wrap items-center gap-2 pt-1">
                               <button
@@ -717,7 +717,7 @@ export default function AchieversPage() {
                                 <span>{copiedLink ? "पंजीकरण लिंक कॉपी हो गया ✓" : "पंजीकरण लिंक कॉपी करें"}</span>
                               </button>
                               <a
-                                href={`https://wa.me/?text=${encodeURIComponent(`सादर प्रणाम! कृपया ऋषिकुल राजकीय आयुर्वेद कॉलेज एलुमनाई एसोसिएशन पोर्टल पर अपना पंजीकरण करें ताकि आपको लाइफटाइम अचीवर / हॉल ऑफ फेम हेतु नामांकित किया जा सके: ${typeof window !== 'undefined' ? window.location.origin : ''}/register`)}`}
+                                href={`https://wa.me/?text=${encodeURIComponent(`सादर प्रणाम! कृपया ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन पोर्टल पर अपना पंजीकरण करें ताकि आपको लाइफटाइम अचीवर / हॉल ऑफ फेम हेतु नामांकित किया जा सके: ${typeof window !== 'undefined' ? window.location.origin : ''}/register`)}`}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="px-3 py-1.5 rounded-lg bg-emerald-600 text-white font-bold text-[11px] hover:bg-emerald-700 transition-colors flex items-center gap-1.5 shadow-xs"

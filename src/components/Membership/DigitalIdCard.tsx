@@ -92,13 +92,16 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
               </div>
               <div>
                 <h4 className="font-serif-heading text-sm font-bold tracking-tight text-white leading-tight">
-                  RISHIKUL SANGAM
+                  ऋषिकुल संगम
                 </h4>
-                <p className="text-[9px] uppercase tracking-wider text-[#C5A059] font-medium">
-                  Official Alumni Network
+                <p className="text-[8.5px] font-semibold text-amber-200 leading-tight">
+                  ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन
                 </p>
-                <p className="text-[8px] text-slate-300">
-                  Govt Ayurvedic College, Haridwar
+                <p className="text-[7.5px] font-mono text-[#C5A059]">
+                  पंजी. संख्या: UK06803112023012256
+                </p>
+                <p className="text-[7.5px] text-slate-300">
+                  Verified Alumni • Govt Ayurvedic College, Haridwar
                 </p>
               </div>
             </div>

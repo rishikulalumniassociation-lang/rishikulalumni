@@ -197,15 +197,18 @@ export default function RegisterPage() {
             />
           </div>
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-1">
-            <span>RISHIKUL SANGAM</span>
+            <span>ऋषिकुल संगम</span>
             <span>•</span>
-            <span>पुरातन छात्र पंजीकरण</span>
+            <span>पूर्व स्नातक / स्नातकोत्तर पंजीकरण</span>
           </div>
-          <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight">
+          <p className="text-xs font-semibold text-amber-900 mt-1">
+            ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड (पंजी. संख्या: UK06803112023012256)
+          </p>
+          <h1 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A] tracking-tight mt-1">
             Alumni Registration & Account Creation
           </h1>
           <p className="text-xs font-semibold text-[#2D5A43] mt-1">
-            एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+            ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक
           </p>
           <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
             पंजीकरण के बाद आपका आवेदन एडमिन द्वारा सत्यापित (Approve) किया जाएगा और आपकी सदस्यता श्रेणी (Non-Paid, Lifetime, Patron) निर्धारित की जाएगी।

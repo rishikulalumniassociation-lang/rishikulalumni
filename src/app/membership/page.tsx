@@ -61,18 +61,21 @@ export default function MembershipPage() {
             />
           </div>
           <div className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] mb-1">
-            <span>RISHIKUL SANGAM</span>
+            <span>ऋषिकुल संगम</span>
             <span>•</span>
-            <span>Official Digital Smart ID</span>
+            <span>Verified Digital Smart ID</span>
           </div>
-          <h1 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold text-[#0F172A] tracking-tight">
+          <p className="text-xs font-semibold text-amber-900 mt-1">
+            ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड (पंजी. संख्या: UK06803112023012256)
+          </p>
+          <h1 className="font-serif-heading text-3xl sm:text-4xl md:text-5xl font-bold text-[#0F172A] tracking-tight mt-1">
             Alumni Digital Identity Card
           </h1>
           <p className="text-xs font-semibold text-[#2D5A43] mt-1">
-            एक ऋषिकुल • अनेक पीढ़ियाँ • एक परिवार
+            ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक
           </p>
           <p className="text-xs sm:text-sm text-[#64748B] mt-2 leading-relaxed">
-            यह पहचान पत्र केवल पंजीकृत एवं सत्यापित पुरातन छात्रों (Verified Alumni) को उनके व्यक्तिगत लॉगिन के उपरांत ही उपलब्ध होता है।
+            यह पहचान पत्र केवल पंजीकृत एवं सत्यापित पूर्व स्नातकों / स्नातकोत्तरों (Verified Alumni) को उनके व्यक्तिगत लॉगिन के उपरांत ही उपलब्ध होता है।
           </p>
         </div>
 

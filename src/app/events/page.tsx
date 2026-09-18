@@ -435,7 +435,7 @@ export default function EventsPage() {
                   </label>
                   <input
                     type="text"
-                    placeholder="उदा. वार्षिक पुरातन छात्र मिलन समारोह"
+                    placeholder="उदा. वार्षिक पूर्व स्नातक / स्नातकोत्तर मिलन समारोह"
                     value={formData.titleHindi}
                     onChange={(e) => setFormData({ ...formData, titleHindi: e.target.value })}
                     className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none"
@@ -637,7 +637,7 @@ export default function EventsPage() {
                 कृपया पहले लॉग-इन करें
               </h3>
               <p className="text-xs text-slate-500 mt-1 max-w-xs mx-auto">
-                ऋषिकुल पुरातन छात्र पोर्टल पर नया आयोजन (Event) पोस्ट करने के लिए पंजीकृत एलुमनाई या एडमिन का लॉग-इन होना आवश्यक है।
+                ऋषिकुल स्नातक एवं स्नातकोत्तर पोर्टल पर नया आयोजन (Event) पोस्ट करने के लिए पंजीकृत एलुमनाई या एडमिन का लॉग-इन होना आवश्यक है।
               </p>
             </div>
 

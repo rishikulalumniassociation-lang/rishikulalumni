@@ -73,18 +73,23 @@ export default function Navbar() {
   return (
     <header className="sticky top-0 z-40 w-full border-b border-[#C5A059]/20 bg-[#FAF7F2]/95 backdrop-blur-md transition-all">
       {/* Top Heritage Ribbon */}
-      <div className="bg-[#0F172A] text-[#FAF7F2] text-[11px] sm:text-xs py-1.5 px-4 tracking-wider uppercase flex justify-between items-center border-b border-[#C5A059]/30">
+      <div className="bg-[#0F172A] text-[#FAF7F2] text-[11px] sm:text-xs py-1.5 px-4 tracking-wider flex justify-between items-center border-b border-[#C5A059]/30">
         <div className="flex items-center gap-2">
           <span className="inline-block w-1.5 h-1.5 rounded-full bg-[#C5A059] animate-pulse"></span>
-          <span className="font-medium text-[#C5A059]">ESTD. 1919</span>
-          <span className="hidden sm:inline text-slate-400">|</span>
-          <span className="hidden sm:inline text-slate-300">
-            Alumni Association of Rishikul Govt Ayurvedic College
+          <span className="font-medium text-[#C5A059] uppercase">ESTD. 1919</span>
+          <span className="hidden md:inline text-slate-400">|</span>
+          <span className="hidden md:inline text-slate-300">
+            ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड
+          </span>
+          <span className="hidden lg:inline text-amber-200 font-mono text-[10px]">
+            (पंजी. संख्या: UK06803112023012256)
           </span>
         </div>
         <div className="flex items-center gap-3 font-medium text-[11px]">
-          <span className="text-amber-200">ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन</span>
-          <span className="text-slate-500">|</span>
+          <span className="text-amber-200 md:hidden truncate max-w-[200px]">
+            ऋषिकुल एसोसिएशन (UK06803112023012256)
+          </span>
+          <span className="text-slate-500 md:hidden">|</span>
           {isAdmin ? (
             <div className="flex items-center gap-2">
               <Link
@@ -130,7 +135,7 @@ export default function Navbar() {
                 RISHIKUL SANGAM
               </span>
               <span className="text-[9px] sm:text-[11px] font-semibold text-[#64748B] tracking-normal mt-0.5 truncate hidden xs:inline">
-                Official Alumni Network • Haridwar
+                Verified Alumni Network • Haridwar
               </span>
             </div>
           </Link>
