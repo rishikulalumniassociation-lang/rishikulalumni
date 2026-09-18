@@ -2,7 +2,8 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, Search, ShieldCheck, Award, Sparkles, HeartHandshake, ChevronLeft, ChevronRight, Camera } from "lucide-react";
+import { ArrowRight, Search, ShieldCheck, Award, Sparkles, HeartHandshake, ChevronLeft, ChevronRight, Camera, Users } from "lucide-react";
+import { getAlumniList } from "@/lib/store";
 
 const heroSlides = [
   {
@@ -27,8 +28,31 @@ const heroSlides = [
   },
 ];
 
-export default function EditorialHero() {
+interface EditorialHeroProps {
+  registeredCount?: number;
+}
+
+export default function EditorialHero({ registeredCount: propRegisteredCount }: EditorialHeroProps = {}) {
   const [currentSlide, setCurrentSlide] = useState(0);
+  const [registeredCount, setRegisteredCount] = useState<number>(propRegisteredCount ?? 0);
+
+  useEffect(() => {
+    if (propRegisteredCount !== undefined) {
+      setRegisteredCount(propRegisteredCount);
+    } else {
+      getAlumniList().then((list) => {
+        setRegisteredCount(list.length);
+      });
+    }
+
+    const handleAlumniUpdate = () => {
+      getAlumniList().then((list) => {
+        setRegisteredCount(list.length);
+      });
+    };
+    window.addEventListener("alumni_updated", handleAlumniUpdate);
+    return () => window.removeEventListener("alumni_updated", handleAlumniUpdate);
+  }, [propRegisteredCount]);
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -185,11 +209,13 @@ export default function EditorialHero() {
 
           <div className="p-3 sm:p-4 rounded-xl bg-slate-900/70 border border-[#C5A059]/30 backdrop-blur-md shadow-md">
             <div className="flex items-center gap-2 text-[#C5A059] mb-1">
-              <ShieldCheck className="w-4 h-4" />
-              <span className="text-xs font-semibold uppercase tracking-wider">Alumni Base</span>
+              <Users className="w-4 h-4" />
+              <span className="text-xs font-semibold uppercase tracking-wider">Alumni Registered</span>
             </div>
-            <div className="font-serif-heading text-2xl sm:text-3xl font-bold text-white">12,000+</div>
-            <div className="text-[11px] text-slate-300">Vaidyas across 35 nations</div>
+            <div className="font-serif-heading text-2xl sm:text-3xl font-bold text-white">
+              {registeredCount > 0 ? registeredCount.toLocaleString("en-IN") : "..."}
+            </div>
+            <div className="text-[11px] text-slate-300">Verified members on portal</div>
           </div>
 
           <div className="p-3 sm:p-4 rounded-xl bg-slate-900/70 border border-[#C5A059]/30 backdrop-blur-md shadow-md">

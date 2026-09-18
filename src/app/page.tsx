@@ -72,7 +72,7 @@ export default function HomePage() {
   return (
     <div className="flex flex-col min-h-screen">
       {/* 1. Immersive Editorial Hero */}
-      <EditorialHero />
+      <EditorialHero registeredCount={alumniList.length} />
 
       {/* 2. Urgent Community Notification Banner: Birthday Radar & Memorials */}
       <div className="bg-[#FAF7F2] border-b border-[#C5A059]/20 py-3 px-4">
