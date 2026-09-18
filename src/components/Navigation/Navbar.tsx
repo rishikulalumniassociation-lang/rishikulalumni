@@ -65,7 +65,7 @@ export default function Navbar() {
   const navLinks = [
     { name: "Home", href: homeHref, icon: GraduationCap },
     { name: "Directory", href: "/directory", icon: Users },
-    { name: "Gallery / गैलरी", href: "/community", icon: Camera },
+    { name: "Gallery", href: "/community", icon: Camera },
     { name: "Lifetime Member", href: "/membership/permanent", icon: Crown },
     { name: "Ayurveda Experts", href: "/experts", icon: Stethoscope },
     { name: "Achievements", href: "/achievements", icon: Sparkles },
