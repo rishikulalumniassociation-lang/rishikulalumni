@@ -29,7 +29,8 @@ import {
   ChevronRight,
   Stethoscope,
   Medal,
-  Trophy
+  Trophy,
+  Crown
 } from "lucide-react";
 
 export default function DirectoryPage() {
@@ -480,9 +481,21 @@ export default function DirectoryPage() {
                   />
                 </div>
                 <div>
-                  <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#C5A059] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 mb-1">
-                    {selectedProfile.membershipTier} • Verified
-                  </span>
+                  {selectedProfile.membershipTier === "Life Member" ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-[#C5A059] to-amber-500 text-slate-950 px-3 py-1 rounded-full border border-amber-300 shadow-xs mb-1.5">
+                      <Crown className="w-3.5 h-3.5 fill-slate-950 text-slate-950" />
+                      Paid Life Member • आजीवन सदस्य
+                    </span>
+                  ) : selectedProfile.membershipTier === "Patron Member" ? (
+                    <span className="inline-flex items-center gap-1.5 text-[11px] font-extrabold uppercase tracking-wider bg-slate-900 text-amber-300 px-3 py-1 rounded-full border border-[#C5A059] shadow-xs mb-1.5">
+                      <Crown className="w-3.5 h-3.5 fill-[#C5A059] text-[#C5A059]" />
+                      Patron Member • संरक्षक सदस्य
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-[#C5A059] bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 mb-1">
+                      {selectedProfile.membershipTier} • Verified
+                    </span>
+                  )}
                   <h3 className="font-serif-heading text-2xl font-bold text-[#0F172A] leading-tight">
                     {selectedProfile.fullName}
                   </h3>

@@ -29,7 +29,8 @@ import {
   CreditCard,
   Camera,
   ArrowLeft,
-  ChevronRight
+  ChevronRight,
+  Crown
 } from "lucide-react";
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
@@ -295,9 +296,21 @@ export default function AlumniProfilePage() {
           <div className="bg-gradient-to-r from-[#0F172A] via-[#1E293B] to-[#2D5A43] px-5 sm:px-10 pt-5 pb-6 relative">
             {/* Top Badges Row */}
             <div className="flex items-center justify-end gap-2 mb-3">
-              <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[11px] sm:text-xs font-bold uppercase shadow-sm">
-                {user.membershipTier}
-              </span>
+              {user.membershipTier === "Life Member" ? (
+                <span className="px-3.5 py-1 rounded-full bg-gradient-to-r from-amber-400 via-[#C5A059] to-amber-500 text-slate-950 text-[11px] sm:text-xs font-extrabold uppercase shadow-md flex items-center gap-1.5 border border-amber-200">
+                  <Crown className="w-3.5 h-3.5 fill-slate-950 text-slate-950" />
+                  Paid Life Member
+                </span>
+              ) : user.membershipTier === "Patron Member" ? (
+                <span className="px-3.5 py-1 rounded-full bg-slate-900 text-amber-300 text-[11px] sm:text-xs font-extrabold uppercase shadow-md flex items-center gap-1.5 border border-[#C5A059]">
+                  <Crown className="w-3.5 h-3.5 fill-[#C5A059] text-[#C5A059]" />
+                  Patron Member
+                </span>
+              ) : (
+                <span className="px-3 py-1 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white text-[11px] sm:text-xs font-bold uppercase shadow-sm">
+                  {user.membershipTier}
+                </span>
+              )}
               <span className="px-3 py-1 rounded-full bg-emerald-600 text-white text-[11px] sm:text-xs font-bold uppercase flex items-center gap-1 shadow-sm">
                 <ShieldCheck className="w-3.5 h-3.5" />
                 Verified

@@ -3,7 +3,7 @@
 import React, { useRef, useState, useEffect } from "react";
 import QRCode from "qrcode";
 import { toPng } from "html-to-image";
-import { Download, Share2, ShieldCheck, Award, Sparkles, RefreshCw, GraduationCap } from "lucide-react";
+import { Download, Share2, ShieldCheck, Award, Sparkles, RefreshCw, GraduationCap, Crown } from "lucide-react";
 import { AlumniProfile } from "@/types";
 
 interface DigitalIdCardProps {
@@ -61,26 +61,39 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
     .filter(Boolean)
     .join(" | ") || `Batch ${alumni.batchYear || ""}`;
 
-  return (
+    const isLifeMember = alumni.membershipTier === "Life Member";
+    const isPatronMember = alumni.membershipTier === "Patron Member";
+
+    return (
     <div className="flex flex-col items-center w-full max-w-md mx-auto">
       {/* Interactive Card Flip Preview */}
       <div className="relative w-full aspect-[1.586/1] mb-6 perspective">
         <div
           ref={cardRef}
           onClick={() => setIsFlipped(!isFlipped)}
-          className={`w-full h-full rounded-2xl p-5 sm:p-6 shadow-2xl transition-transform duration-500 cursor-pointer select-none relative overflow-hidden flex flex-col justify-between border-2 ${
-            alumni.membershipTier === "Patron Member"
-              ? "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A0F1D] border-[#C5A059] text-white"
-              : alumni.membershipTier === "Life Member"
-              ? "bg-gradient-to-br from-[#0F172A] to-[#162A20] border-[#C5A059]/60 text-white"
-              : "bg-gradient-to-br from-[#1E293B] to-[#0F172A] border-slate-600 text-white"
+          className={`w-full h-full rounded-2xl p-5 sm:p-6 shadow-2xl transition-transform duration-500 cursor-pointer select-none relative overflow-hidden flex flex-col justify-between border-3 ${
+            isPatronMember
+              ? "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A0F1D] border-[#E5C158] text-white shadow-[0_15px_40px_rgba(15,23,42,0.6)]"
+              : isLifeMember
+              ? "bg-gradient-to-br from-[#042017] via-[#0B3524] to-[#031811] border-[#E5C158] text-white shadow-[0_18px_45px_rgba(197,160,89,0.4)]"
+              : "bg-gradient-to-br from-[#1E293B] to-[#0F172A] border-slate-600 text-white shadow-xl"
           }`}
         >
-          {/* Subtle Background Ayurvedic Mandala */}
+          {/* Top Gold Shimmer Stripe for Life Member & Patron */}
+          {(isLifeMember || isPatronMember) && (
+            <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-300 via-[#E5C158] to-amber-500 shadow-sm" />
+          )}
+
+          {/* Subtle Background Ayurvedic Mandala & Watermark */}
           <div className="absolute -right-12 -bottom-12 w-48 h-48 rounded-full border-[12px] border-[#C5A059]/10 pointer-events-none" />
           <div className="absolute -right-6 -bottom-6 w-36 h-36 rounded-full border-[6px] border-[#C5A059]/15 pointer-events-none" />
+          {isLifeMember && (
+            <div className="absolute right-4 bottom-14 opacity-10 pointer-events-none select-none text-amber-300">
+              <Crown className="w-32 h-32" />
+            </div>
+          )}
 
-          {/* Card Top Header: RISHIKUL SANGAM */}
+          {/* Card Top Header */}
           <div className="relative z-10 flex items-start justify-between">
             <div className="flex items-center gap-2.5">
               <div className="w-10 h-10 rounded-full border border-[#C5A059] bg-white overflow-hidden flex items-center justify-center shadow-sm shrink-0">
@@ -107,23 +120,64 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
             </div>
 
             <div className="text-right">
-              <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-[#C5A059] text-[#0F172A] shadow-sm">
-                {alumni.membershipTier}
-              </span>
-              <p className="text-[9px] font-mono text-slate-300 mt-1">
-                {alumni.membershipId}
-              </p>
+              {isLifeMember ? (
+                <div className="flex flex-col items-end">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-gradient-to-r from-amber-400 via-[#E5C158] to-amber-500 text-slate-950 shadow-md border border-amber-200">
+                    <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+                    Paid Life Member
+                  </span>
+                  <span className="text-[8px] font-bold text-amber-300 tracking-wider mt-0.5 uppercase">
+                    स्थायी आजीवन सदस्य
+                  </span>
+                  <p className="text-[9px] font-mono text-amber-200 font-bold mt-0.5">
+                    {alumni.membershipId}
+                  </p>
+                </div>
+              ) : isPatronMember ? (
+                <div className="flex flex-col items-end">
+                  <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-extrabold tracking-wider uppercase bg-gradient-to-r from-amber-300 to-amber-500 text-slate-950 shadow-md border border-white/40">
+                    <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+                    Patron Member
+                  </span>
+                  <span className="text-[8px] font-bold text-amber-200 tracking-wider mt-0.5 uppercase">
+                    संरक्षक सदस्य
+                  </span>
+                  <p className="text-[9px] font-mono text-slate-300 font-bold mt-0.5">
+                    {alumni.membershipId}
+                  </p>
+                </div>
+              ) : (
+                <div className="text-right">
+                  <span className="inline-block px-2.5 py-0.5 rounded-full text-[10px] font-bold tracking-wider uppercase bg-slate-700 text-slate-200 border border-slate-600 shadow-sm">
+                    {alumni.membershipTier}
+                  </span>
+                  <p className="text-[9px] font-mono text-slate-400 mt-1">
+                    {alumni.membershipId}
+                  </p>
+                </div>
+              )}
             </div>
           </div>
 
           {/* Card Middle: Photo, Full Name (up to 2 lines), Degree, Batch */}
           <div className="relative z-10 flex items-center gap-3 sm:gap-4 my-2">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden border-2 border-[#C5A059] flex-shrink-0 bg-slate-800 shadow-md">
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-xl overflow-hidden flex-shrink-0 shadow-md relative ${
+              isLifeMember
+                ? "border-2 border-[#E5C158] ring-2 ring-amber-400/50 bg-amber-950/40"
+                : isPatronMember
+                ? "border-2 border-[#C5A059] ring-2 ring-amber-300/40 bg-slate-900"
+                : "border-2 border-[#C5A059] bg-slate-800"
+            }`}>
               <img
                 src={alumni.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop"}
                 alt={alumni.fullName}
                 className="w-full h-full object-cover"
               />
+              {isLifeMember && (
+                <div className="absolute top-1 left-1 bg-amber-500 text-slate-950 rounded-full p-0.5 shadow-sm" title="Paid Life Member">
+                  <Crown className="w-2.5 h-2.5 fill-slate-950" />
+                </div>
+              )}
             </div>
 
             <div className="flex-1 min-w-0 pr-1">
@@ -163,7 +217,17 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
 
             <div className="flex items-center gap-2">
               <span className="text-[8px] uppercase tracking-wider text-slate-400 text-right leading-tight">
-                Official<br />Digital Credential
+                {isLifeMember ? (
+                  <span className="text-amber-300 font-semibold">
+                    Permanent<br />Life Credential
+                  </span>
+                ) : isPatronMember ? (
+                  <span className="text-amber-200 font-semibold">
+                    Patron<br />Life Credential
+                  </span>
+                ) : (
+                  <>Official<br />Digital Credential</>
+                )}
               </span>
               {qrDataUrl && (
                 <div className="p-1 bg-white rounded-lg shadow-sm">

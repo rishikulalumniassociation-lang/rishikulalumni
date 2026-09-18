@@ -4,7 +4,7 @@ import React, { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
-import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock } from "lucide-react";
+import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock, Crown } from "lucide-react";
 import { getAlumniList, getLoggedInAlumni } from "@/lib/store";
 import { AlumniProfile } from "@/types";
 
@@ -132,9 +132,21 @@ export default function BirthdaysPage() {
                         </div>
                       </div>
 
-                      <span className="px-3 py-1 rounded-full bg-[#2D5A43] text-white text-[11px] font-bold">
-                        {alumnus.membershipTier}
-                      </span>
+                      {alumnus.membershipTier === "Life Member" ? (
+                        <span className="px-3 py-1 rounded-full bg-gradient-to-r from-amber-400 via-[#C5A059] to-amber-500 text-slate-950 text-[11px] font-extrabold flex items-center gap-1 shadow-xs border border-amber-300">
+                          <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+                          Life Member
+                        </span>
+                      ) : alumnus.membershipTier === "Patron Member" ? (
+                        <span className="px-3 py-1 rounded-full bg-slate-900 text-amber-300 text-[11px] font-extrabold flex items-center gap-1 shadow-xs border border-[#C5A059]">
+                          <Crown className="w-3 h-3 text-[#C5A059] fill-[#C5A059]" />
+                          Patron Member
+                        </span>
+                      ) : (
+                        <span className="px-3 py-1 rounded-full bg-[#2D5A43] text-white text-[11px] font-bold">
+                          {alumnus.membershipTier}
+                        </span>
+                      )}
                     </div>
 
                     <div className="pt-4 border-t border-[#C5A059]/30 flex items-center justify-between gap-3">
@@ -231,9 +243,21 @@ export default function BirthdaysPage() {
                   </div>
 
                   <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
-                    <span className="text-slate-400 font-mono text-[10px]">
-                      {alumnus.membershipTier}
-                    </span>
+                    {alumnus.membershipTier === "Life Member" ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-700 bg-amber-100 px-2 py-0.5 rounded-full border border-amber-300">
+                        <Crown className="w-2.5 h-2.5 text-amber-700 fill-amber-700" />
+                        Life Member
+                      </span>
+                    ) : alumnus.membershipTier === "Patron Member" ? (
+                      <span className="inline-flex items-center gap-1 text-[10px] font-extrabold text-amber-900 bg-amber-200 px-2 py-0.5 rounded-full border border-amber-400">
+                        <Crown className="w-2.5 h-2.5 text-amber-900 fill-amber-900" />
+                        Patron
+                      </span>
+                    ) : (
+                      <span className="text-slate-400 font-mono text-[10px]">
+                        {alumnus.membershipTier}
+                      </span>
+                    )}
                     <Link
                       href={`/directory?id=${alumnus.id}`}
                       className="text-[#2D5A43] font-semibold hover:underline"

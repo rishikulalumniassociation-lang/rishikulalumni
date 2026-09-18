@@ -15,7 +15,8 @@ import {
   Building,
   Medal,
   Lock,
-  Heart
+  Heart,
+  Crown
 } from "lucide-react";
 import { toggleAlumniConnection } from "@/lib/store";
 import { useRouter } from "next/navigation";
@@ -96,21 +97,54 @@ export default function AlumniCard({
     );
   };
 
+  const isLifeMember = alumni.membershipTier === "Life Member";
+  const isPatronMember = alumni.membershipTier === "Patron Member";
+
   return (
     <div
       onClick={() => onSelect && onSelect(alumni)}
-      className="group relative bg-white rounded-2xl p-5 sm:p-6 border border-[#C5A059]/30 hover:border-[#C5A059] shadow-sm hover:shadow-md transition-all duration-300 flex flex-col justify-between cursor-pointer"
+      className={`group relative rounded-2xl p-5 sm:p-6 transition-all duration-300 flex flex-col justify-between cursor-pointer overflow-hidden ${
+        isLifeMember
+          ? "bg-gradient-to-br from-[#FFFDF8] via-[#FAF3E2] to-[#F4E6CC] border-2 border-[#C5A059] shadow-md hover:shadow-xl hover:border-amber-500 ring-1 ring-amber-400/40"
+          : isPatronMember
+          ? "bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A0F1D] text-slate-100 border-2 border-[#C5A059] shadow-lg hover:shadow-2xl hover:border-amber-400"
+          : "bg-white border border-[#C5A059]/30 hover:border-[#C5A059] shadow-sm hover:shadow-md"
+      }`}
     >
+      {/* Distinction Top Strip */}
+      {isLifeMember && (
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-amber-400 via-[#C5A059] to-amber-600 shadow-xs" />
+      )}
+      {isPatronMember && (
+        <div className="absolute top-0 left-0 right-0 h-1.5 bg-gradient-to-r from-[#0F172A] via-[#C5A059] to-[#0F172A] shadow-xs" />
+      )}
+
+      {/* Subtle Background Watermark for Life Member */}
+      {isLifeMember && (
+        <div className="absolute -bottom-8 -right-8 w-36 h-36 rounded-full border-[10px] border-[#C5A059]/10 pointer-events-none select-none" />
+      )}
+
       <div>
         {/* Header with Photo, Verified Badge, and Membership Tier */}
         <div className="flex items-start justify-between gap-3 mb-4">
           <div className="relative">
-            <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden border-2 border-[#C5A059]/40 group-hover:border-[#2D5A43] transition-colors relative bg-slate-100 flex-shrink-0">
+            <div className={`w-16 h-16 sm:w-20 sm:h-20 rounded-2xl overflow-hidden relative flex-shrink-0 transition-all ${
+              isLifeMember
+                ? "border-2 border-amber-500 ring-2 ring-[#C5A059]/50 shadow-md bg-amber-50"
+                : isPatronMember
+                ? "border-2 border-[#C5A059] ring-2 ring-amber-400/50 shadow-md bg-slate-900"
+                : "border-2 border-[#C5A059]/40 group-hover:border-[#2D5A43] bg-slate-100"
+            }`}>
               <img
                 src={alumni.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=200&auto=format&fit=crop"}
                 alt={alumni.fullName}
                 className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
               />
+              {isLifeMember && (
+                <div className="absolute top-1 left-1 bg-amber-500 text-slate-950 rounded-full p-0.5 shadow-sm" title="Life Member">
+                  <Crown className="w-2.5 h-2.5 fill-slate-950" />
+                </div>
+              )}
             </div>
             {alumni.isVerified && (
               <span
@@ -124,23 +158,59 @@ export default function AlumniCard({
 
           <div className="flex flex-col items-end gap-1.5">
             {renderBatchBadges()}
-            <span className="text-[10px] uppercase font-bold tracking-wider text-[#C5A059]">
-              {alumni.membershipTier}
-            </span>
+            {isLifeMember ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-amber-400 via-[#C5A059] to-amber-500 text-slate-950 shadow-xs border border-amber-300">
+                <Crown className="w-3 h-3 text-slate-950 fill-slate-950" />
+                Life Member
+              </span>
+            ) : isPatronMember ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase tracking-wider bg-gradient-to-r from-slate-900 to-[#0F172A] text-amber-300 shadow-xs border border-[#C5A059]">
+                <Crown className="w-3 h-3 text-[#C5A059] fill-[#C5A059]" />
+                Patron Member
+              </span>
+            ) : (
+              <span className="text-[10px] uppercase font-bold tracking-wider text-[#C5A059]">
+                {alumni.membershipTier}
+              </span>
+            )}
           </div>
         </div>
 
         {/* Doctor Name & Degree */}
         <div className="mb-2">
-          <h3 className="font-serif-heading text-lg sm:text-xl font-bold text-[#0F172A] group-hover:text-[#2D5A43] transition-colors line-clamp-1">
-            {alumni.fullName}
-          </h3>
+          <div className="flex items-center gap-1.5">
+            <h3 className={`font-serif-heading text-lg sm:text-xl font-bold transition-colors line-clamp-1 ${
+              isPatronMember ? "text-white group-hover:text-amber-300" : "text-[#0F172A] group-hover:text-[#2D5A43]"
+            }`}>
+              {alumni.fullName}
+            </h3>
+            {isLifeMember && (
+              <span title="Paid Life Member (आजीवन सदस्य)">
+                <Crown className="w-4 h-4 text-amber-600 fill-amber-500 shrink-0" />
+              </span>
+            )}
+          </div>
           {alumni.fullNameHindi && (
-            <p className="text-xs font-medium text-[#64748B] tracking-normal mt-0.5">
+            <p className={`text-xs font-medium tracking-normal mt-0.5 ${
+              isPatronMember ? "text-amber-200/90" : "text-[#64748B]"
+            }`}>
               {alumni.fullNameHindi}
             </p>
           )}
         </div>
+
+        {/* Paid Life Member Distinction Banner */}
+        {isLifeMember && (
+          <div className="mb-3 px-2.5 py-1 rounded-xl bg-gradient-to-r from-amber-200/85 via-amber-100 to-amber-200/85 border border-amber-300/90 flex items-center justify-between shadow-2xs">
+            <span className="text-[10.5px] font-extrabold text-amber-950 flex items-center gap-1">
+              <Crown className="w-3.5 h-3.5 text-amber-800 fill-amber-700" />
+              आजीवन सदस्य (Paid Life Member)
+            </span>
+            <span className="text-[8.5px] font-extrabold uppercase tracking-widest text-amber-900 bg-amber-300/80 px-1.5 py-0.5 rounded border border-amber-400/70">
+              Distinction
+            </span>
+          </div>
+        )}
 
         {/* Education Tag & Specialization */}
         <div className="flex flex-wrap items-center gap-1.5 mb-3">
@@ -265,8 +335,12 @@ export default function AlumniCard({
       </div>
 
       {/* Card Action Footer */}
-      <div className="pt-3 border-t border-[#C5A059]/20 flex items-center justify-between">
-        <span className="text-[10px] font-mono text-slate-400">
+      <div className={`pt-3 border-t flex items-center justify-between ${
+        isPatronMember ? "border-slate-700" : isLifeMember ? "border-amber-300/70" : "border-[#C5A059]/20"
+      }`}>
+        <span className={`text-[10px] font-mono ${
+          isPatronMember ? "text-slate-400" : isLifeMember ? "text-amber-950 font-bold" : "text-slate-400"
+        }`}>
           ID: {alumni.membershipId}
         </span>
 
