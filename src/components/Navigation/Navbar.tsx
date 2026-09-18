@@ -63,7 +63,7 @@ export default function Navbar() {
     { name: "Home", href: "/", icon: GraduationCap },
     { name: "Directory", href: "/directory", icon: Users },
     { name: "Gallery / गैलरी", href: "/community", icon: Camera },
-    { name: "आजीवन सदस्यता", href: "/membership/permanent", icon: Crown },
+    { name: "Lifetime Member", href: "/membership/permanent", icon: Crown },
     { name: "Ayurveda Experts", href: "/experts", icon: Stethoscope },
     { name: "Achievements", href: "/achievements", icon: Sparkles },
     { name: "Hall of Fame", href: "/achievers", icon: Award },

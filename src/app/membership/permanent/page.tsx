@@ -199,7 +199,7 @@ export default function PermanentMembershipPage() {
             आजीवन सदस्यता (Lifetime Membership)
           </h1>
           <p className="font-serif-heading text-lg sm:text-xl text-[#C5A059] font-bold mt-2">
-            आजन्म सदस्य बनें और अपनी संस्था को बढ़ाने में सहयोग करें।
+            आजीवन सदस्य बनें और अपनी संस्था को बढ़ाने में सहयोग करें।
           </p>
           <p className="text-xs sm:text-sm text-slate-600 mt-2 max-w-2xl mx-auto leading-relaxed">
             ऋषिकुल एक • पीढ़ियाँ अनेक • कुटुंब एक • विचार अनेक (UK06803112023012256)
@@ -331,11 +331,11 @@ export default function PermanentMembershipPage() {
 
               {/* QR Code Section */}
               <div className="flex flex-col sm:flex-row items-center gap-6 bg-gradient-to-br from-amber-50/60 to-white p-5 rounded-2xl border border-amber-200">
-                <div className="w-40 h-40 bg-white p-2 rounded-2xl border-2 border-[#C5A059] shadow-md shrink-0 flex items-center justify-center overflow-hidden">
+                <div className="w-48 sm:w-56 bg-white p-3 rounded-2xl border-2 border-[#C5A059] shadow-md shrink-0 flex items-center justify-center overflow-hidden">
                   <img
-                    src={settings.qrImageUrl || "/images/rishikul-sangam-logo.jpg"}
+                    src={settings.qrImageUrl || "/images/rishikul-upi-qr.png"}
                     alt="Official UPI QR Code"
-                    className="w-full h-full object-contain"
+                    className="w-full h-auto object-contain"
                   />
                 </div>
                 <div className="text-center sm:text-left space-y-2">
@@ -658,7 +658,7 @@ export default function PermanentMembershipPage() {
             <div>
               <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-100 text-amber-900 text-xs font-bold uppercase tracking-wider mb-2">
                 <Crown className="w-3.5 h-3.5 text-amber-600 fill-amber-500" />
-                <span>ऋषिकुल आजन्म सदस्य गौरव सूची</span>
+                <span>ऋषिकुल आजीवन सदस्य गौरव सूची</span>
               </div>
               <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
                 हमारे सम्मानित आजीवन सदस्य ({lifeMembers.length})

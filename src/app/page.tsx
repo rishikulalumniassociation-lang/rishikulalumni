@@ -606,7 +606,7 @@ export default function HomePage() {
                 </div>
 
                 <h2 className="font-serif-heading text-3xl sm:text-4xl font-extrabold text-[#0F172A] leading-tight">
-                  आजन्म सदस्य बनें और अपनी संस्था को बढ़ाने में सहयोग करें
+                  आजीवन सदस्य बनें और अपनी संस्था को बढ़ाने में सहयोग करें
                 </h2>
 
                 <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-2xl">
@@ -622,7 +622,7 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
                     <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
                     <span>
-                      वर्तमान में {alumniList.filter((a) => a.membershipTier === "Life Member" && !a.isDeceased).length} आजन्म सदस्य सक्रिय
+                      वर्तमान में {alumniList.filter((a) => a.membershipTier === "Life Member" && !a.isDeceased).length} आजीवन सदस्य सक्रिय
                     </span>
                   </div>
                 </div>
@@ -644,7 +644,7 @@ export default function HomePage() {
                     href="/membership/permanent"
                     className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-[#C5A059] hover:text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#C5A059]"
                   >
-                    <span>आजन्म सदस्य बनें (Join Now)</span>
+                    <span>आजीवन सदस्य बनें (Join Now)</span>
                     <ArrowRight className="w-4 h-4" />
                   </Link>
 
@@ -652,7 +652,7 @@ export default function HomePage() {
                     href="/membership/permanent"
                     className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-transparent hover:bg-black/5 text-slate-700 text-xs font-bold transition-colors"
                   >
-                    <span>आजन्म सदस्यों की सूची देखें ({alumniList.filter((a) => a.membershipTier === "Life Member" && !a.isDeceased).length})</span>
+                    <span>आजीवन सदस्यों की सूची देखें ({alumniList.filter((a) => a.membershipTier === "Life Member" && !a.isDeceased).length})</span>
                   </Link>
                 </div>
               </div>

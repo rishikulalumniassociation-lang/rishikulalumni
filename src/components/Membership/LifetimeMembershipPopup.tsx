@@ -85,7 +85,7 @@ export default function LifetimeMembershipPopup() {
 
         {/* Prominent Hindi Title */}
         <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A] leading-snug mb-1">
-          आजन्म सदस्य बनें
+          आजीवन सदस्य बनें
         </h2>
         <p className="text-xs sm:text-sm font-medium text-[#2D5A43] mb-4">
           और अपनी संस्था को बढ़ाने में सहयोग करें।

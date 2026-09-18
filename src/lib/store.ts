@@ -1265,15 +1265,15 @@ export interface LifetimeMembershipSettings {
 
 export const DEFAULT_MEMBERSHIP_SETTINGS: LifetimeMembershipSettings = {
   lifetimeFee: 3100,
-  upiId: "YOUR_OFFICIAL_UPI_ID",
-  qrImageUrl: "/images/rishikul-sangam-logo.jpg",
+  upiId: "0274060820260000@cbin",
+  qrImageUrl: "/images/rishikul-upi-qr.png",
   contactPersonName: "Prof. Vineet Kumar Agnihotri",
   contactMobile: "9897284154",
   whatsappNumber: "9897284154",
-  accountName: "ऋषिकुल स्नातक एवं स्नातकोत्तर संघ",
-  bankName: "State Bank of India (SBI)",
+  accountName: "RISHIKUL SNATAK AVAM SNATKOTAR ASSOCIATION",
+  bankName: "Central Bank of India",
   accountNumber: "XXXXXXXXXXXX",
-  ifscCode: "SBIN000XXXX"
+  ifscCode: "CBIN0280274"
 };
 
 export interface MembershipPaymentSubmission {
