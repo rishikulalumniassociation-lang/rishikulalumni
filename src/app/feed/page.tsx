@@ -216,14 +216,27 @@ export default function FeedPage() {
     setTimeout(() => setCopiedLinkPostId(null), 2500);
   };
 
-  // Compute Birthdays for the Month
+  // Compute Birthdays for the Month (today and upcoming this month)
   const thisMonthBirthdays = useMemo(() => {
-    const currentMonth = new Date().getMonth() + 1;
-    return alumniList.filter((a) => {
-      if (!a.dateOfBirth) return false;
-      const parts = a.dateOfBirth.split("-");
-      return parts.length >= 2 && parseInt(parts[1], 10) === currentMonth;
-    });
+    const today = new Date();
+    const currentMonth = today.getMonth() + 1;
+    const currentDay = today.getDate();
+    return alumniList
+      .filter((a) => {
+        if (!a.dateOfBirth) return false;
+        const parts = a.dateOfBirth.split("-");
+        if (parts.length < 3) return false;
+        const m = parseInt(parts[1], 10);
+        const d = parseInt(parts[2], 10);
+        return m === currentMonth && d >= currentDay;
+      })
+      .sort((a, b) => {
+        const partsA = a.dateOfBirth!.split("-");
+        const partsB = b.dateOfBirth!.split("-");
+        const dayA = parseInt(partsA[2], 10);
+        const dayB = parseInt(partsB[2], 10);
+        return dayA - dayB;
+      });
   }, [alumniList]);
 
   // Today's Birthdays

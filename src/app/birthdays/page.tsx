@@ -23,8 +23,9 @@ export default function BirthdaysPage() {
   const today = new Date();
   const todayMonthDay = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
-  // Current calendar month (1-12)
+  // Current calendar month (1-12) and today's day of the month
   const currentMonth = today.getMonth() + 1;
+  const currentDay = today.getDate();
   const currentMonthName = today.toLocaleDateString("en-US", { month: "long" });
 
   // Filter today's birthdays
@@ -36,14 +37,15 @@ export default function BirthdaysPage() {
     return mDay === todayMonthDay;
   });
 
-  // Upcoming birthdays strictly in this specific calendar month (after today or throughout this month)
+  // Birthdays this month that are today or upcoming in this current month (excluding past dates before today)
   const thisMonthBirthdays = alumni
     .filter((a) => {
       if (!a.dateOfBirth) return false;
       const parts = a.dateOfBirth.split("-");
       if (parts.length < 3) return false;
       const m = parseInt(parts[1], 10);
-      return m === currentMonth;
+      const d = parseInt(parts[2], 10);
+      return m === currentMonth && d >= currentDay;
     })
     .sort((a, b) => {
       const partsA = a.dateOfBirth.split("-");
@@ -212,7 +214,7 @@ export default function BirthdaysPage() {
           <div className="flex items-center gap-2 mb-6">
             <Calendar className="w-5 h-5 text-[#2D5A43]" />
             <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
-              Birthdays in {currentMonthName} ({thisMonthBirthdays.length})
+              Birthday This Month ({thisMonthBirthdays.length})
             </h2>
           </div>
 
@@ -236,7 +238,7 @@ export default function BirthdaysPage() {
                     />
                     <div>
                       <span className="text-[10px] font-bold uppercase tracking-wider text-amber-800 bg-amber-100 px-2 py-0.5 rounded-full inline-block mb-1">
-                        Upcoming: {formattedDate}
+                        Birthday: {formattedDate}
                       </span>
                       <h4 className="font-serif-heading text-lg font-bold text-[#0F172A]">
                         {alumnus.fullName}
