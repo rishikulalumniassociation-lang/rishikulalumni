@@ -49,8 +49,10 @@ export default function RegisterPage() {
     // Step 2: Rishikul Education (UG / PG / BOTH)
     rishikulEducation: "UG" as RishikulEducationType,
     ugBatchYear: "1995",
+    ugPassoutYear: "2000",
     ugDegree: "BAMS",
     pgBatchYear: "2000",
+    pgPassoutYear: "2003",
     pgDegree: "MD (Ayurveda)",
     specialization: "Kayachikitsa (Internal Medicine)" as any,
 
@@ -137,8 +139,10 @@ export default function RegisterPage() {
       // Rishikul Education
       rishikulEducation: formData.rishikulEducation,
       ugBatchYear: formData.rishikulEducation === "PG" ? undefined : Number(formData.ugBatchYear),
+      ugPassoutYear: formData.rishikulEducation === "PG" ? undefined : (formData.ugPassoutYear ? Number(formData.ugPassoutYear) : (formData.ugBatchYear ? Number(formData.ugBatchYear) + 5 : undefined)),
       ugDegree: formData.rishikulEducation === "PG" ? undefined : formData.ugDegree,
       pgBatchYear: formData.rishikulEducation === "UG" ? undefined : (formData.pgBatchYear ? Number(formData.pgBatchYear) : undefined),
+      pgPassoutYear: formData.rishikulEducation === "UG" ? undefined : (formData.pgPassoutYear ? Number(formData.pgPassoutYear) : (formData.pgBatchYear ? Number(formData.pgBatchYear) + 3 : undefined)),
       pgDegree: formData.rishikulEducation === "UG" ? undefined : formData.pgDegree,
       specialization: formData.rishikulEducation === "UG" ? undefined : (formData.specialization || undefined),
 
@@ -502,18 +506,41 @@ export default function RegisterPage() {
                         <GraduationCap className="w-4 h-4" />
                         Rishikul UG (Undergraduate) Details
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
-                            UG Entrance / Batch Year *
+                            UG Admission Year (प्रवेश वर्ष) *
                           </label>
                           <input
                             type="number"
                             name="ugBatchYear"
                             min="1940"
                             max="2026"
-                            placeholder="e.g. 1994"
+                            placeholder="e.g. 1995"
                             value={formData.ugBatchYear}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const num = parseInt(val, 10);
+                              setFormData((prev) => ({
+                                ...prev,
+                                ugBatchYear: val,
+                                ugPassoutYear: num ? String(num + 5) : prev.ugPassoutYear,
+                              }));
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                            UG Passout Year (उत्तीर्ण वर्ष) *
+                          </label>
+                          <input
+                            type="number"
+                            name="ugPassoutYear"
+                            min="1945"
+                            max="2032"
+                            placeholder="e.g. 2000"
+                            value={formData.ugPassoutYear}
                             onChange={handleChange}
                             className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
                           />
@@ -526,7 +553,7 @@ export default function RegisterPage() {
                             type="text"
                             disabled
                             value="BAMS"
-                            className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-500"
+                            className="w-full bg-slate-100 border border-slate-300 rounded-xl px-3 py-2 text-sm text-slate-500 font-medium"
                           />
                         </div>
                       </div>
@@ -540,18 +567,41 @@ export default function RegisterPage() {
                         <GraduationCap className="w-4 h-4 text-[#C5A059]" />
                         Rishikul PG (Postgraduate) Details
                       </div>
-                      <div className="grid grid-cols-2 gap-3">
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                         <div>
                           <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
-                            PG Entrance / Batch Year *
+                            PG Admission Year (प्रवेश वर्ष) *
                           </label>
                           <input
                             type="number"
                             name="pgBatchYear"
                             min="1970"
                             max="2026"
-                            placeholder="e.g. 2002"
+                            placeholder="e.g. 2003"
                             value={formData.pgBatchYear}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              const num = parseInt(val, 10);
+                              setFormData((prev) => ({
+                                ...prev,
+                                pgBatchYear: val,
+                                pgPassoutYear: num ? String(num + 3) : prev.pgPassoutYear,
+                              }));
+                            }}
+                            className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] font-bold uppercase text-slate-600 mb-1">
+                            PG Passout Year (उत्तीर्ण वर्ष) *
+                          </label>
+                          <input
+                            type="number"
+                            name="pgPassoutYear"
+                            min="1973"
+                            max="2032"
+                            placeholder="e.g. 2006"
+                            value={formData.pgPassoutYear}
                             onChange={handleChange}
                             className="w-full bg-white border border-slate-300 rounded-xl px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
                           />

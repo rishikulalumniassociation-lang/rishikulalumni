@@ -103,6 +103,12 @@ export default function AlumniProfilePage() {
     (async () => {
       const fullList = await getAlumniList();
       const freshUser = fullList.find((a) => a.id === loggedIn.id) || loggedIn;
+      if (!freshUser.ugPassoutYear && freshUser.ugBatchYear) {
+        freshUser.ugPassoutYear = freshUser.ugBatchYear + 5;
+      }
+      if (!freshUser.pgPassoutYear && freshUser.pgBatchYear) {
+        freshUser.pgPassoutYear = freshUser.pgBatchYear + 3;
+      }
 
       setUser(freshUser);
       setAllAlumni(fullList);
@@ -164,6 +170,10 @@ export default function AlumniProfilePage() {
 
     const updates: Partial<AlumniProfile> = {
       ...formData,
+      ugBatchYear: formData.ugBatchYear ? Number(formData.ugBatchYear) : undefined,
+      ugPassoutYear: formData.ugPassoutYear ? Number(formData.ugPassoutYear) : (formData.ugBatchYear ? Number(formData.ugBatchYear) + 5 : undefined),
+      pgBatchYear: formData.pgBatchYear ? Number(formData.pgBatchYear) : undefined,
+      pgPassoutYear: formData.pgPassoutYear ? Number(formData.pgPassoutYear) : (formData.pgBatchYear ? Number(formData.pgBatchYear) + 3 : undefined),
       mobile: updatedMobile,
       whatsappNumber: updatedMobile,
       username: newUsername || user.username,
@@ -343,12 +353,12 @@ export default function AlumniProfilePage() {
                 <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
                   {user.ugBatchYear && (
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-amber-50 text-amber-900 border border-amber-300 shadow-xs">
-                      UG Batch: {user.ugBatchYear}
+                      UG: {user.ugBatchYear}{user.ugPassoutYear || (user.ugBatchYear ? `-${user.ugBatchYear + 5}` : "")}
                     </span>
                   )}
                   {user.pgBatchYear && (
                     <span className="px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30 shadow-xs">
-                      PG Batch: {user.pgBatchYear} ({user.pgDegree || "MD"})
+                      PG: {user.pgBatchYear}{user.pgPassoutYear || (user.pgBatchYear ? `-${user.pgBatchYear + 3}` : "")} ({user.pgDegree || "MD"})
                     </span>
                   )}
                   {user.rishikulEducation !== "UG" && user.specialization && user.specialization !== "General Ayurvedic Practice" && (
@@ -1400,39 +1410,6 @@ export default function AlumniProfilePage() {
                 </div>
               </div>
 
-              {(user.rishikulEducation === "PG" || user.rishikulEducation === "BOTH") && (
-                <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
-                    PG Specialization / स्नातकोत्तर विशेषता (MD/MS)
-                  </label>
-                  <select
-                    value={formData.specialization || ""}
-                    onChange={(e) => setFormData({ ...formData, specialization: e.target.value as any })}
-                    className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
-                  >
-                    <option value="">Select PG Specialization</option>
-                    {[
-                      "Kayachikitsa (Internal Medicine)",
-                      "Panchakarma",
-                      "Shalya Tantra (Surgery)",
-                      "Shalakya Tantra (ENT & Ophthalmology)",
-                      "Prasuti & Stri Roga (Obstetrics & Gynecology)",
-                      "Kaumarbhritya (Pediatrics)",
-                      "Dravyaguna (Pharmacology)",
-                      "Rasa Shastra & Bhaishajya Kalpana",
-                      "Sharir Kriya (Physiology)",
-                      "Sharir Rachana (Anatomy)",
-                      "Samhita & Siddhanta",
-                      "Swasthavritta & Yoga",
-                      "Agada Tantra (Toxicology)",
-                      "General Ayurvedic Practice"
-                    ].map((spec) => (
-                      <option key={spec} value={spec}>{spec}</option>
-                    ))}
-                  </select>
-                </div>
-              )}
-
               <div>
                 <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
                   About Me / Bio (अपनी जीवन यात्रा एवं क्लिनिकल अनुभव)
@@ -1445,6 +1422,141 @@ export default function AlumniProfilePage() {
                   className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl p-3 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
                 />
               </div>
+            </div>
+
+            {/* SECTION 4: RISHIKUL EDUCATION, ADMISSION & PASSOUT YEARS */}
+            <div className="space-y-4 p-5 rounded-2xl bg-[#FAF7F2] border border-slate-200">
+              <h4 className="text-xs font-bold uppercase text-[#2D5A43] flex items-center gap-1.5 tracking-wider">
+                <GraduationCap className="w-4 h-4 text-[#C5A059]" />
+                4. Rishikul Education & Batch Years (शिक्षा, प्रवेश एवं उत्तीर्ण वर्ष)
+              </h4>
+
+              {/* UG Years (if UG or BOTH) */}
+              {(user.rishikulEducation === "UG" || user.rishikulEducation === "BOTH") && (
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
+                  <div className="text-xs font-bold text-[#2D5A43] flex items-center justify-between">
+                    <span>UG (BAMS) Admission & Passout Years</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Degree: BAMS</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        UG Admission Year (प्रवेश वर्ष)
+                      </label>
+                      <input
+                        type="number"
+                        min="1940"
+                        max="2026"
+                        placeholder="e.g. 1995"
+                        value={formData.ugBatchYear ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const num = parseInt(val, 10);
+                          setFormData((prev) => ({
+                            ...prev,
+                            ugBatchYear: val ? Number(val) : undefined,
+                            ugPassoutYear: num ? num + 5 : prev.ugPassoutYear,
+                          }));
+                        }}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        UG Passout Year (उत्तीर्ण वर्ष)
+                      </label>
+                      <input
+                        type="number"
+                        min="1945"
+                        max="2032"
+                        placeholder="e.g. 2000"
+                        value={formData.ugPassoutYear ?? (formData.ugBatchYear ? Number(formData.ugBatchYear) + 5 : "")}
+                        onChange={(e) => setFormData({ ...formData, ugPassoutYear: e.target.value ? Number(e.target.value) : undefined })}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* PG Years (if PG or BOTH) */}
+              {(user.rishikulEducation === "PG" || user.rishikulEducation === "BOTH") && (
+                <div className="p-4 rounded-xl bg-white border border-slate-200 space-y-3">
+                  <div className="text-xs font-bold text-[#C5A059] flex items-center justify-between">
+                    <span>PG (MD/MS) Admission & Passout Years</span>
+                    <span className="text-[10px] text-slate-500 font-normal">Degree: {user.pgDegree || "MD/MS"}</span>
+                  </div>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        PG Admission Year (प्रवेश वर्ष)
+                      </label>
+                      <input
+                        type="number"
+                        min="1970"
+                        max="2026"
+                        placeholder="e.g. 2003"
+                        value={formData.pgBatchYear ?? ""}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const num = parseInt(val, 10);
+                          setFormData((prev) => ({
+                            ...prev,
+                            pgBatchYear: val ? Number(val) : undefined,
+                            pgPassoutYear: num ? num + 3 : prev.pgPassoutYear,
+                          }));
+                        }}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                        PG Passout Year (उत्तीर्ण वर्ष)
+                      </label>
+                      <input
+                        type="number"
+                        min="1973"
+                        max="2032"
+                        placeholder="e.g. 2006"
+                        value={formData.pgPassoutYear ?? (formData.pgBatchYear ? Number(formData.pgBatchYear) + 3 : "")}
+                        onChange={(e) => setFormData({ ...formData, pgPassoutYear: e.target.value ? Number(e.target.value) : undefined })}
+                        className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                      PG Specialization / स्नातकोत्तर विशेषता (MD/MS)
+                    </label>
+                    <select
+                      value={formData.specialization || ""}
+                      onChange={(e) => setFormData({ ...formData, specialization: e.target.value as any })}
+                      className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
+                    >
+                      <option value="">Select PG Specialization</option>
+                      {[
+                        "Kayachikitsa (Internal Medicine)",
+                        "Panchakarma",
+                        "Shalya Tantra (Surgery)",
+                        "Shalakya Tantra (ENT & Ophthalmology)",
+                        "Prasuti & Stri Roga (Obstetrics & Gynecology)",
+                        "Kaumarbhritya (Pediatrics)",
+                        "Dravyaguna (Pharmacology)",
+                        "Rasa Shastra & Bhaishajya Kalpana",
+                        "Sharir Kriya (Physiology)",
+                        "Sharir Rachana (Anatomy)",
+                        "Samhita & Siddhanta",
+                        "Swasthavritta & Yoga",
+                        "Agada Tantra (Toxicology)",
+                        "General Ayurvedic Practice"
+                      ].map((spec) => (
+                        <option key={spec} value={spec}>{spec}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* SAVE BUTTON */}

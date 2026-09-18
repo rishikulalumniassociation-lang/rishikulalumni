@@ -496,12 +496,12 @@ export default function DirectoryPage() {
                   <div className="flex flex-wrap gap-1.5 mt-2">
                     {selectedProfile.ugBatchYear && (
                       <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[11px] font-bold border border-amber-300">
-                        UG Batch: {selectedProfile.ugBatchYear} ({selectedProfile.ugDegree || "BAMS"})
+                        UG: {selectedProfile.ugBatchYear}{selectedProfile.ugPassoutYear || (selectedProfile.ugBatchYear ? `-${selectedProfile.ugBatchYear + 5}` : "")} ({selectedProfile.ugDegree || "BAMS"})
                       </span>
                     )}
                     {selectedProfile.pgBatchYear && (
                       <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-[#2D5A43] text-[11px] font-bold border border-emerald-200">
-                        PG Batch: {selectedProfile.pgBatchYear} ({selectedProfile.pgDegree || "MD"})
+                        PG: {selectedProfile.pgBatchYear}{selectedProfile.pgPassoutYear || (selectedProfile.pgBatchYear ? `-${selectedProfile.pgBatchYear + 3}` : "")} ({selectedProfile.pgDegree || "MD"})
                       </span>
                     )}
                     {selectedProfile.rishikulEducation !== "UG" && selectedProfile.specialization && selectedProfile.specialization !== "General Ayurvedic Practice" && (

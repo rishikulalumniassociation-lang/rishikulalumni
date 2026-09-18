@@ -77,16 +77,19 @@ export default function AlumniCard({
 
   // Render UG / PG batch badges dynamically
   const renderBatchBadges = () => {
+    const ugEnd = alumni.ugPassoutYear || (alumni.ugBatchYear ? alumni.ugBatchYear + 5 : null);
+    const pgEnd = alumni.pgPassoutYear || (alumni.pgBatchYear ? alumni.pgBatchYear + 3 : null);
+
     return (
-      <div className="flex flex-wrap items-center gap-1">
+      <div className="flex flex-col items-end gap-1">
         {alumni.ugBatchYear && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#FAF7F2] text-[#0F172A] border border-[#C5A059]/50">
-            UG Batch: {alumni.ugBatchYear}
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#FAF7F2] text-[#0F172A] border border-[#C5A059]/50 shadow-xs whitespace-nowrap">
+            UG: {alumni.ugBatchYear}{ugEnd ? `-${ugEnd}` : ""}
           </span>
         )}
         {alumni.pgBatchYear && (
-          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30">
-            PG Batch: {alumni.pgBatchYear}
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-bold bg-[#2D5A43]/10 text-[#2D5A43] border border-[#2D5A43]/30 shadow-xs whitespace-nowrap">
+            PG: {alumni.pgBatchYear}{pgEnd ? `-${pgEnd}` : ""}
           </span>
         )}
       </div>

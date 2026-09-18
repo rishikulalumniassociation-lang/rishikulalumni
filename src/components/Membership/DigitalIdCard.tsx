@@ -50,10 +50,13 @@ export default function DigitalIdCard({ alumni }: DigitalIdCardProps) {
     }
   };
 
-  // Compute batch labels
+  // Compute batch labels with admission and passout years
+  const ugEnd = alumni.ugPassoutYear || (alumni.ugBatchYear ? alumni.ugBatchYear + 5 : null);
+  const pgEnd = alumni.pgPassoutYear || (alumni.pgBatchYear ? alumni.pgBatchYear + 3 : null);
+
   const batchLabel = [
-    alumni.ugBatchYear ? `UG: ${alumni.ugBatchYear}` : null,
-    alumni.pgBatchYear ? `PG: ${alumni.pgBatchYear}` : null,
+    alumni.ugBatchYear ? `UG: ${alumni.ugBatchYear}${ugEnd ? `-${ugEnd}` : ""}` : null,
+    alumni.pgBatchYear ? `PG: ${alumni.pgBatchYear}${pgEnd ? `-${pgEnd}` : ""}` : null,
   ]
     .filter(Boolean)
     .join(" | ") || `Batch ${alumni.batchYear || ""}`;

@@ -73,7 +73,9 @@ export interface AlumniProfile {
   // Education at Rishikul (UG / PG / BOTH)
   rishikulEducation: RishikulEducationType;
   ugBatchYear?: number;
+  ugPassoutYear?: number;
   pgBatchYear?: number;
+  pgPassoutYear?: number;
   batchYear?: number; // helper
   ugDegree?: string;
   pgDegree?: string;

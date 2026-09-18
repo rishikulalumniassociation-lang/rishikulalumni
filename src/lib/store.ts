@@ -19,6 +19,35 @@ import {
 // ---------------------------------------------------------------------------
 
 function rowToProfile(row: Record<string, unknown>): AlumniProfile {
+  const rawUgDegree = row.ug_degree as string | undefined;
+  const rawPgDegree = row.pg_degree as string | undefined;
+
+  let ugDegree = rawUgDegree;
+  let ugPassoutYear: number | undefined = row.ug_passout_year as number | undefined;
+
+  if (rawUgDegree && typeof rawUgDegree === "string" && rawUgDegree.includes(":")) {
+    const parts = rawUgDegree.split(":");
+    ugDegree = parts[0];
+    const parsed = parseInt(parts[1], 10);
+    if (!isNaN(parsed)) ugPassoutYear = parsed;
+  }
+  if (!ugPassoutYear && row.ug_batch_year) {
+    ugPassoutYear = Number(row.ug_batch_year) + 5;
+  }
+
+  let pgDegree = rawPgDegree;
+  let pgPassoutYear: number | undefined = row.pg_passout_year as number | undefined;
+
+  if (rawPgDegree && typeof rawPgDegree === "string" && rawPgDegree.includes(":")) {
+    const parts = rawPgDegree.split(":");
+    pgDegree = parts[0];
+    const parsed = parseInt(parts[1], 10);
+    if (!isNaN(parsed)) pgPassoutYear = parsed;
+  }
+  if (!pgPassoutYear && row.pg_batch_year) {
+    pgPassoutYear = Number(row.pg_batch_year) + 3;
+  }
+
   return {
     id: row.id as string,
     fullName: row.full_name as string,
@@ -32,9 +61,11 @@ function rowToProfile(row: Record<string, unknown>): AlumniProfile {
     avatarUrl: row.avatar_url as string | undefined,
     rishikulEducation: row.rishikul_education as AlumniProfile["rishikulEducation"],
     ugBatchYear: row.ug_batch_year as number | undefined,
-    ugDegree: row.ug_degree as string | undefined,
+    ugPassoutYear,
+    ugDegree,
     pgBatchYear: row.pg_batch_year as number | undefined,
-    pgDegree: row.pg_degree as string | undefined,
+    pgPassoutYear,
+    pgDegree,
     specialization: row.specialization as AlumniProfile["specialization"],
     isExpert: row.is_expert as boolean | undefined,
     diseaseSpecialty: row.disease_specialty as string | undefined,
@@ -68,6 +99,9 @@ function rowToProfile(row: Record<string, unknown>): AlumniProfile {
 }
 
 function profileToRow(p: AlumniProfile): Record<string, unknown> {
+  const cleanUgDegree = (p.ugDegree || "BAMS").split(":")[0];
+  const cleanPgDegree = p.pgDegree ? p.pgDegree.split(":")[0] : null;
+
   return {
     id: p.id,
     full_name: p.fullName,
@@ -81,9 +115,9 @@ function profileToRow(p: AlumniProfile): Record<string, unknown> {
     avatar_url: p.avatarUrl ?? null,
     rishikul_education: p.rishikulEducation,
     ug_batch_year: p.ugBatchYear ?? null,
-    ug_degree: p.ugDegree ?? null,
+    ug_degree: p.ugPassoutYear ? `${cleanUgDegree}:${p.ugPassoutYear}` : (p.ugDegree ?? "BAMS"),
     pg_batch_year: p.pgBatchYear ?? null,
-    pg_degree: p.pgDegree ?? null,
+    pg_degree: p.pgPassoutYear ? `${cleanPgDegree || "MD"}:${p.pgPassoutYear}` : cleanPgDegree,
     specialization: (p.rishikulEducation === "UG" ? null : (p.specialization || null)),
     is_expert: p.isExpert ?? false,
     disease_specialty: p.diseaseSpecialty ?? null,
@@ -277,9 +311,16 @@ export async function updateAlumniProfile(id: string, updates: Partial<AlumniPro
   if (updates.dateOfBirth !== undefined) snakeUpdates.date_of_birth = updates.dateOfBirth;
   if (updates.rishikulEducation !== undefined) snakeUpdates.rishikul_education = updates.rishikulEducation;
   if (updates.ugBatchYear !== undefined) snakeUpdates.ug_batch_year = updates.ugBatchYear;
-  if (updates.ugDegree !== undefined) snakeUpdates.ug_degree = updates.ugDegree;
   if (updates.pgBatchYear !== undefined) snakeUpdates.pg_batch_year = updates.pgBatchYear;
-  if (updates.pgDegree !== undefined) snakeUpdates.pg_degree = updates.pgDegree;
+
+  if (updates.ugDegree !== undefined || updates.ugPassoutYear !== undefined) {
+    const baseDeg = (updates.ugDegree || "BAMS").split(":")[0];
+    snakeUpdates.ug_degree = updates.ugPassoutYear ? `${baseDeg}:${updates.ugPassoutYear}` : baseDeg;
+  }
+  if (updates.pgDegree !== undefined || updates.pgPassoutYear !== undefined) {
+    const baseDeg = (updates.pgDegree || "MD").split(":")[0];
+    snakeUpdates.pg_degree = updates.pgPassoutYear ? `${baseDeg}:${updates.pgPassoutYear}` : baseDeg;
+  }
   if (updates.specialization !== undefined) snakeUpdates.specialization = updates.specialization;
   if (updates.achievements !== undefined) snakeUpdates.achievements = updates.achievements;
   if (updates.username !== undefined) snakeUpdates.username = updates.username;

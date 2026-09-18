@@ -25,8 +25,10 @@ CREATE TABLE IF NOT EXISTS public.profiles (
     -- Rishikul Education (UG / PG / Both)
     rishikul_education TEXT NOT NULL CHECK (rishikul_education IN ('UG', 'PG', 'BOTH')),
     ug_batch_year INTEGER,
+    ug_passout_year INTEGER,
     ug_degree TEXT DEFAULT 'BAMS',
     pg_batch_year INTEGER,
+    pg_passout_year INTEGER,
     pg_degree TEXT,
     specialization TEXT,
 
