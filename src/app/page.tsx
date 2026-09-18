@@ -86,7 +86,7 @@ export default function HomePage() {
             <span className="text-slate-600">
               {todaysBirthdays.length > 0
                 ? `${todaysBirthdays.map((b) => b.fullName).join(", ")} celebrating today!`
-                : "Check upcoming alumni birthdays for this week."}
+                : "Check upcoming alumni birthdays for this month."}
             </span>
           </div>
 
@@ -237,7 +237,7 @@ export default function HomePage() {
               href="/birthdays"
               className="inline-flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#C5A059] hover:underline"
             >
-              <span>View All Birthdays & Upcoming Week</span>
+              <span>View All Birthdays & Upcoming Month</span>
               <ArrowRight className="w-4 h-4" />
             </Link>
           </div>
@@ -300,7 +300,7 @@ export default function HomePage() {
             <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 text-center max-w-md mx-auto">
               <Cake className="w-8 h-8 text-[#C5A059] mx-auto mb-2" />
               <p className="text-xs text-slate-300">
-                No alumni birthdays recorded for today. Click below to explore upcoming birthdays this week!
+                No alumni birthdays recorded for today. Click below to explore upcoming birthdays this month!
               </p>
             </div>
           )}

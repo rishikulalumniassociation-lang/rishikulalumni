@@ -32,20 +32,34 @@ export default function BirthdaysPage() {
     return mDay === todayMonthDay;
   });
 
-  // Upcoming in next 7 days
-  const upcomingBirthdays = alumni.filter((a) => {
-    if (!a.dateOfBirth) return false;
-    const parts = a.dateOfBirth.split("-");
-    if (parts.length < 3) return false;
-    const m = parseInt(parts[1], 10) - 1;
-    const d = parseInt(parts[2], 10);
+  // Upcoming birthdays this month (within next 30 days)
+  const upcomingBirthdays = alumni
+    .filter((a) => {
+      if (!a.dateOfBirth) return false;
+      const parts = a.dateOfBirth.split("-");
+      if (parts.length < 3) return false;
+      const m = parseInt(parts[1], 10) - 1;
+      const d = parseInt(parts[2], 10);
 
-    const bdayThisYear = new Date(today.getFullYear(), m, d);
-    const diffTime = bdayThisYear.getTime() - today.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      // Check current year birthday or next year if year wrapped
+      let bday = new Date(today.getFullYear(), m, d);
+      if (bday.getTime() < today.getTime()) {
+        bday = new Date(today.getFullYear() + 1, m, d);
+      }
+      const diffTime = bday.getTime() - today.getTime();
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
-    return diffDays > 0 && diffDays <= 7;
-  });
+      return diffDays > 0 && diffDays <= 30;
+    })
+    .sort((a, b) => {
+      const partsA = a.dateOfBirth.split("-");
+      const partsB = b.dateOfBirth.split("-");
+      let bdayA = new Date(today.getFullYear(), parseInt(partsA[1], 10) - 1, parseInt(partsA[2], 10));
+      let bdayB = new Date(today.getFullYear(), parseInt(partsB[1], 10) - 1, parseInt(partsB[2], 10));
+      if (bdayA.getTime() < today.getTime()) bdayA.setFullYear(today.getFullYear() + 1);
+      if (bdayB.getTime() < today.getTime()) bdayB.setFullYear(today.getFullYear() + 1);
+      return bdayA.getTime() - bdayB.getTime();
+    });
 
   const handleSendWish = (alumnus: AlumniProfile) => {
     if (!wishedIds.includes(alumnus.id)) {
@@ -81,7 +95,7 @@ export default function BirthdaysPage() {
             Alumni Birthday Radar
           </h1>
           <p className="text-xs sm:text-sm text-[#64748B] mt-2 leading-relaxed">
-            Stay close to your batchmates! Check whose birthday is today, see upcoming birthdays in the coming week, and send warm wishes and blessings directly.
+            Stay close to your batchmates! Check whose birthday is today, see upcoming birthdays this month, and send warm wishes and blessings directly.
           </p>
         </div>
 
@@ -206,7 +220,7 @@ export default function BirthdaysPage() {
           <div className="flex items-center gap-2 mb-6">
             <Calendar className="w-5 h-5 text-[#2D5A43]" />
             <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
-              Upcoming Birthdays in Next 7 Days ({upcomingBirthdays.length})
+              Upcoming Birthdays This Month ({upcomingBirthdays.length})
             </h2>
           </div>
 
