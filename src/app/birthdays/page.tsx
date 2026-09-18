@@ -23,6 +23,10 @@ export default function BirthdaysPage() {
   const today = new Date();
   const todayMonthDay = `${String(today.getMonth() + 1).padStart(2, "0")}-${String(today.getDate()).padStart(2, "0")}`;
 
+  // Current calendar month (1-12)
+  const currentMonth = today.getMonth() + 1;
+  const currentMonthName = today.toLocaleDateString("en-US", { month: "long" });
+
   // Filter today's birthdays
   const todaysBirthdays = alumni.filter((a) => {
     if (!a.dateOfBirth) return false;
@@ -32,33 +36,21 @@ export default function BirthdaysPage() {
     return mDay === todayMonthDay;
   });
 
-  // Upcoming birthdays this month (within next 30 days)
-  const upcomingBirthdays = alumni
+  // Upcoming birthdays strictly in this specific calendar month (after today or throughout this month)
+  const thisMonthBirthdays = alumni
     .filter((a) => {
       if (!a.dateOfBirth) return false;
       const parts = a.dateOfBirth.split("-");
       if (parts.length < 3) return false;
-      const m = parseInt(parts[1], 10) - 1;
-      const d = parseInt(parts[2], 10);
-
-      // Check current year birthday or next year if year wrapped
-      let bday = new Date(today.getFullYear(), m, d);
-      if (bday.getTime() < today.getTime()) {
-        bday = new Date(today.getFullYear() + 1, m, d);
-      }
-      const diffTime = bday.getTime() - today.getTime();
-      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-
-      return diffDays > 0 && diffDays <= 30;
+      const m = parseInt(parts[1], 10);
+      return m === currentMonth;
     })
     .sort((a, b) => {
       const partsA = a.dateOfBirth.split("-");
       const partsB = b.dateOfBirth.split("-");
-      let bdayA = new Date(today.getFullYear(), parseInt(partsA[1], 10) - 1, parseInt(partsA[2], 10));
-      let bdayB = new Date(today.getFullYear(), parseInt(partsB[1], 10) - 1, parseInt(partsB[2], 10));
-      if (bdayA.getTime() < today.getTime()) bdayA.setFullYear(today.getFullYear() + 1);
-      if (bdayB.getTime() < today.getTime()) bdayB.setFullYear(today.getFullYear() + 1);
-      return bdayA.getTime() - bdayB.getTime();
+      const dayA = parseInt(partsA[2], 10);
+      const dayB = parseInt(partsB[2], 10);
+      return dayA - dayB;
     });
 
   const handleSendWish = (alumnus: AlumniProfile) => {
@@ -215,17 +207,17 @@ export default function BirthdaysPage() {
           )}
         </div>
 
-        {/* SECTION 2: UPCOMING BIRTHDAYS */}
+        {/* SECTION 2: THIS MONTH'S BIRTHDAYS */}
         <div>
           <div className="flex items-center gap-2 mb-6">
             <Calendar className="w-5 h-5 text-[#2D5A43]" />
             <h2 className="font-serif-heading text-2xl sm:text-3xl font-bold text-[#0F172A]">
-              Upcoming Birthdays This Month ({upcomingBirthdays.length})
+              Birthdays in {currentMonthName} ({thisMonthBirthdays.length})
             </h2>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {upcomingBirthdays.map((alumnus) => {
+            {thisMonthBirthdays.map((alumnus) => {
               const bdayDate = alumnus.dateOfBirth ? new Date(alumnus.dateOfBirth) : null;
               const formattedDate = bdayDate
                 ? bdayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })

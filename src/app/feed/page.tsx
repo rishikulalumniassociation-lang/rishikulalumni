@@ -554,7 +554,7 @@ export default function FeedPage() {
                     : "bg-white text-slate-600 hover:bg-slate-100 border border-slate-200"
                 }`}
               >
-                जन्मदिन ({todaysBirthdays.length})
+                इस माह के जन्मदिन ({thisMonthBirthdays.length})
               </button>
               <button
                 onClick={() => setActiveTab("shradhanjali")}
@@ -600,8 +600,68 @@ export default function FeedPage() {
                 </div>
               )}
 
+              {/* When Birthday Tab is Active: Show all this month's birthdays */}
+              {activeTab === "birthdays" && (
+                <div className="bg-white rounded-3xl p-6 border-2 border-pink-200 shadow-sm space-y-4">
+                  <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                    <div className="flex items-center gap-2">
+                      <Cake className="w-5 h-5 text-pink-600" />
+                      <h3 className="font-serif-heading text-lg font-bold text-[#0F172A]">
+                        इस माह के सभी जन्मदिन ({thisMonthBirthdays.length})
+                      </h3>
+                    </div>
+                    <Link
+                      href="/birthdays"
+                      className="text-xs font-bold text-pink-600 hover:underline"
+                    >
+                      पूर्ण रडार देखें →
+                    </Link>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    {thisMonthBirthdays.map((alumnus) => {
+                      const bdayDate = alumnus.dateOfBirth ? new Date(alumnus.dateOfBirth) : null;
+                      const formattedDate = bdayDate
+                        ? bdayDate.toLocaleDateString("en-US", { month: "short", day: "numeric" })
+                        : "";
+                      return (
+                        <div
+                          key={alumnus.id}
+                          className="flex items-center justify-between p-3 rounded-2xl bg-slate-50 border border-slate-100 hover:border-pink-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-3">
+                            <img
+                              src={alumnus.avatarUrl || "/images/default-avatar.png"}
+                              alt={alumnus.fullName}
+                              className="w-11 h-11 rounded-xl object-cover border border-pink-200 shrink-0"
+                            />
+                            <div>
+                              <span className="text-[10px] font-bold text-pink-600 block uppercase">
+                                {formattedDate}
+                              </span>
+                              <h5 className="font-bold text-xs text-[#0F172A] leading-snug">
+                                {alumnus.fullName}
+                              </h5>
+                              <p className="text-[10px] text-slate-500">
+                                {alumnus.ugBatchYear ? `UG ${alumnus.ugBatchYear}` : alumnus.city}
+                              </p>
+                            </div>
+                          </div>
+                          <Link
+                            href="/birthdays"
+                            className="px-2.5 py-1 rounded-full bg-pink-100 text-pink-700 text-[11px] font-bold hover:bg-pink-200 transition-colors shrink-0"
+                          >
+                            बधाई दें
+                          </Link>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
               {/* Feed Posts */}
-              {posts.map((post) => {
+              {(activeTab === "all" || activeTab === "posts") && posts.map((post) => {
                 const isLiked = likedPostIds.includes(post.id);
                 const comments = postCommentsMap[post.id] || [];
                 const isCommentOpen = activeCommentPostId === post.id;
@@ -806,6 +866,63 @@ export default function FeedPage() {
                   </article>
                 );
               })}
+
+              {/* When Events Tab is Active */}
+              {activeTab === "events" && (
+                <div className="space-y-4">
+                  {events.map((ev) => (
+                    <div key={ev.id} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm space-y-2">
+                      <div className="flex items-center justify-between text-xs text-[#2D5A43] font-bold">
+                        <span>{ev.eventType}</span>
+                        <span>{ev.date} • {ev.city}</span>
+                      </div>
+                      <h4 className="font-serif-heading text-lg font-bold text-[#0F172A]">{ev.title}</h4>
+                      <p className="text-xs text-slate-600 font-light">{ev.description}</p>
+                      <div className="pt-2 flex justify-end">
+                        <Link href="/events" className="text-xs font-bold text-[#C5A059] hover:underline">
+                          RSVP & Details →
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* When Achievers Tab is Active */}
+              {activeTab === "achievers" && (
+                <div className="space-y-4">
+                  {achievers.map((ach) => (
+                    <div key={ach.id} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex items-start gap-4">
+                      <img src={ach.photoUrl} alt={ach.name} className="w-16 h-16 rounded-2xl object-cover border border-[#C5A059] shrink-0" />
+                      <div>
+                        <span className="text-[10px] font-bold text-[#C5A059] uppercase block">Batch {ach.batchYear} • {ach.degree}</span>
+                        <h4 className="font-serif-heading text-base font-bold text-[#0F172A]">{ach.name}</h4>
+                        <p className="text-xs text-[#2D5A43] font-semibold">{ach.title}</p>
+                        <p className="text-xs text-slate-600 mt-1 italic font-light line-clamp-2">"{ach.citation}"</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* When Shradhanjali Tab is Active */}
+              {activeTab === "shradhanjali" && (
+                <div className="space-y-4">
+                  {shradhanjali.map((sh) => (
+                    <div key={sh.id} className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm flex items-start gap-4">
+                      <img src={sh.photoUrl} alt={sh.name} className="w-16 h-16 rounded-2xl object-cover grayscale border border-slate-300 shrink-0" />
+                      <div>
+                        <span className="text-[10px] font-bold text-red-600 uppercase block">स्मृति शेष • Batch {sh.batchYear} • {sh.dateOfDemise}</span>
+                        <h4 className="font-serif-heading text-base font-bold text-[#0F172A]">{sh.name}</h4>
+                        <p className="text-xs text-slate-600 mt-1 italic font-light">"{sh.tribute}"</p>
+                        <Link href="/shradhanjali" className="text-xs font-bold text-[#2D5A43] hover:underline inline-block mt-2">
+                          श्रद्धा सुमन अर्पित करें ({sh.condolencesCount}) →
+                        </Link>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </main>
 
