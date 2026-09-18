@@ -40,12 +40,20 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Column 2: Alumni Quick Links */}
+          {/* Column 2: About Us & Alumni Links */}
           <div>
             <h4 className="font-serif-heading text-base font-semibold text-[#C5A059] mb-4 tracking-wider uppercase">
-              Fraternity Links
+              About Us
             </h4>
             <ul className="space-y-2 text-xs">
+              <li>
+                <Link
+                  href="/about-association"
+                  className="text-amber-300 font-semibold hover:text-white transition-colors flex items-center gap-1.5"
+                >
+                  <span>हमारे बारे में (About Association)</span>
+                </Link>
+              </li>
               <li>
                 <Link href="/directory" className="text-slate-300 hover:text-white transition-colors">
                   Alumni Directory & Search
@@ -104,7 +112,13 @@ export default function Footer() {
 
         {/* Bottom Bar */}
         <div className="mt-12 pt-6 border-t border-slate-800 flex flex-col sm:flex-row items-center justify-between text-xs text-slate-400 gap-3">
-          <p>© {new Date().getFullYear()} ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड. All rights reserved.</p>
+          <div className="flex flex-wrap items-center gap-3">
+            <p>© {new Date().getFullYear()} ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन, हरिद्वार, उत्तराखण्ड. All rights reserved.</p>
+            <span className="hidden sm:inline text-slate-600">•</span>
+            <Link href="/about-association" className="text-amber-300 hover:text-white font-medium underline underline-offset-4">
+              हमारे बारे में
+            </Link>
+          </div>
           <div className="flex flex-wrap items-center justify-center gap-2">
             <span className="text-[11px] text-slate-400 font-medium">
               Developed by <strong className="text-amber-300 font-semibold">Vd KK Pandey</strong>
