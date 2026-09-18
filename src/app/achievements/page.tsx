@@ -166,7 +166,7 @@ export default function CommunityAchievementsPage() {
                     />
                     <div>
                       <h4 className="text-sm font-bold text-[#0F172A]">
-                        Posting as Dr. {currentUser.fullName}
+                        Posting as {currentUser.fullName}
                       </h4>
                       <p className="text-[11px] text-[#2D5A43]">
                         {currentUser.rishikulEducation} • {currentUser.city}
@@ -348,7 +348,7 @@ export default function CommunityAchievementsPage() {
                     />
                     <div>
                       <h4 className="font-bold text-sm text-[#0F172A] flex items-center gap-1.5">
-                        <span>Dr. {item.alumniName}</span>
+                        <span>{item.alumniName}</span>
                       </h4>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500 mt-0.5">
                         <span className="text-[#2D5A43] font-semibold">{item.alumniBatch}</span>

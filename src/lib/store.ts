@@ -360,7 +360,7 @@ export async function markAlumnusAsDeceased(alumniId: string, dateOfDemise: stri
   await updateAlumniProfile(alumniId, {
     isDeceased: true,
     dateOfDemise,
-    demiseTribute: tributeText || `In loving memory of Dr. ${alumnus.fullName}`,
+    demiseTribute: tributeText || `In loving memory of ${alumnus.fullName}`,
     approvalStatus: "expired",
   });
 
@@ -375,7 +375,7 @@ export async function markAlumnusAsDeceased(alumniId: string, dateOfDemise: stri
     const newRecord = {
       id: `shradhanjali-${Date.now()}`,
       alumni_id: alumnus.id,
-      name: alumnus.fullName.startsWith("Late") ? alumnus.fullName : `Late Dr. ${alumnus.fullName}`,
+      name: alumnus.fullName.startsWith("Late") ? alumnus.fullName : `Late ${alumnus.fullName}`,
       name_hindi: alumnus.fullNameHindi
         ? alumnus.fullNameHindi.startsWith("स्व.") ? alumnus.fullNameHindi : `स्व. ${alumnus.fullNameHindi}`
         : null,
@@ -383,7 +383,7 @@ export async function markAlumnusAsDeceased(alumniId: string, dateOfDemise: stri
       degree: alumnus.ugDegree || alumnus.pgDegree || "BAMS",
       photo_url: alumnus.avatarUrl || "https://images.unsplash.com/photo-1544816155-12df9643f363?w=400&auto=format&fit=crop",
       date_of_demise: dateOfDemise,
-      tribute: tributeText || `अत्यंत दुःख के साथ सूचित किया जाता है कि हमारे वरिष्ठ साथी डॉ. ${alumnus.fullName} का निधन ${dateOfDemise} को हो गया।`,
+      tribute: tributeText || `अत्यंत दुःख के साथ सूचित किया जाता है कि हमारे वरिष्ठ साथी ${alumnus.fullName} का निधन ${dateOfDemise} को हो गया।`,
       condolences_count: 0,
       posted_by: "Association Executive Committee",
     };

@@ -22,7 +22,8 @@ import {
   Stethoscope,
   Sparkles,
   Camera,
-  Crown
+  Crown,
+  Settings
 } from "lucide-react";
 import { isAdminAuthenticated, setAdminAuthenticated, getLoggedInAlumni, setLoggedInAlumni } from "@/lib/store";
 import { AlumniProfile } from "@/types";
@@ -168,22 +169,15 @@ export default function Navbar() {
               <div className="flex items-center gap-2">
                 <Link
                   href="/profile"
-                  className="flex items-center gap-2.5 bg-white hover:bg-amber-50/60 border-2 border-[#C5A059] py-1.5 px-3.5 rounded-full shadow-sm transition-all group"
-                  title="Open and Update Profile"
+                  className="flex items-center gap-2 bg-white hover:bg-amber-50/80 border-2 border-[#C5A059] p-1.5 pr-2.5 rounded-full shadow-sm transition-all group shrink-0"
+                  title="प्रोफ़ाइल सेटिंग्स (Profile & Settings)"
                 >
                   <img
                     src={loggedInUser.avatarUrl || "https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?w=100"}
                     alt={loggedInUser.fullName}
                     className="w-7 h-7 rounded-full object-cover border border-[#C5A059]"
                   />
-                  <div className="flex flex-col text-left">
-                    <span className="text-xs font-bold text-[#0F172A] group-hover:text-[#2D5A43] truncate max-w-[130px] leading-tight">
-                      Dr. {loggedInUser.fullName.split(" ")[1] || loggedInUser.fullName}
-                    </span>
-                    <span className="text-[10px] text-[#2D5A43] font-bold">
-                      प्रोफाइल अपडेट करें ✏️
-                    </span>
-                  </div>
+                  <Settings className="w-4 h-4 text-slate-700 group-hover:text-[#2D5A43] group-hover:rotate-45 transition-all duration-200" />
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -282,7 +276,7 @@ export default function Navbar() {
                 />
                 <div className="min-w-0">
                   <div className="font-bold text-sm text-[#0F172A] truncate">
-                    Dr. {loggedInUser.fullName}
+                    {loggedInUser.fullName}
                   </div>
                   <div className="text-[11px] text-[#2D5A43] font-bold">
                     प्रोफाइल अपडेट करें / Edit Profile →

@@ -68,7 +68,7 @@ export default function AlumniSearchSelect({
             <div className="min-w-0">
               <div className="flex items-center gap-1.5">
                 <span className="font-bold text-xs sm:text-sm text-[#0F172A] truncate">
-                  Dr. {selectedAlumnus.fullName}
+                  {selectedAlumnus.fullName}
                 </span>
                 {selectedAlumnus.fullNameHindi && (
                   <span className="text-[11px] text-[#C5A059] truncate hidden sm:inline">
@@ -146,7 +146,7 @@ export default function AlumniSearchSelect({
                       />
                       <div className="min-w-0">
                         <div className="font-bold text-xs sm:text-sm text-[#0F172A] truncate group-hover:text-[#2D5A43]">
-                          Dr. {alumnus.fullName}{" "}
+                          {alumnus.fullName}{" "}
                           {alumnus.fullNameHindi && (
                             <span className="text-[11px] text-[#C5A059] font-normal">
                               ({alumnus.fullNameHindi})

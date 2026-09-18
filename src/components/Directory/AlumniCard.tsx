@@ -59,7 +59,7 @@ export default function AlumniCard({
     e.stopPropagation();
     if (navigator.clipboard) {
       navigator.clipboard.writeText(
-        `Dr. ${alumni.fullName} - Rishikul Alumni: ${window.location.origin}/directory?id=${alumni.id}`
+        `${alumni.fullName} - Rishikul Alumni: ${window.location.origin}/directory?id=${alumni.id}`
       );
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -286,7 +286,7 @@ export default function AlumniCard({
                 <strong className="font-bold">
                   {familyPeople[0].relationType}:
                 </strong>{" "}
-                Dr. {familyPeople[0].person.fullName}
+                {familyPeople[0].person.fullName}
                 {familyPeople.length > 1 && ` (+${familyPeople.length - 1} more)`}
               </span>
             </div>

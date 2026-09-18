@@ -817,7 +817,7 @@ export default function DirectoryPage() {
                                 />
                                 <div className="min-w-0">
                                   <h5 className="font-bold text-sm text-[#0F172A] group-hover:text-[#2D5A43] truncate">
-                                    Dr. {conn.fullName} {conn.fullNameHindi && <span className="text-xs text-[#C5A059]">({conn.fullNameHindi})</span>}
+                                    {conn.fullName} {conn.fullNameHindi && <span className="text-xs text-[#C5A059]">({conn.fullNameHindi})</span>}
                                   </h5>
                                   <p className="text-xs text-slate-500 truncate">
                                     {conn.ugBatchYear ? `UG: ${conn.ugBatchYear}` : ""}{conn.pgBatchYear ? ` • PG: ${conn.pgBatchYear}` : ""} • {conn.city}
@@ -884,7 +884,7 @@ export default function DirectoryPage() {
                                     पूज्य गुरुजन • Revered Faculty
                                   </span>
                                   <h5 className="font-bold text-sm text-[#0F172A] group-hover:text-[#2D5A43] truncate">
-                                    Vaidya Dr. {teacher.fullName}
+                                    {teacher.fullName}
                                   </h5>
                                   <p className="text-xs text-slate-600 truncate font-medium">
                                     {teacher.designation} • {teacher.workplace}
@@ -948,7 +948,7 @@ export default function DirectoryPage() {
                                     {getFamilyRelationLabel(rel.relationType)}
                                   </span>
                                   <h5 className="font-bold text-sm text-[#0F172A] group-hover:text-[#2D5A43] truncate">
-                                    Dr. {rel.person.fullName}
+                                    {rel.person.fullName}
                                   </h5>
                                   <p className="text-xs text-slate-500 truncate">
                                     {rel.person.ugBatchYear ? `UG:${rel.person.ugBatchYear}` : `PG:${rel.person.pgBatchYear}`} • {rel.person.city}

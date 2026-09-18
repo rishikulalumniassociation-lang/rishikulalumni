@@ -293,7 +293,7 @@ export default function AdminDashboardPage() {
     await updateAlumniProfile(id, { isVerified: false, approvalStatus: 'rejected' });
     getAlumniList().then(list => setAlumniList(list));
     if (candidate) {
-      alert(`Dr. ${candidate.fullName} का रजिस्ट्रेशन अस्वीकार (Reject) कर दिया गया है।`);
+      alert(`${candidate.fullName} का रजिस्ट्रेशन अस्वीकार (Reject) कर दिया गया है।`);
     }
   };
 
@@ -309,7 +309,7 @@ export default function AdminDashboardPage() {
 
     await markAlumnusAsDeceased(activeDeceasedAlumnus.id, demiseDateInput, demiseTributeInput);
     await loadAllData();
-    alert(`Dr. ${activeDeceasedAlumnus.fullName} has been marked as Expired. Their tribute is now live in the Shradhanjali Hall!`);
+    alert(`${activeDeceasedAlumnus.fullName} has been marked as Expired. Their tribute is now live in the Shradhanjali Hall!`);
     setActiveDeceasedAlumnus(null);
   };
 
@@ -760,7 +760,7 @@ export default function AdminDashboardPage() {
                         <div>
                           <div className="flex flex-wrap items-center gap-2">
                             <h4 className="font-serif-heading font-bold text-lg text-[#0F172A]">
-                              Dr. {nom.nomineeName}
+                              {nom.nomineeName}
                             </h4>
                             {nom.nomineeNameHindi && (
                               <span className="text-xs text-slate-500">({nom.nomineeNameHindi})</span>
@@ -951,7 +951,7 @@ export default function AdminDashboardPage() {
                           onClick={() => {
                             setActiveDeceasedAlumnus(a);
                             setDemiseDateInput(new Date().toISOString().split("T")[0]);
-                            setDemiseTributeInput(`श्रद्धेय डॉ. ${a.fullName} के असामयिक निधन पर ऋषिकुल स्नातक एवं स्नातकोत्तर परिवार गहरा शोक व्यक्त करता है।`);
+                            setDemiseTributeInput(`श्रद्धेय ${a.fullName} के असामयिक निधन पर ऋषिकुल स्नातक एवं स्नातकोत्तर परिवार गहरा शोक व्यक्त करता है।`);
                           }}
                           className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-slate-800 text-slate-200 hover:bg-black text-[11px] font-bold uppercase transition-colors"
                           title="Mark alumnus as Expired"
@@ -1815,7 +1815,7 @@ export default function AdminDashboardPage() {
               Mark Alumnus as Expired
             </h3>
             <p className="text-xs text-slate-500 mb-4">
-              Marking <strong>Dr. {activeDeceasedAlumnus.fullName}</strong> will automatically generate their tribute memorial in the Shradhanjali Hall and update their registration status to Expired.
+              Marking <strong>{activeDeceasedAlumnus.fullName}</strong> will automatically generate their tribute memorial in the Shradhanjali Hall and update their registration status to Expired.
             </p>
 
             <form onSubmit={handleConfirmMarkExpired} className="space-y-4">
@@ -2068,7 +2068,7 @@ export default function AdminDashboardPage() {
                 />
                 <div>
                   <div className="font-bold text-sm text-[#0F172A]">
-                    Dr. {rejectCandidate.fullName}
+                    {rejectCandidate.fullName}
                   </div>
                   <div className="text-slate-500">
                     Mobile: <span className="font-mono font-bold text-slate-800">{rejectCandidate.mobile}</span>
@@ -2084,7 +2084,7 @@ export default function AdminDashboardPage() {
             </div>
 
             <p className="text-xs text-slate-600 leading-relaxed">
-              क्या आप वाकई <strong className="text-rose-700 font-bold">Dr. {rejectCandidate.fullName}</strong> का पंजीकरण अस्वीकार (Reject) करना चाहते हैं? अस्वीकार करने पर यह आवेदक पेंडिंग सूची से हट जाएगा और पोर्टल में लॉगिन नहीं कर सकेगा।
+              क्या आप वाकई <strong className="text-rose-700 font-bold">{rejectCandidate.fullName}</strong> का पंजीकरण अस्वीकार (Reject) करना चाहते हैं? अस्वीकार करने पर यह आवेदक पेंडिंग सूची से हट जाएगा और पोर्टल में लॉगिन नहीं कर सकेगा।
             </p>
 
             <div className="flex items-center justify-end gap-3 pt-2">

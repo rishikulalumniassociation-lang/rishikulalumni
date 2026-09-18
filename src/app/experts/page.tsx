@@ -340,7 +340,7 @@ export default function AyurvedaExpertsPage() {
               const cleanWa = (exp.whatsappNumber || exp.mobile || "").replace(/\D/g, "");
               const waLink = cleanWa
                 ? `https://wa.me/${cleanWa}?text=${encodeURIComponent(
-                    `प्रणाम आदरणीय डॉ. ${exp.fullName} जी! मैं ऋषिकुल एलुमनाई डायरेक्टरी के माध्यम से आपकी रोग विशेषज्ञता (${exp.diseaseSpecialty || "आयुर्वेद चिकित्सा"}) देखकर संपर्क कर रहा हूँ।`
+                    `प्रणाम आदरणीय ${exp.fullName} जी! मैं ऋषिकुल एलुमनाई डायरेक्टरी के माध्यम से आपकी रोग विशेषज्ञता (${exp.diseaseSpecialty || "आयुर्वेद चिकित्सा"}) देखकर संपर्क कर रहा हूँ।`
                   )}`
                 : null;
 
@@ -360,7 +360,7 @@ export default function AyurvedaExpertsPage() {
                         />
                         <div>
                           <h4 className="font-serif-heading font-bold text-base text-[#0F172A] leading-tight">
-                            Dr. {exp.fullName}
+                            {exp.fullName}
                           </h4>
                           <div className="flex flex-wrap items-center gap-1 mt-0.5">
                             <span className="text-[11px] text-[#2D5A43] font-semibold">
@@ -549,7 +549,7 @@ export default function AyurvedaExpertsPage() {
                 />
                 <div className="text-xs">
                   <strong className="text-sm text-[#0F172A] block font-serif-heading font-bold">
-                    Dr. {currentUser.fullName}
+                    {currentUser.fullName}
                   </strong>
                   <span className="text-[#2D5A43] font-medium">
                     {currentUser.designation} • {currentUser.city}, {currentUser.state}

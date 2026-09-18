@@ -156,7 +156,7 @@ export default function MediaLightbox({ post, onClose }: MediaLightboxProps) {
                 className="w-10 h-10 rounded-full object-cover border border-[#C5A059]/40 shrink-0"
               />
               <div className="min-w-0">
-                <p className="text-xs font-bold text-white truncate">Dr. {post.authorName}</p>
+                <p className="text-xs font-bold text-white truncate">{post.authorName}</p>
                 <div className="flex items-center gap-1.5 text-[10px] text-slate-400">
                   {post.authorBatch && <span>{post.authorBatch}</span>}
                   <span>•</span>

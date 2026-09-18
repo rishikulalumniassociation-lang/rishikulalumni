@@ -80,7 +80,7 @@ export default function AchieversPage() {
     if (user) {
       setNomForm((prev) => ({
         ...prev,
-        nominatorName: `Dr. ${user.fullName}`,
+        nominatorName: user.fullName,
         nominatorMobile: user.whatsappNumber || user.mobile,
         nominatorEmail: user.email,
         nominatorBatchText: user.ugBatchYear ? `UG: ${user.ugBatchYear}` : `PG: ${user.pgBatchYear || ""}`,
@@ -161,14 +161,14 @@ export default function AchieversPage() {
         citation: nomForm.citation.trim(),
         awards: awardsArr,
         nominatorId: currentUser?.id || "guest",
-        nominatorName: nomForm.nominatorName.trim() || (currentUser ? `Dr. ${currentUser.fullName}` : "ऋषिकुल एलुमनाई"),
+        nominatorName: nomForm.nominatorName.trim() || (currentUser ? currentUser.fullName : "ऋषिकुल एलुमनाई"),
         nominatorEmail: nomForm.nominatorEmail.trim(),
         nominatorMobile: nomForm.nominatorMobile.trim(),
         nominatorBatchText: nomForm.nominatorBatchText.trim(),
       });
 
       setNominationSuccessMsg(
-        `डॉ. ${selectedNominee.fullName} का नामांकन एसोसिएशन एडमिन समिति को सफलतापूर्वक भेज दिया गया है। समिति के सत्यापन के उपरांत यह नाम 'हॉल ऑफ फेम' में सम्मिलित किया जाएगा।`
+        `${selectedNominee.fullName} का नामांकन एसोसिएशन एडमिन समिति को सफलतापूर्वक भेज दिया गया है। समिति के सत्यापन के उपरांत यह नाम 'हॉल ऑफ फेम' में सम्मिलित किया जाएगा।`
       );
     } catch (err) {
       alert("नामांकन सबमिट करने में त्रुटि हुई। कृपया पुनः प्रयास करें।");
@@ -505,7 +505,7 @@ export default function AchieversPage() {
                               Patron Member
                             </span>
                             <h4 className="font-serif-heading text-lg font-bold text-[#0F172A] leading-tight">
-                              Dr. {patron.fullName}
+                              {patron.fullName}
                             </h4>
                             {patron.fullNameHindi && (
                               <p className="text-xs text-slate-500 mt-0.5">{patron.fullNameHindi}</p>
@@ -615,7 +615,7 @@ export default function AchieversPage() {
                               पंजीकृत पूर्व स्नातक / स्नातकोत्तर ✓
                             </span>
                             <h5 className="font-serif-heading font-bold text-base text-[#0F172A] mt-1 truncate">
-                              Dr. {selectedNominee.fullName} {selectedNominee.fullNameHindi && `(${selectedNominee.fullNameHindi})`}
+                              {selectedNominee.fullName} {selectedNominee.fullNameHindi && `(${selectedNominee.fullNameHindi})`}
                             </h5>
                             <p className="text-xs text-slate-600 truncate">
                               {selectedNominee.ugBatchYear ? `UG: ${selectedNominee.ugBatchYear}` : ""}{" "}
@@ -671,7 +671,7 @@ export default function AchieversPage() {
                                   />
                                   <div className="min-w-0">
                                     <div className="font-bold text-xs sm:text-sm text-[#0F172A] truncate group-hover:text-[#2D5A43]">
-                                      Dr. {alumnus.fullName}{" "}
+                                      {alumnus.fullName}{" "}
                                       {alumnus.fullNameHindi && (
                                         <span className="text-[11px] text-[#C5A059] font-normal">
                                           ({alumnus.fullNameHindi})
@@ -800,7 +800,7 @@ export default function AchieversPage() {
                       <div className="p-3 bg-emerald-50 rounded-xl border border-emerald-200 text-xs text-emerald-900 flex items-center gap-2">
                         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
                         <span>
-                          प्रस्तावक: <strong>Dr. {currentUser.fullName}</strong> (बैच: {currentUser.ugBatchYear || currentUser.pgBatchYear || "Alumnus"}) • स्वतः सत्यापित
+                          प्रस्तावक: <strong>{currentUser.fullName}</strong> (बैच: {currentUser.ugBatchYear || currentUser.pgBatchYear || "Alumnus"}) • स्वतः सत्यापित
                         </span>
                       </div>
                     ) : (

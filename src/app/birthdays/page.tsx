@@ -180,7 +180,7 @@ export default function BirthdaysPage() {
                         currentUser ? (
                           <a
                             href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
-                              `Happy Birthday, Dr. ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`
+                              `Happy Birthday, ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`
                             )}`}
                             target="_blank"
                             rel="noopener noreferrer"
