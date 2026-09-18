@@ -35,7 +35,10 @@ import {
   Flag,
   ExternalLink,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  Crown,
+  QrCode,
+  Settings
 } from "lucide-react";
 import {
   getAlumniList,
@@ -60,7 +63,13 @@ import {
   unpinCommunityPost,
   hideCommunityPost,
   getCommunityPostReports,
-  reviewCommunityPostReport
+  reviewCommunityPostReport,
+  getMembershipSettings,
+  updateMembershipSettings,
+  getMembershipPayments,
+  reviewMembershipPayment,
+  LifetimeMembershipSettings,
+  MembershipPaymentSubmission
 } from "@/lib/store";
 import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, MembershipTier, PasswordResetRequest, AchieverNomination, CommunityPost, CommunityPostReport } from "@/types";
 import MediaLightbox from "@/components/Community/MediaLightbox";
@@ -68,7 +77,7 @@ import MediaLightbox from "@/components/Community/MediaLightbox";
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [mounted, setMounted] = useState(false);
-  const [activeTab, setActiveTab] = useState<"approvals" | "nominations" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali" | "showcase">("approvals");
+  const [activeTab, setActiveTab] = useState<"approvals" | "nominations" | "all_registered" | "password_resets" | "patrons" | "achievers" | "shradhanjali" | "showcase" | "membership_settings">("approvals");
 
   // State
   const [alumniList, setAlumniList] = useState<AlumniProfile[]>([]);
@@ -78,6 +87,11 @@ export default function AdminDashboardPage() {
   const [nominationsList, setNominationsList] = useState<AchieverNomination[]>([]);
   const [nominationFilter, setNominationFilter] = useState<"all" | "pending" | "approved" | "rejected">("pending");
   const [nominationSearch, setNominationSearch] = useState("");
+
+  // Lifetime Membership Settings & Payments state
+  const [membershipSettings, setMembershipSettings] = useState<LifetimeMembershipSettings>(getMembershipSettings());
+  const [membershipPaymentsList, setMembershipPaymentsList] = useState<MembershipPaymentSubmission[]>([]);
+  const [settingsSavedSuccess, setSettingsSavedSuccess] = useState(false);
 
   // Showcase state
   const [communityPosts, setCommunityPosts] = useState<CommunityPost[]>([]);
@@ -152,16 +166,25 @@ export default function AdminDashboardPage() {
       getPasswordResetRequests().then(r => setResetRequests(r));
     };
 
+    const handleMembershipUpdate = () => {
+      setMembershipSettings(getMembershipSettings());
+      setMembershipPaymentsList(getMembershipPayments());
+    };
+
     window.addEventListener("alumni_updated", handleAlumniUpdate);
     window.addEventListener("nominations_updated", handleNomUpdate);
     window.addEventListener("achievers_updated", handleNomUpdate);
     window.addEventListener("password_reset_updated", handleResetUpdate);
+    window.addEventListener("membership_settings_updated", handleMembershipUpdate);
+    window.addEventListener("membership_payments_updated", handleMembershipUpdate);
 
     return () => {
       window.removeEventListener("alumni_updated", handleAlumniUpdate);
       window.removeEventListener("nominations_updated", handleNomUpdate);
       window.removeEventListener("achievers_updated", handleNomUpdate);
       window.removeEventListener("password_reset_updated", handleResetUpdate);
+      window.removeEventListener("membership_settings_updated", handleMembershipUpdate);
+      window.removeEventListener("membership_payments_updated", handleMembershipUpdate);
     };
   }, [router]);
 
@@ -182,6 +205,8 @@ export default function AdminDashboardPage() {
     setNominationsList(nominations);
     setCommunityPosts(posts);
     setCommunityReports(reports);
+    setMembershipSettings(getMembershipSettings());
+    setMembershipPaymentsList(getMembershipPayments());
   };
 
   const handleAdminTogglePin = async (post: CommunityPost) => {
@@ -529,6 +554,13 @@ export default function AdminDashboardPage() {
                 { id: "patrons", label: "Patrons", count: patronMembers.length, countColor: "bg-amber-100 text-amber-900 border border-amber-300", icon: Star },
                 { id: "achievers", label: "Achievers", count: achieversList.length, countColor: "bg-slate-200 text-slate-700", icon: Award },
                 { id: "shradhanjali", label: "Shradhanjali", count: shradhanjaliList.length, countColor: "bg-slate-200 text-slate-700", icon: Heart },
+                {
+                  id: "membership_settings",
+                  label: "Lifetime Membership & UPI",
+                  count: membershipPaymentsList.filter((p) => p.status === "pending").length > 0 ? `${membershipPaymentsList.filter((p) => p.status === "pending").length} New` : undefined,
+                  countColor: "bg-emerald-600 text-white animate-pulse",
+                  icon: Crown,
+                },
               ].map(({ id, label, count, countColor, icon: Icon }) => {
                 const isActive = activeTab === id;
                 return (
@@ -1494,6 +1526,282 @@ export default function AdminDashboardPage() {
                 )}
               </div>
             )}
+          </div>
+        )}
+
+        {/* 9. LIFETIME MEMBERSHIP & UPI SETTINGS TAB */}
+        {activeTab === "membership_settings" && (
+          <div className="space-y-8 animate-in fade-in duration-200">
+            {/* Top Alert / Status */}
+            {settingsSavedSuccess && (
+              <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-300 text-emerald-900 text-xs font-bold flex items-center gap-2">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                <span>आजीवन सदस्यता सेटिंग्स सफलतापूर्वक अपडेट हो गई हैं!</span>
+              </div>
+            )}
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left Column: Configuration Form */}
+              <div className="lg:col-span-6 bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#C5A059]/40 shadow-xl space-y-6">
+                <div className="flex items-center gap-3 pb-4 border-b border-slate-100">
+                  <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-300 flex items-center justify-center text-[#C5A059]">
+                    <Settings className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
+                      Membership & UPI Configuration
+                    </h3>
+                    <p className="text-xs text-slate-500">
+                      आजीवन सदस्यता शुल्क, UPI ID, QR कोड एवं संपर्क प्रतिनिधि सेटिंग्स
+                    </p>
+                  </div>
+                </div>
+
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    updateMembershipSettings(membershipSettings);
+                    setSettingsSavedSuccess(true);
+                    setTimeout(() => setSettingsSavedSuccess(false), 3000);
+                  }}
+                  className="space-y-4 text-xs"
+                >
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      आजीवन सदस्यता शुल्क (Lifetime Membership Fee in ₹) *
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={membershipSettings.lifetimeFee}
+                      onChange={(e) =>
+                        setMembershipSettings({ ...membershipSettings, lifetimeFee: Number(e.target.value) })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-bold text-base text-[#0F172A]"
+                    />
+                    <span className="text-[11px] text-slate-400">पोर्टल पर डिफॉल्ट शुल्क ₹3,100 निर्धारित है।</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      एसोसिएशन आधिकारिक UPI ID *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={membershipSettings.upiId}
+                      onChange={(e) =>
+                        setMembershipSettings({ ...membershipSettings, upiId: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-mono font-bold text-slate-800"
+                    />
+                    <span className="text-[11px] text-slate-400">सदस्यों को कॉपी करने व सीधे भुगतान हेतु यह UPI ID दिखेगी।</span>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      खाता धारक / संस्था नाम (Account Name) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={membershipSettings.accountName}
+                      onChange={(e) =>
+                        setMembershipSettings({ ...membershipSettings, accountName: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-bold text-slate-800"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      UPI QR Code Image URL *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={membershipSettings.qrImageUrl}
+                      onChange={(e) =>
+                        setMembershipSettings({ ...membershipSettings, qrImageUrl: e.target.value })
+                      }
+                      placeholder="/images/sample-upi-qr.png या Cloudinary URL"
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-mono text-slate-800"
+                    />
+                    <span className="text-[11px] text-slate-400">आधिकारिक बैंक UPI QR कोड की छवि का पाथ या वेब लिंक।</span>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        अधिकृत संपर्क व्यक्ति (Contact Person) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={membershipSettings.contactPersonName}
+                        onChange={(e) =>
+                          setMembershipSettings({ ...membershipSettings, contactPersonName: e.target.value })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-semibold text-slate-800"
+                      />
+                    </div>
+                    <div>
+                      <label className="block font-bold text-slate-700 mb-1">
+                        संपर्क मोबाइल नंबर (Contact Mobile) *
+                      </label>
+                      <input
+                        type="text"
+                        required
+                        value={membershipSettings.contactMobile}
+                        onChange={(e) =>
+                          setMembershipSettings({ ...membershipSettings, contactMobile: e.target.value })
+                        }
+                        className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-mono font-bold text-slate-800"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block font-bold text-slate-700 mb-1">
+                      WhatsApp नंबर (Pre-filled Help Link) *
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={membershipSettings.whatsappNumber}
+                      onChange={(e) =>
+                        setMembershipSettings({ ...membershipSettings, whatsappNumber: e.target.value })
+                      }
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-300 focus:border-[#C5A059] focus:ring-1 focus:ring-[#C5A059] outline-none font-mono font-bold text-slate-800"
+                    />
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      className="w-full py-3 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-[#C5A059] hover:text-white font-bold text-xs uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#C5A059]"
+                    >
+                      Save Settings (सेटिंग्स सुरक्षित करें)
+                    </button>
+                  </div>
+                </form>
+              </div>
+
+              {/* Right Column: Submitted Lifetime Payment Requests */}
+              <div className="lg:col-span-6 space-y-4">
+                <div className="bg-white rounded-3xl p-6 sm:p-8 border-2 border-[#C5A059]/40 shadow-xl">
+                  <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Crown className="w-5 h-5 text-amber-500 fill-amber-500" />
+                      <h3 className="font-serif-heading text-xl font-bold text-[#0F172A]">
+                        सदस्यता शुल्क रसीदें (Payment Submissions)
+                      </h3>
+                    </div>
+                    <span className="px-2.5 py-0.5 rounded-full bg-amber-100 text-amber-900 font-bold text-xs">
+                      {membershipPaymentsList.length} कुल
+                    </span>
+                  </div>
+
+                  {membershipPaymentsList.length === 0 ? (
+                    <div className="p-8 text-center text-slate-400 bg-slate-50 rounded-2xl border border-slate-200">
+                      अभी तक कोई भुगतान विवरण प्राप्त नहीं हुआ है।
+                    </div>
+                  ) : (
+                    <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                      {membershipPaymentsList.map((payment) => (
+                        <div
+                          key={payment.id}
+                          className="p-4 rounded-2xl border border-slate-200 bg-[#FAF7F2] space-y-2 text-xs"
+                        >
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <div className="font-bold text-sm text-[#0F172A]">
+                                {payment.fullName}
+                              </div>
+                              <div className="text-slate-500 font-mono">
+                                📞 {payment.mobile} {payment.email ? `• ✉️ ${payment.email}` : ""}
+                              </div>
+                            </div>
+                            <span
+                              className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold uppercase ${
+                                payment.status === "approved"
+                                  ? "bg-emerald-100 text-emerald-800"
+                                  : payment.status === "rejected"
+                                  ? "bg-red-100 text-red-800"
+                                  : "bg-amber-100 text-amber-800 animate-pulse"
+                              }`}
+                            >
+                              {payment.status}
+                            </span>
+                          </div>
+
+                          <div className="bg-white p-3 rounded-xl border border-slate-200 space-y-1">
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Amount:</span>
+                              <strong className="text-emerald-700 font-bold">₹{payment.amount}</strong>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">UTR / Ref ID:</span>
+                              <strong className="font-mono text-slate-800">{payment.transactionReference}</strong>
+                            </div>
+                            <div className="flex justify-between">
+                              <span className="text-slate-500">Payment Date:</span>
+                              <span>{payment.paymentDate}</span>
+                            </div>
+                            {payment.screenshotUrl && (
+                              <div className="pt-1">
+                                <a
+                                  href={payment.screenshotUrl}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-600 hover:underline font-bold inline-flex items-center gap-1"
+                                >
+                                  <span>View Receipt Screenshot</span>
+                                  <ExternalLink className="w-3 h-3" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+
+                          {payment.status === "pending" && (
+                            <div className="flex items-center justify-end gap-2 pt-1">
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm(`क्या आप ${payment.fullName} का ₹${payment.amount} का भुगतान सत्यापित कर उन्हें Life Member में अपग्रेड करना चाहते हैं?`)) {
+                                    await reviewMembershipPayment(payment.id, "approved");
+                                    setMembershipPaymentsList(getMembershipPayments());
+                                    const refreshedAlumni = await getAlumniList();
+                                    setAlumniList(refreshedAlumni);
+                                    alert("भुगतान सत्यापित हो गया और पूर्व स्नातक को 'Life Member' में अपग्रेड कर दिया गया!");
+                                  }
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-[#2D5A43] hover:bg-[#234734] text-white font-bold text-xs flex items-center gap-1 shadow-xs"
+                              >
+                                <CheckCircle2 className="w-3.5 h-3.5" />
+                                <span>Verify & Approve Life Member</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={async () => {
+                                  if (confirm(`क्या आप ${payment.fullName} का भुगतान अनुरोध अस्वीकार करना चाहते हैं?`)) {
+                                    await reviewMembershipPayment(payment.id, "rejected");
+                                    setMembershipPaymentsList(getMembershipPayments());
+                                  }
+                                }}
+                                className="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-bold text-xs"
+                              >
+                                Reject
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
           </div>
         )}
       </div>

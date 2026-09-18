@@ -6,7 +6,7 @@ import EditorialHero from "@/components/Hero/EditorialHero";
 import FounderHeritageSection from "@/components/Hero/FounderHeritageSection";
 import AlumniCard from "@/components/Directory/AlumniCard";
 import { EXECUTIVE_MEMBERS } from "@/lib/mockData";
-import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents, getCommunityPosts, getLoggedInAlumni } from "@/lib/store";
+import { getAlumniList, getLifetimeAchievers, getShradhanjaliList, getEvents, getCommunityPosts, getLoggedInAlumni, getMembershipSettings } from "@/lib/store";
 import {
   Search,
   ArrowRight,
@@ -24,7 +24,8 @@ import {
   Flag,
   Camera,
   Play,
-  FileText
+  FileText,
+  Crown
 } from "lucide-react";
 import { AlumniProfile, LifetimeAchiever, ShradhanjaliRecord, AssociationEvent, CommunityPost } from "@/types";
 
@@ -587,7 +588,80 @@ export default function HomePage() {
         </div>
       </section>
 
-      {/* 8. Call to Action */}
+      {/* 8. LIFETIME MEMBERSHIP FEATURED CTA (Live Count & Direct Access) */}
+      <section className="py-16 md:py-20 bg-gradient-to-br from-[#0F172A] via-[#1E293B] to-[#0A0F1D] text-white border-t border-[#C5A059]/40 relative overflow-hidden">
+        {/* Subtle decorative glow */}
+        <div className="absolute -top-24 -right-24 w-96 h-96 bg-[#C5A059]/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-24 -left-24 w-96 h-96 bg-[#2D5A43]/20 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="bg-gradient-to-br from-[#FFFDF8] via-[#FAF3E2] to-[#F4E6CC] text-[#0F172A] rounded-3xl p-8 sm:p-12 border-2 border-[#C5A059] shadow-2xl relative overflow-hidden">
+            <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-amber-400 via-[#C5A059] to-amber-600" />
+
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              <div className="lg:col-span-8 space-y-4 text-center lg:text-left">
+                <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-amber-200/70 border border-amber-400/80 text-amber-950 text-xs font-bold uppercase tracking-wider">
+                  <Crown className="w-4 h-4 text-amber-700 fill-amber-500" />
+                  <span>आजीवन सदस्यता (Lifetime Membership)</span>
+                </div>
+
+                <h2 className="font-serif-heading text-3xl sm:text-4xl font-extrabold text-[#0F172A] leading-tight">
+                  आजन्म सदस्य बनें और अपनी संस्था को बढ़ाने में सहयोग करें
+                </h2>
+
+                <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-2xl">
+                  ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन से स्थायी रूप से जुड़ें। जीवनभर के लिए आधिकारिक पहचान, विशेष गोल्डन प्रोफ़ाइल, डिजिटल स्मार्ट कार्ड, एवं संस्था के निर्णयों में सक्रिय सहभागिता प्राप्त करें।
+                </p>
+
+                <div className="flex flex-wrap items-center justify-center lg:justify-start gap-4 pt-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-[#2D5A43]">
+                    <ShieldCheck className="w-4 h-4" />
+                    <span>UK06803112023012256</span>
+                  </div>
+                  <span className="text-slate-300">•</span>
+                  <div className="flex items-center gap-2 text-xs font-bold text-amber-900">
+                    <Crown className="w-4 h-4 text-amber-600 fill-amber-500" />
+                    <span>
+                      वर्तमान में {alumniList.filter((a) => a.membershipTier === "Life Member" && !a.isDeceased).length} आजन्म सदस्य सक्रिय
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="lg:col-span-4 flex flex-col items-center justify-center bg-white/80 backdrop-blur-sm p-6 sm:p-8 rounded-2xl border-2 border-[#C5A059]/50 shadow-md text-center">
+                <span className="text-[11px] font-bold uppercase tracking-widest text-slate-500">
+                  आजीवन सदस्यता शुल्क
+                </span>
+                <div className="text-4xl sm:text-5xl font-serif-heading font-black text-[#0F172A] my-1">
+                  ₹{(getMembershipSettings().lifetimeFee || 3100).toLocaleString("en-IN")}
+                </div>
+                <span className="text-[11px] font-semibold text-emerald-800 bg-emerald-50 px-3 py-0.5 rounded-full border border-emerald-200 mb-4">
+                  ★ एकमुश्त (One-time Lifelong)
+                </span>
+
+                <div className="w-full space-y-2">
+                  <Link
+                    href="/membership/permanent"
+                    className="w-full inline-flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-[#C5A059] hover:text-white text-xs font-bold uppercase tracking-wider transition-all shadow-md active:scale-95 border border-[#C5A059]"
+                  >
+                    <span>आजन्म सदस्य बनें (Join Now)</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+
+                  <Link
+                    href="/membership/permanent"
+                    className="w-full inline-flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl bg-transparent hover:bg-black/5 text-slate-700 text-xs font-bold transition-colors"
+                  >
+                    <span>आजन्म सदस्यों की सूची देखें ({alumniList.filter((a) => a.membershipTier === "Life Member" && !a.isDeceased).length})</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 9. Call to Action */}
       <section className="py-16 bg-[#FAF7F2] text-[#0F172A] border-t border-[#C5A059]/30 text-center">
         <div className="max-w-3xl mx-auto px-4 sm:px-6 space-y-6">
           <h2 className="font-serif-heading text-3xl sm:text-4xl font-bold text-[#0F172A]">

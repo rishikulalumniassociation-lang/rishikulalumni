@@ -1246,3 +1246,148 @@ export async function reviewCommunityPostReport(
   }
 }
 
+// ---------------------------------------------------------------------------
+// Lifetime Membership Settings & Payment Submission Management
+// ---------------------------------------------------------------------------
+
+export interface LifetimeMembershipSettings {
+  lifetimeFee: number;
+  upiId: string;
+  qrImageUrl: string;
+  contactPersonName: string;
+  contactMobile: string;
+  whatsappNumber: string;
+  accountName: string;
+  bankName?: string;
+  accountNumber?: string;
+  ifscCode?: string;
+}
+
+export const DEFAULT_MEMBERSHIP_SETTINGS: LifetimeMembershipSettings = {
+  lifetimeFee: 3100,
+  upiId: "YOUR_OFFICIAL_UPI_ID",
+  qrImageUrl: "/images/rishikul-sangam-logo.jpg",
+  contactPersonName: "Prof. Vineet Kumar Agnihotri",
+  contactMobile: "9897284154",
+  whatsappNumber: "9897284154",
+  accountName: "ऋषिकुल स्नातक एवं स्नातकोत्तर संघ",
+  bankName: "State Bank of India (SBI)",
+  accountNumber: "XXXXXXXXXXXX",
+  ifscCode: "SBIN000XXXX"
+};
+
+export interface MembershipPaymentSubmission {
+  id: string;
+  alumniId?: string;
+  fullName: string;
+  mobile: string;
+  email?: string;
+  membershipType: "Life Member";
+  amount: number;
+  transactionReference: string;
+  paymentDate: string;
+  screenshotUrl?: string;
+  status: "pending" | "approved" | "rejected";
+  adminRemarks?: string;
+  submittedAt: string;
+}
+
+const SETTINGS_STORAGE_KEY = "rishikul_lifetime_settings_v1";
+const PAYMENTS_STORAGE_KEY = "rishikul_lifetime_payments_v1";
+
+export function getMembershipSettings(): LifetimeMembershipSettings {
+  if (typeof window === "undefined") return DEFAULT_MEMBERSHIP_SETTINGS;
+  try {
+    const raw = localStorage.getItem(SETTINGS_STORAGE_KEY);
+    if (!raw) return DEFAULT_MEMBERSHIP_SETTINGS;
+    return { ...DEFAULT_MEMBERSHIP_SETTINGS, ...JSON.parse(raw) };
+  } catch (e) {
+    return DEFAULT_MEMBERSHIP_SETTINGS;
+  }
+}
+
+export function updateMembershipSettings(settings: Partial<LifetimeMembershipSettings>): LifetimeMembershipSettings {
+  const current = getMembershipSettings();
+  const updated = { ...current, ...settings };
+  if (typeof window !== "undefined") {
+    localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("membership_settings_updated"));
+  }
+  return updated;
+}
+
+export function getMembershipPayments(): MembershipPaymentSubmission[] {
+  if (typeof window === "undefined") return [];
+  try {
+    const raw = localStorage.getItem(PAYMENTS_STORAGE_KEY);
+    if (!raw) return [];
+    return JSON.parse(raw);
+  } catch (e) {
+    return [];
+  }
+}
+
+export function submitMembershipPayment(payment: Omit<MembershipPaymentSubmission, "id" | "submittedAt" | "status">): MembershipPaymentSubmission {
+  const current = getMembershipPayments();
+  const newSubmission: MembershipPaymentSubmission = {
+    ...payment,
+    id: `pay-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
+    submittedAt: new Date().toISOString(),
+    status: "pending",
+  };
+  const updated = [newSubmission, ...current];
+  if (typeof window !== "undefined") {
+    localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(updated));
+    window.dispatchEvent(new Event("membership_payments_updated"));
+  }
+  return newSubmission;
+}
+
+export async function reviewMembershipPayment(
+  paymentId: string,
+  decision: "approved" | "rejected",
+  adminRemarks?: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const current = getMembershipPayments();
+    const idx = current.findIndex((p) => p.id === paymentId);
+    if (idx === -1) return { success: false, error: "Payment submission not found." };
+
+    const payment = current[idx];
+    current[idx] = {
+      ...payment,
+      status: decision,
+      adminRemarks: adminRemarks || (decision === "approved" ? "Verified and upgraded to Life Member" : "Payment verification declined"),
+    };
+
+    if (typeof window !== "undefined") {
+      localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(current));
+      window.dispatchEvent(new Event("membership_payments_updated"));
+    }
+
+    if (decision === "approved") {
+      const allAlumni = await getAlumniList();
+      let targetAlumnus = payment.alumniId
+        ? allAlumni.find((a) => a.id === payment.alumniId)
+        : null;
+
+      if (!targetAlumnus) {
+        targetAlumnus = allAlumni.find((a) => a.mobile.replace(/\D/g, "") === payment.mobile.replace(/\D/g, ""));
+      }
+
+      if (targetAlumnus) {
+        await updateAlumniProfile(targetAlumnus.id, {
+          membershipTier: "Life Member",
+          isVerified: true,
+          approvalStatus: "approved",
+        });
+      }
+    }
+
+    return { success: true };
+  } catch (err: any) {
+    return { success: false, error: err.message || "Failed to review payment." };
+  }
+}
+
+
