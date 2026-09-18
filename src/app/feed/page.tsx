@@ -87,6 +87,15 @@ export default function FeedPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedLinkPostId, setCopiedLinkPostId] = useState<string | null>(null);
 
+  // Network group modal: which panel is open + what label to show
+  type NetworkGroup = {
+    title: string;
+    subtitle: string;
+    list: (AlumniProfile & { _relationType?: string })[];
+    accentColor: string; // tailwind bg class for the header strip
+  };
+  const [networkModal, setNetworkModal] = useState<NetworkGroup | null>(null);
+
   // Initialize data
   useEffect(() => {
     const user = getLoggedInAlumni();
@@ -522,19 +531,19 @@ export default function FeedPage() {
                     <Users className="w-3.5 h-3.5" />
                     <span>UG Batchmates</span>
                   </div>
-                  <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "UG Batchmates", subtitle: `BAMS Batch ${currentUser.ugBatchYear} • ${ugBatchmates.length} alumni`, list: ugBatchmates, accentColor: "bg-sky-700" })}
+                    className="text-[11px] font-semibold text-[#C5A059] hover:underline cursor-pointer"
+                  >
                     View All
-                  </Link>
+                  </button>
                 </div>
                 <p className="text-[11px] text-slate-500">BAMS Batch {currentUser.ugBatchYear} • {ugBatchmates.length} alumni</p>
                 <div className="space-y-2">
                   {ugBatchmates.slice(0, 4).map((a) => (
                     <div key={a.id} className="flex items-center gap-2.5">
-                      <img
-                        src={a.avatarUrl || "/images/default-avatar.png"}
-                        alt={a.fullName}
-                        className="w-7 h-7 rounded-full object-cover border border-sky-200 shrink-0"
-                      />
+                      <img src={a.avatarUrl || "/images/default-avatar.png"} alt={a.fullName} className="w-7 h-7 rounded-full object-cover border border-sky-200 shrink-0" />
                       <div className="truncate">
                         <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
                         <span className="text-[10px] text-slate-400">{a.city || a.state}</span>
@@ -545,6 +554,15 @@ export default function FeedPage() {
                     <p className="text-[11px] text-slate-400 text-center py-1">No batchmates registered yet.</p>
                   )}
                 </div>
+                {ugBatchmates.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "UG Batchmates", subtitle: `BAMS Batch ${currentUser.ugBatchYear} • ${ugBatchmates.length} alumni`, list: ugBatchmates, accentColor: "bg-sky-700" })}
+                    className="w-full text-[11px] font-semibold text-sky-700 hover:underline text-center pt-1 cursor-pointer"
+                  >
+                    +{ugBatchmates.length - 4} more batchmates →
+                  </button>
+                )}
               </div>
             )}
 
@@ -556,9 +574,13 @@ export default function FeedPage() {
                     <Users className="w-3.5 h-3.5" />
                     <span>PG Batchmates</span>
                   </div>
-                  <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "PG Batchmates", subtitle: `PG Batch ${currentUser.pgBatchYear}${currentUser.specialization ? " • " + currentUser.specialization.split(" (")[0] : ""} • ${pgBatchmates.length} alumni`, list: pgBatchmates, accentColor: "bg-violet-700" })}
+                    className="text-[11px] font-semibold text-[#C5A059] hover:underline cursor-pointer"
+                  >
                     View All
-                  </Link>
+                  </button>
                 </div>
                 <p className="text-[11px] text-slate-500">
                   PG Batch {currentUser.pgBatchYear}
@@ -568,11 +590,7 @@ export default function FeedPage() {
                 <div className="space-y-2">
                   {pgBatchmates.slice(0, 4).map((a) => (
                     <div key={a.id} className="flex items-center gap-2.5">
-                      <img
-                        src={a.avatarUrl || "/images/default-avatar.png"}
-                        alt={a.fullName}
-                        className="w-7 h-7 rounded-full object-cover border border-violet-200 shrink-0"
-                      />
+                      <img src={a.avatarUrl || "/images/default-avatar.png"} alt={a.fullName} className="w-7 h-7 rounded-full object-cover border border-violet-200 shrink-0" />
                       <div className="truncate">
                         <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
                         <span className="text-[10px] text-slate-400">
@@ -585,6 +603,15 @@ export default function FeedPage() {
                     <p className="text-[11px] text-slate-400 text-center py-1">No PG batchmates found.</p>
                   )}
                 </div>
+                {pgBatchmates.length > 4 && (
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "PG Batchmates", subtitle: `PG Batch ${currentUser.pgBatchYear}${currentUser.specialization ? " • " + currentUser.specialization.split(" (")[0] : ""} • ${pgBatchmates.length} alumni`, list: pgBatchmates, accentColor: "bg-violet-700" })}
+                    className="w-full text-[11px] font-semibold text-violet-700 hover:underline text-center pt-1 cursor-pointer"
+                  >
+                    +{pgBatchmates.length - 4} more batchmates →
+                  </button>
+                )}
               </div>
             )}
 
@@ -601,17 +628,15 @@ export default function FeedPage() {
               </div>
               {myConnections.length > 0 ? (
                 <>
-                  <div className="flex -space-x-2">
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "Connections", subtitle: `${myConnections.length} connected alumni`, list: myConnections, accentColor: "bg-[#2D5A43]" })}
+                    className="flex -space-x-2 cursor-pointer hover:opacity-80 transition-opacity"
+                  >
                     {myConnections.slice(0, 6).map((c) => (
-                      <img
-                        key={c.id}
-                        src={c.avatarUrl || "/images/default-avatar.png"}
-                        alt={c.fullName}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                        title={c.fullName}
-                      />
+                      <img key={c.id} src={c.avatarUrl || "/images/default-avatar.png"} alt={c.fullName} className="w-8 h-8 rounded-full object-cover border-2 border-white" title={c.fullName} />
                     ))}
-                  </div>
+                  </button>
                   <p className="text-[11px] text-slate-500">{myConnections.length} connected alumni</p>
                 </>
               ) : (
@@ -630,18 +655,18 @@ export default function FeedPage() {
                     <Heart className="w-3.5 h-3.5" />
                     <span>Alumni Family</span>
                   </div>
-                  <Link href="/directory" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "Alumni Family", subtitle: `${myFamily.length} family members registered on Rishikul Sangam`, list: myFamily, accentColor: "bg-rose-700" })}
+                    className="text-[11px] font-semibold text-[#C5A059] hover:underline cursor-pointer"
+                  >
                     View All
-                  </Link>
+                  </button>
                 </div>
                 <div className="space-y-2">
                   {myFamily.slice(0, 4).map((a) => (
                     <div key={a.id} className="flex items-center gap-2.5">
-                      <img
-                        src={a.avatarUrl || "/images/default-avatar.png"}
-                        alt={a.fullName}
-                        className="w-7 h-7 rounded-full object-cover border border-rose-200 shrink-0"
-                      />
+                      <img src={a.avatarUrl || "/images/default-avatar.png"} alt={a.fullName} className="w-7 h-7 rounded-full object-cover border border-rose-200 shrink-0" />
                       <div className="truncate">
                         <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
                         <span className="text-[10px] text-rose-500 font-medium">
@@ -662,18 +687,18 @@ export default function FeedPage() {
                     <Sparkles className="w-3.5 h-3.5" />
                     <span>My Teachers</span>
                   </div>
-                  <Link href="/experts" className="text-[11px] font-semibold text-[#C5A059] hover:underline">
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({ title: "My Teachers", subtitle: `${myTeachers.length} teachers linked to your profile`, list: myTeachers, accentColor: "bg-amber-700" })}
+                    className="text-[11px] font-semibold text-[#C5A059] hover:underline cursor-pointer"
+                  >
                     View All
-                  </Link>
+                  </button>
                 </div>
                 <div className="space-y-2">
                   {myTeachers.slice(0, 4).map((a) => (
                     <div key={a.id} className="flex items-center gap-2.5">
-                      <img
-                        src={a.avatarUrl || "/images/default-avatar.png"}
-                        alt={a.fullName}
-                        className="w-7 h-7 rounded-full object-cover border border-amber-200 shrink-0"
-                      />
+                      <img src={a.avatarUrl || "/images/default-avatar.png"} alt={a.fullName} className="w-7 h-7 rounded-full object-cover border border-amber-200 shrink-0" />
                       <div className="truncate">
                         <span className="font-medium text-[11px] text-[#0F172A] block truncate">{a.fullName}</span>
                         <span className="text-[10px] text-amber-700 font-medium">
@@ -766,18 +791,19 @@ export default function FeedPage() {
               <div className="flex items-stretch gap-3 overflow-x-auto px-5 pb-4 no-scrollbar">
 
                 {/* Connections */}
-                <Link
-                  href="/directory"
-                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-[#FAF7F2] hover:bg-amber-50 border border-[#C5A059]/30 hover:border-[#C5A059] rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                <button
+                  type="button"
+                  onClick={() => setNetworkModal({
+                    title: "Connections",
+                    subtitle: `${myConnections.length} connected alumni`,
+                    list: myConnections,
+                    accentColor: "bg-[#2D5A43]",
+                  })}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-[#FAF7F2] hover:bg-amber-50 border border-[#C5A059]/30 hover:border-[#C5A059] rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center cursor-pointer"
                 >
                   <div className="flex -space-x-2">
                     {myConnections.slice(0, 3).map((c) => (
-                      <img
-                        key={c.id}
-                        src={c.avatarUrl || "/images/default-avatar.png"}
-                        alt={c.fullName}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                      />
+                      <img key={c.id} src={c.avatarUrl || "/images/default-avatar.png"} alt={c.fullName} className="w-8 h-8 rounded-full object-cover border-2 border-white" />
                     ))}
                     {myConnections.length === 0 && (
                       <div className="w-8 h-8 rounded-full bg-slate-200 flex items-center justify-center">
@@ -789,21 +815,22 @@ export default function FeedPage() {
                   <span className="text-[10px] text-slate-500 font-medium">
                     {myConnections.length > 0 ? `${myConnections.length} Connected` : "Find Alumni"}
                   </span>
-                </Link>
+                </button>
 
                 {/* UG Batchmates */}
-                <Link
-                  href="/directory"
-                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-sky-50 hover:bg-sky-100 border border-sky-200/60 hover:border-sky-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                <button
+                  type="button"
+                  onClick={() => setNetworkModal({
+                    title: "UG Batchmates",
+                    subtitle: `BAMS Batch ${currentUser.ugBatchYear} • ${ugBatchmates.length} alumni`,
+                    list: ugBatchmates,
+                    accentColor: "bg-sky-700",
+                  })}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-sky-50 hover:bg-sky-100 border border-sky-200/60 hover:border-sky-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center cursor-pointer"
                 >
                   <div className="flex -space-x-2">
                     {ugBatchmates.slice(0, 3).map((c) => (
-                      <img
-                        key={c.id}
-                        src={c.avatarUrl || "/images/default-avatar.png"}
-                        alt={c.fullName}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                      />
+                      <img key={c.id} src={c.avatarUrl || "/images/default-avatar.png"} alt={c.fullName} className="w-8 h-8 rounded-full object-cover border-2 border-white" />
                     ))}
                     {ugBatchmates.length === 0 && (
                       <div className="w-8 h-8 rounded-full bg-sky-200 flex items-center justify-center">
@@ -813,26 +840,25 @@ export default function FeedPage() {
                   </div>
                   <span className="text-[11px] font-bold text-sky-700 leading-tight">UG Batch</span>
                   <span className="text-[10px] text-slate-500 font-medium">
-                    {currentUser.ugBatchYear
-                      ? `${ugBatchmates.length} Batchmates`
-                      : "No UG Batch"}
+                    {currentUser.ugBatchYear ? `${ugBatchmates.length} Batchmates` : "No UG Batch"}
                   </span>
-                </Link>
+                </button>
 
                 {/* PG Batchmates */}
                 {currentUser.pgBatchYear && (
-                  <Link
-                    href="/directory"
-                    className="flex-shrink-0 flex flex-col items-center gap-2 bg-violet-50 hover:bg-violet-100 border border-violet-200/60 hover:border-violet-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                  <button
+                    type="button"
+                    onClick={() => setNetworkModal({
+                      title: "PG Batchmates",
+                      subtitle: `PG Batch ${currentUser.pgBatchYear}${currentUser.specialization ? " • " + currentUser.specialization.split(" (")[0] : ""} • ${pgBatchmates.length} alumni`,
+                      list: pgBatchmates,
+                      accentColor: "bg-violet-700",
+                    })}
+                    className="flex-shrink-0 flex flex-col items-center gap-2 bg-violet-50 hover:bg-violet-100 border border-violet-200/60 hover:border-violet-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center cursor-pointer"
                   >
                     <div className="flex -space-x-2">
                       {pgBatchmates.slice(0, 3).map((c) => (
-                        <img
-                          key={c.id}
-                          src={c.avatarUrl || "/images/default-avatar.png"}
-                          alt={c.fullName}
-                          className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                        />
+                        <img key={c.id} src={c.avatarUrl || "/images/default-avatar.png"} alt={c.fullName} className="w-8 h-8 rounded-full object-cover border-2 border-white" />
                       ))}
                       {pgBatchmates.length === 0 && (
                         <div className="w-8 h-8 rounded-full bg-violet-200 flex items-center justify-center">
@@ -844,22 +870,23 @@ export default function FeedPage() {
                     <span className="text-[10px] text-slate-500 font-medium">
                       {pgBatchmates.length} Batchmates
                     </span>
-                  </Link>
+                  </button>
                 )}
 
                 {/* Family */}
-                <Link
-                  href="/directory"
-                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 hover:border-rose-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                <button
+                  type="button"
+                  onClick={() => setNetworkModal({
+                    title: "Alumni Family",
+                    subtitle: `${myFamily.length} family members registered on Rishikul Sangam`,
+                    list: myFamily,
+                    accentColor: "bg-rose-700",
+                  })}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-rose-50 hover:bg-rose-100 border border-rose-200/60 hover:border-rose-400 rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center cursor-pointer"
                 >
                   <div className="flex -space-x-2">
                     {myFamily.slice(0, 3).map((c) => (
-                      <img
-                        key={c.id}
-                        src={c.avatarUrl || "/images/default-avatar.png"}
-                        alt={c.fullName}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                      />
+                      <img key={c.id} src={c.avatarUrl || "/images/default-avatar.png"} alt={c.fullName} className="w-8 h-8 rounded-full object-cover border-2 border-white" />
                     ))}
                     {myFamily.length === 0 && (
                       <div className="w-8 h-8 rounded-full bg-rose-200 flex items-center justify-center">
@@ -871,21 +898,22 @@ export default function FeedPage() {
                   <span className="text-[10px] text-slate-500 font-medium">
                     {myFamily.length > 0 ? `${myFamily.length} Members` : "Link Alumni"}
                   </span>
-                </Link>
+                </button>
 
                 {/* My Teachers */}
-                <Link
-                  href="/experts"
-                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 hover:border-[#C5A059] rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center"
+                <button
+                  type="button"
+                  onClick={() => setNetworkModal({
+                    title: "My Teachers",
+                    subtitle: `${myTeachers.length} teacher${myTeachers.length !== 1 ? "s" : ""} linked to your profile`,
+                    list: myTeachers,
+                    accentColor: "bg-amber-700",
+                  })}
+                  className="flex-shrink-0 flex flex-col items-center gap-2 bg-amber-50 hover:bg-amber-100 border border-amber-200/60 hover:border-[#C5A059] rounded-2xl px-4 py-3 transition-all min-w-[90px] text-center cursor-pointer"
                 >
                   <div className="flex -space-x-2">
                     {myTeachers.slice(0, 3).map((c) => (
-                      <img
-                        key={c.id}
-                        src={c.avatarUrl || "/images/default-avatar.png"}
-                        alt={c.fullName}
-                        className="w-8 h-8 rounded-full object-cover border-2 border-white"
-                      />
+                      <img key={c.id} src={c.avatarUrl || "/images/default-avatar.png"} alt={c.fullName} className="w-8 h-8 rounded-full object-cover border-2 border-white" />
                     ))}
                     {myTeachers.length === 0 && (
                       <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center">
@@ -897,10 +925,11 @@ export default function FeedPage() {
                   <span className="text-[10px] text-slate-500 font-medium">
                     {myTeachers.length > 0 ? `${myTeachers.length} Gurus` : "Find Experts"}
                   </span>
-                </Link>
+                </button>
 
               </div>
             </div>
+
 
             {/* Filter Pills */}
             <div className="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar text-xs font-semibold">
@@ -1672,6 +1701,119 @@ export default function FeedPage() {
             >
               Close
             </button>
+          </div>
+        </div>
+      )}
+
+      {/* ============================================================== */}
+      {/* Network Group Modal — filtered alumni panel                    */}
+      {/* ============================================================== */}
+      {networkModal && (
+        <div
+          className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-0 sm:p-4 animate-in fade-in"
+          onClick={() => setNetworkModal(null)}
+        >
+          <div
+            className="bg-white w-full sm:max-w-md rounded-t-3xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden max-h-[85vh] flex flex-col animate-in slide-in-from-bottom sm:slide-in-from-bottom-0 duration-300"
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className={`${networkModal.accentColor} text-white px-5 py-4 flex items-center justify-between shrink-0`}>
+              <div>
+                <h3 className="font-serif-heading text-base font-bold leading-tight">{networkModal.title}</h3>
+                <p className="text-[11px] text-white/75 mt-0.5">{networkModal.subtitle}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setNetworkModal(null)}
+                className="p-1.5 rounded-full bg-white/20 hover:bg-white/30 transition-colors"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Alumni List */}
+            <div className="overflow-y-auto flex-1 p-4 space-y-3">
+              {networkModal.list.length === 0 ? (
+                <div className="text-center py-12 text-slate-400">
+                  <Users className="w-10 h-10 mx-auto mb-3 text-slate-300" />
+                  <p className="text-sm font-medium">कोई alumni नहीं मिला।</p>
+                  <p className="text-xs mt-1">Update your profile or explore the full Directory.</p>
+                  <Link
+                    href="/directory"
+                    onClick={() => setNetworkModal(null)}
+                    className="inline-flex items-center gap-1 mt-3 px-4 py-2 rounded-full bg-[#0F172A] text-[#C5A059] text-xs font-bold hover:bg-[#2D5A43] hover:text-white transition-colors"
+                  >
+                    Full Directory <ChevronRight className="w-3 h-3" />
+                  </Link>
+                </div>
+              ) : (
+                networkModal.list.map((a) => {
+                  const rel = (a as typeof a & { _relationType?: string })._relationType;
+                  return (
+                    <div key={a.id} className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 hover:bg-[#FAF7F2] border border-slate-100 hover:border-[#C5A059]/30 transition-all">
+                      <img
+                        src={a.avatarUrl || "/images/default-avatar.png"}
+                        alt={a.fullName}
+                        className="w-12 h-12 rounded-2xl object-cover border border-slate-200 shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-bold text-sm text-[#0F172A] truncate">{a.fullName}</h4>
+                        <div className="flex flex-wrap gap-x-2 gap-y-0.5 mt-0.5">
+                          {rel && (
+                            <span className="text-[10px] font-bold text-rose-600 uppercase">{rel}</span>
+                          )}
+                          {a.ugBatchYear && (
+                            <span className="text-[10px] text-sky-700 font-medium">BAMS {a.ugBatchYear}</span>
+                          )}
+                          {a.pgBatchYear && (
+                            <span className="text-[10px] text-violet-700 font-medium">PG {a.pgBatchYear}</span>
+                          )}
+                          {a.specialization && (
+                            <span className="text-[10px] text-amber-700">{a.specialization.split(" (")[0]}</span>
+                          )}
+                          {a.city && (
+                            <span className="text-[10px] text-slate-500">{a.city}</span>
+                          )}
+                        </div>
+                        {a.designation && (
+                          <p className="text-[11px] text-slate-500 truncate mt-0.5">{a.designation}</p>
+                        )}
+                      </div>
+                      {a.whatsappNumber && (
+                        <a
+                          href={`https://wa.me/91${a.whatsappNumber.replace(/\D/g, "")}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="shrink-0 p-2 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-colors"
+                          title={`WhatsApp ${a.fullName}`}
+                        >
+                          <svg className="w-4 h-4 fill-white" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                        </a>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+
+            {/* Footer */}
+            <div className="shrink-0 px-4 py-3 border-t border-slate-100 flex items-center justify-between">
+              <Link
+                href="/directory"
+                onClick={() => setNetworkModal(null)}
+                className="text-xs font-semibold text-[#2D5A43] hover:underline flex items-center gap-1"
+              >
+                Full Alumni Directory <ExternalLink className="w-3 h-3" />
+              </Link>
+              <button
+                type="button"
+                onClick={() => setNetworkModal(null)}
+                className="px-4 py-1.5 rounded-full bg-[#0F172A] text-white text-xs font-bold"
+              >
+                बंद करें
+              </button>
+            </div>
           </div>
         </div>
       )}
