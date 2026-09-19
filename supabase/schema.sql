@@ -485,3 +485,57 @@ END $$;
 CREATE POLICY "Public read birthday_wishes" ON public.birthday_wishes FOR SELECT USING (true);
 CREATE POLICY "Enable all birthday_wishes" ON public.birthday_wishes FOR ALL USING (true);
 
+-- Community Post Comments (पोस्ट टिप्पणियाँ)
+CREATE TABLE IF NOT EXISTS public.community_post_comments (
+    id TEXT PRIMARY KEY DEFAULT ('cmt_' || floor(extract(epoch from now()) * 1000)::text),
+    post_id TEXT NOT NULL REFERENCES public.community_posts(id) ON DELETE CASCADE,
+    user_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    author_name TEXT NOT NULL,
+    author_avatar TEXT,
+    author_batch TEXT,
+    content TEXT NOT NULL,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.community_post_comments ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Public read community_post_comments" ON public.community_post_comments;
+    DROP POLICY IF EXISTS "Enable all community_post_comments" ON public.community_post_comments;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+CREATE POLICY "Public read community_post_comments" ON public.community_post_comments FOR SELECT USING (true);
+CREATE POLICY "Enable all community_post_comments" ON public.community_post_comments FOR ALL USING (true);
+
+-- User Notifications (अधिसूचनाएँ)
+CREATE TABLE IF NOT EXISTS public.notifications (
+    id TEXT PRIMARY KEY DEFAULT ('notif_' || floor(extract(epoch from now()) * 1000)::text),
+    user_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    actor_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
+    actor_name TEXT,
+    actor_avatar TEXT,
+    type TEXT NOT NULL,
+    title TEXT NOT NULL,
+    message TEXT NOT NULL,
+    link TEXT,
+    is_read BOOLEAN DEFAULT FALSE,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.notifications ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Public read notifications" ON public.notifications;
+    DROP POLICY IF EXISTS "Enable all notifications" ON public.notifications;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+CREATE POLICY "Public read notifications" ON public.notifications FOR SELECT USING (true);
+CREATE POLICY "Enable all notifications" ON public.notifications FOR ALL USING (true);
+
+
