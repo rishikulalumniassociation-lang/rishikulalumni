@@ -21,6 +21,7 @@ export type Specialization =
   | 'Samhita & Siddhanta'
   | 'Swasthavritta & Yoga'
   | 'Agada Tantra (Toxicology)'
+  | 'Agada Tantra evum Vidhi Vaidyaka (Toxicology & Medical Jurisprudence)'
   | 'General Ayurvedic Practice';
 
 export interface WorkExperience {

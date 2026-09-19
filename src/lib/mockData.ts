@@ -86,7 +86,7 @@ export const SPECIALIZATION_OPTIONS = [
   "Sharir Rachana (Anatomy)",
   "Samhita & Siddhanta",
   "Swasthavritta & Yoga",
-  "Agada Tantra (Toxicology)",
+  "Agada Tantra evum Vidhi Vaidyaka (Toxicology & Medical Jurisprudence)",
   "General Ayurvedic Practice"
 ];
 
