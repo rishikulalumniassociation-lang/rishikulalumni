@@ -441,13 +441,13 @@ export default function PostCard({
 
         {/* Likers Summary */}
         {likersList.length > 0 && (
-          <div className="pt-2.5 pb-1">
+          <div className="pt-2.5 pb-1 max-w-full overflow-hidden">
             <button
               type="button"
               onClick={() => setShowLikersModal(true)}
-              className="flex items-center gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
+              className="w-full flex items-start gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
             >
-              <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+              <div className="flex -space-x-1.5 overflow-hidden shrink-0 pt-0.5">
                 {likersList.slice(0, 3).map((u) => (
                   <img
                     key={u.id}
@@ -457,7 +457,7 @@ export default function PostCard({
                   />
                 ))}
               </div>
-              <span className="truncate">
+              <div className="flex-1 min-w-0 break-words leading-snug">
                 ❤️ Liked by{" "}
                 {likersList.length === 1 && (
                   <strong className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">{likersList[0].fullName}</strong>
@@ -475,7 +475,7 @@ export default function PostCard({
                     <span className="underline decoration-dotted font-medium">{likersList.length - 2} others</span>
                   </>
                 )}
-              </span>
+              </div>
             </button>
           </div>
         )}

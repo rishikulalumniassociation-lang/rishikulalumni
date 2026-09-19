@@ -328,19 +328,19 @@ export default function BirthdaysPage() {
                 return (
                   <div
                     key={wish.id}
-                    className="p-3.5 rounded-2xl bg-white border border-amber-200/80 shadow-xs flex items-center justify-between gap-3"
+                    className="p-3.5 rounded-2xl bg-white border border-amber-200/80 shadow-xs flex items-center justify-between gap-3 max-w-full overflow-hidden"
                   >
-                    <div className="flex items-center gap-2.5 truncate">
+                    <div className="flex items-center gap-2.5 min-w-0 flex-1">
                       <img
                         src={wish.senderAvatar || "/images/default-avatar.png"}
                         alt={wish.senderName}
                         className="w-10 h-10 rounded-xl object-cover border border-amber-200 shrink-0"
                       />
-                      <div className="truncate">
-                        <span className="font-bold text-xs text-[#0F172A] block truncate">
+                      <div className="min-w-0 flex-1 break-words">
+                        <span className="font-bold text-xs text-[#0F172A] block break-words leading-snug">
                           {wish.senderName}
                         </span>
-                        <span className="text-[10px] text-emerald-800 font-medium block">
+                        <span className="text-[10px] text-emerald-800 font-medium block break-words">
                           {wish.senderUgBatchYear ? `UG Batch ${wish.senderUgBatchYear}` : "Alumnus"}
                         </span>
                         <span className="text-[9px] text-slate-400 block">
@@ -438,19 +438,19 @@ export default function BirthdaysPage() {
 
                       {/* Display who sent birthday wishes with their names */}
                       {cardWishes.length > 0 && (
-                        <div className="mt-3 mb-4 p-3 rounded-2xl bg-amber-50/80 border border-amber-200">
+                        <div className="mt-3 mb-4 p-3 rounded-2xl bg-amber-50/80 border border-amber-200 max-w-full overflow-hidden">
                           <div className="flex items-center gap-1.5 text-[11px] font-bold text-[#2D5A43] mb-1.5">
-                            <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+                            <Sparkles className="w-3.5 h-3.5 text-amber-600 shrink-0" />
                             <span>बधाई देने वाले साथी ({cardWishes.length}):</span>
                           </div>
-                          <div className="flex flex-wrap gap-1.5">
+                          <div className="flex flex-wrap gap-1.5 max-w-full">
                             {cardWishes.map((w) => (
                               <span
                                 key={w.id}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white text-slate-800 border border-amber-200 text-[11px] font-medium shadow-2xs"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-white text-slate-800 border border-amber-200 text-[11px] font-medium shadow-2xs break-words whitespace-normal max-w-full"
                               >
-                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600" />
-                                {w.senderName} {w.senderUgBatchYear ? `(UG ${w.senderUgBatchYear})` : ""}
+                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 shrink-0" />
+                                <span className="break-words leading-tight">{w.senderName} {w.senderUgBatchYear ? `(UG ${w.senderUgBatchYear})` : ""}</span>
                               </span>
                             ))}
                           </div>
@@ -458,7 +458,7 @@ export default function BirthdaysPage() {
                       )}
                     </div>
 
-                    <div className="pt-4 border-t border-[#C5A059]/30 flex items-center justify-between gap-3">
+                    <div className="pt-4 border-t border-[#C5A059]/30 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2.5">
                       <button
                         onClick={() => handleSendWish(alumnus)}
                         className={`flex-1 flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl text-xs font-bold uppercase tracking-wider transition-all shadow-md ${
@@ -482,11 +482,11 @@ export default function BirthdaysPage() {
                           onClick={() => {
                             void sendBirthdayWish(currentUser, alumnus.id);
                           }}
-                          className="p-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center gap-1 text-xs font-bold"
+                          className="p-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-1 text-xs font-bold"
                           title="Wish on WhatsApp (बिना किसी रुकावट के सीधे WhatsApp पर बधाई दें)"
                         >
                           <MessageCircle className="w-4 h-4" />
-                          <span className="hidden sm:inline">WhatsApp Wish</span>
+                          <span>WhatsApp Wish</span>
                         </a>
                       )}
                     </div>
@@ -554,18 +554,18 @@ export default function BirthdaysPage() {
 
                     {/* Display well-wishers on this month's cards too */}
                     {cardWishes.length > 0 && (
-                      <div className="mt-2 mb-3 p-2 rounded-xl bg-amber-50/70 border border-amber-200/70">
+                      <div className="mt-2 mb-3 p-2 rounded-xl bg-amber-50/70 border border-amber-200/70 max-w-full overflow-hidden">
                         <div className="flex items-center gap-1 text-[10px] font-bold text-[#2D5A43] mb-1">
-                          <Sparkles className="w-3 h-3 text-amber-600" />
+                          <Sparkles className="w-3 h-3 text-amber-600 shrink-0" />
                           <span>बधाई दी ({cardWishes.length}):</span>
                         </div>
-                        <div className="flex flex-wrap gap-1">
+                        <div className="flex flex-wrap gap-1 max-w-full">
                           {cardWishes.map((w) => (
                             <span
                               key={w.id}
-                              className="px-1.5 py-0.5 rounded bg-white text-slate-700 border border-amber-200 text-[10px]"
+                              className="inline-flex items-center px-1.5 py-0.5 rounded bg-white text-slate-700 border border-amber-200 text-[10px] break-words whitespace-normal max-w-full leading-tight"
                             >
-                              {w.senderName}
+                              <span className="break-words">{w.senderName}</span>
                             </span>
                           ))}
                         </div>

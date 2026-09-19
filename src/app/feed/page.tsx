@@ -1247,13 +1247,13 @@ export default function FeedPage() {
                     {postLikersMap[post.id]?.length > 0 && (() => {
                       const likers = postLikersMap[post.id] || [];
                       return (
-                        <div className="pt-2.5 pb-1">
+                        <div className="pt-2.5 pb-1 max-w-full overflow-hidden">
                           <button
                             type="button"
                             onClick={() => setLikedByModalPost(post)}
-                            className="flex items-center gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
+                            className="w-full flex items-start gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
                           >
-                            <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                            <div className="flex -space-x-1.5 overflow-hidden shrink-0 pt-0.5">
                               {likers.slice(0, 3).map((u) => (
                                 <img
                                   key={u.id}
@@ -1263,7 +1263,7 @@ export default function FeedPage() {
                                 />
                               ))}
                             </div>
-                            <span className="truncate">
+                            <div className="flex-1 min-w-0 break-words leading-snug">
                               ❤️ Liked by{" "}
                               {likers.length === 1 && (
                                 <strong className="font-semibold text-slate-700 group-hover:text-rose-600">{likers[0].fullName}</strong>
@@ -1281,7 +1281,7 @@ export default function FeedPage() {
                                   <span className="underline decoration-dotted font-medium">{likers.length - 2} others</span>
                                 </>
                               )}
-                            </span>
+                            </div>
                           </button>
                         </div>
                       );
