@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { isAdminAuthenticated, setAdminAuthenticated, getLoggedInAlumni, setLoggedInAlumni } from "@/lib/store";
 import { AlumniProfile } from "@/types";
+import MembershipTicker from "@/components/Navigation/MembershipTicker";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -344,6 +345,9 @@ export default function Navbar() {
           </div>
         </div>
       )}
+
+      {/* Thin Continuous Scrolling Membership Ticker Line */}
+      <MembershipTicker />
     </header>
   );
 }

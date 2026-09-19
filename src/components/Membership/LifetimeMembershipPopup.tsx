@@ -12,11 +12,6 @@ export default function LifetimeMembershipPopup() {
   const [fee, setFee] = useState<number>(3100);
 
   useEffect(() => {
-    // Clear legacy 24-hr dismissal key so it never blocks reloads
-    try {
-      localStorage.removeItem("rishikul_lifetime_popup_dismissed_v1");
-    } catch {}
-
     // If user is already a paid Life Member or Patron Member, don't show
     const user = getLoggedInAlumni();
     if (user && (user.membershipTier === "Life Member" || user.membershipTier === "Patron Member")) {
@@ -24,20 +19,23 @@ export default function LifetimeMembershipPopup() {
     }
 
     // Skip on admin dashboard and already-opened permanent membership page
-    if (pathname?.startsWith("/admin") || pathname === "/membership/permanent") {
-      return;
+    if (typeof window !== "undefined") {
+      const p = window.location.pathname;
+      if (p.startsWith("/admin") || p === "/membership/permanent") {
+        return;
+      }
     }
 
     const settings = getMembershipSettings();
     setFee(settings.lifetimeFee || 3100);
 
-    // Show popup on every site reload after smooth 700ms entry
+    // Show popup only once when the site is initially loaded / reloaded
     const timer = setTimeout(() => {
       setIsOpen(true);
-    }, 700);
+    }, 800);
 
     return () => clearTimeout(timer);
-  }, [pathname]);
+  }, []);
 
   const handleDismiss = () => {
     setIsOpen(false);
