@@ -21,13 +21,12 @@ export default function BirthdaysPage() {
     const checkAuthAndLoad = () => {
       const user = getLoggedInAlumni();
       const admin = isAdminAuthenticated();
-      const isApprovedUser = Boolean(user && user.approvalStatus === "approved");
-      const authorized = Boolean(admin || isApprovedUser);
-      const pending = Boolean(user && user.approvalStatus !== "approved");
+      const isPending = Boolean(user && user.approvalStatus === "pending");
+      const authorized = Boolean(admin || (user && !isPending));
 
       setCurrentUser(user);
       setIsAuthorized(authorized);
-      setIsPendingApproval(pending);
+      setIsPendingApproval(isPending);
       setIsAuthChecked(true);
 
       // Exclusively fetch alumni list when authorized — never for public visitors

@@ -267,10 +267,35 @@ export async function getAlumniById(id: string): Promise<AlumniProfile | null> {
   return rowToProfile(data as Record<string, unknown>);
 }
 
-export async function getAlumniByUsername(username: string): Promise<AlumniProfile | null> {
-  const { data, error } = await supabase.from("profiles").select("*").eq("username", username).single();
-  if (error || !data) return null;
-  return rowToProfile(data as Record<string, unknown>);
+export async function getAlumniByUsername(identifier: string): Promise<AlumniProfile | null> {
+  const clean = (identifier || "").trim();
+  if (!clean) return null;
+
+  // 1. Try username exact match
+  const resUser = await supabase.from("profiles").select("*").eq("username", clean).maybeSingle();
+  if (resUser.data) return rowToProfile(resUser.data as Record<string, unknown>);
+
+  // 2. Try email match if identifier has @
+  if (clean.includes("@")) {
+    const resEmail = await supabase.from("profiles").select("*").ilike("email", clean).maybeSingle();
+    if (resEmail.data) return rowToProfile(resEmail.data as Record<string, unknown>);
+  }
+
+  // 3. Try mobile / phone variants
+  const digits = clean.replace(/\D/g, "");
+  if (digits.length >= 10) {
+    const last10 = digits.slice(-10);
+    const resMobile = await supabase
+      .from("profiles")
+      .select("*")
+      .or(`mobile.eq.${clean},mobile.eq.${digits},mobile.eq.0${last10},mobile.eq.91${last10},username.eq.${digits},username.eq.0${last10}`)
+      .limit(1);
+    if (resMobile.data && resMobile.data[0]) {
+      return rowToProfile(resMobile.data[0] as Record<string, unknown>);
+    }
+  }
+
+  return null;
 }
 
 export async function registerAlumni(profile: AlumniProfile): Promise<{ success: boolean; error?: string }> {

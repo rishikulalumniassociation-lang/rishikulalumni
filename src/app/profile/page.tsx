@@ -103,35 +103,47 @@ export default function AlumniProfilePage() {
       router.push("/login");
       return;
     }
-    (async () => {
-      const fullList = await getAlumniList();
-      const freshUser = fullList.find((a) => a.id === loggedIn.id) || loggedIn;
-      if (!freshUser.ugPassoutYear && freshUser.ugBatchYear) {
-        freshUser.ugPassoutYear = freshUser.ugBatchYear + 5;
-      }
-      if (!freshUser.pgPassoutYear && freshUser.pgBatchYear) {
-        freshUser.pgPassoutYear = freshUser.pgBatchYear + 3;
-      }
 
-      setUser(freshUser);
-      setAllAlumni(fullList);
-      setFormData(freshUser);
-      setWorkHistory(freshUser.workHistory || [
-        {
-          id: "work-1",
-          institution: freshUser.workplace,
-          designation: freshUser.designation,
-          fromYear: "2018",
-          toYear: "Present",
-          location: `${freshUser.city}, ${freshUser.state}`,
-          description: "Leading patient OPD and Ayurvedic clinical consultations.",
+    // Set initial user data immediately so page renders without waiting for network
+    setUser(loggedIn);
+    setFormData(loggedIn);
+    setFamilyRelations(loggedIn.familyAlumniRelations || []);
+    setTeacherIds(loggedIn.teacherAlumniIds || []);
+    setSpecialAchievements(loggedIn.specialAchievements || []);
+
+    (async () => {
+      try {
+        const fullList = await getAlumniList();
+        const freshUser = fullList.find((a) => a.id === loggedIn.id) || loggedIn;
+        if (!freshUser.ugPassoutYear && freshUser.ugBatchYear) {
+          freshUser.ugPassoutYear = freshUser.ugBatchYear + 5;
         }
-      ]);
-      setFamilyRelations(freshUser.familyAlumniRelations || []);
-      setTeacherIds(freshUser.teacherAlumniIds || []);
-      setSpecialAchievements(freshUser.specialAchievements || []);
-      if (freshUser.id) {
-        loadMyPosts(freshUser.id);
+        if (!freshUser.pgPassoutYear && freshUser.pgBatchYear) {
+          freshUser.pgPassoutYear = freshUser.pgBatchYear + 3;
+        }
+
+        setUser(freshUser);
+        setAllAlumni(fullList);
+        setFormData(freshUser);
+        setWorkHistory(freshUser.workHistory || [
+          {
+            id: "work-1",
+            institution: freshUser.workplace,
+            designation: freshUser.designation,
+            fromYear: "2018",
+            toYear: "Present",
+            location: `${freshUser.city}, ${freshUser.state}`,
+            description: "Leading patient OPD and Ayurvedic clinical consultations.",
+          }
+        ]);
+        setFamilyRelations(freshUser.familyAlumniRelations || []);
+        setTeacherIds(freshUser.teacherAlumniIds || []);
+        setSpecialAchievements(freshUser.specialAchievements || []);
+        if (freshUser.id) {
+          loadMyPosts(freshUser.id);
+        }
+      } catch (err) {
+        console.error("Profile background load error:", err);
       }
     })();
   }, [router]);
@@ -157,7 +169,16 @@ export default function AlumniProfilePage() {
     }
   };
 
-  if (!user) return null;
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#FAF7F2] flex items-center justify-center py-24">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-10 h-10 border-3 border-[#C5A059] border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-semibold text-slate-600">प्रोफ़ाइल लोड हो रही है...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handlePhotoChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];

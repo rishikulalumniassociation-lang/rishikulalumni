@@ -103,27 +103,29 @@ export default function FeedPage() {
       router.push("/login");
       return;
     }
-    if (user.approvalStatus !== "approved") {
+    if (user.approvalStatus === "pending") {
       router.push("/login?pending=true");
       return;
     }
     setCurrentUser(user);
 
-    // Fetch feed dependencies
-    Promise.all([
+    // Fetch feed dependencies resiliently so one failure doesn't block the rest
+    Promise.allSettled([
       getAlumniList(),
       getCommunityPosts(),
       getEvents(),
       getShradhanjaliList(),
       getLifetimeAchievers(),
       getNotifications(user.id),
-    ]).then(([alumni, postsData, eventsData, shradhanjaliData, achieversData, notifs]) => {
-      setAlumniList(alumni);
-      setPosts(postsData);
-      setEvents(eventsData);
-      setShradhanjali(shradhanjaliData);
-      setAchievers(achieversData);
-      setNotifications(notifs);
+    ]).then(([alumniRes, postsRes, eventsRes, shradhRes, achieversRes, notifsRes]) => {
+      if (alumniRes.status === "fulfilled") setAlumniList(alumniRes.value || []);
+      if (postsRes.status === "fulfilled") setPosts(postsRes.value || []);
+      if (eventsRes.status === "fulfilled") setEvents(eventsRes.value || []);
+      if (shradhRes.status === "fulfilled") setShradhanjali(shradhRes.value || []);
+      if (achieversRes.status === "fulfilled") setAchievers(achieversRes.value || []);
+      if (notifsRes.status === "fulfilled") setNotifications(notifsRes.value || []);
+    }).catch((err) => {
+      console.error("Feed load error:", err);
     });
 
     const handleAuthChange = () => {
