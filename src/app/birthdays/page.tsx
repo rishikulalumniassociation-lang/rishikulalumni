@@ -5,7 +5,15 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock, Crown, ChevronRight, Check } from "lucide-react";
-import { getAlumniList, getLoggedInAlumni, isAdminAuthenticated, sendBirthdayWish, getBirthdayWishes } from "@/lib/store";
+import {
+  getAlumniList,
+  getLoggedInAlumni,
+  isAdminAuthenticated,
+  sendBirthdayWish,
+  getBirthdayWishes,
+  isBatchmate,
+  getConnectionStateSync,
+} from "@/lib/store";
 import { AlumniProfile, BirthdayWishItem } from "@/types";
 
 export default function BirthdaysPage() {
@@ -325,6 +333,12 @@ export default function BirthdaysPage() {
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
               {wishesForMe.map((wish) => {
                 const senderObj = alumni.find((a) => a.id === wish.senderId);
+                const isSenderConnected = Boolean(
+                  currentUser && senderObj && (
+                    isBatchmate(currentUser, senderObj) ||
+                    getConnectionStateSync(currentUser.id, senderObj.id, alumni) === "connected"
+                  )
+                );
                 return (
                   <div
                     key={wish.id}
@@ -349,7 +363,7 @@ export default function BirthdaysPage() {
                       </div>
                     </div>
 
-                    {senderObj?.whatsappNumber && (
+                    {senderObj?.whatsappNumber && isSenderConnected && (
                       <a
                         href={`https://wa.me/${senderObj.whatsappNumber}?text=${encodeURIComponent("धन्यवाद! जन्मदिन की शुभकामनाओं के लिए आपका बहुत-बहुत आभार 🙏")}`}
                         target="_blank"
@@ -383,6 +397,13 @@ export default function BirthdaysPage() {
                 const cardWishes = wishesByRecipient[alumnus.id] || [];
                 const hasWished = Boolean(
                   currentUser && cardWishes.some((w) => w.senderId === currentUser.id)
+                );
+                const isBatchmateWithMe = Boolean(currentUser && isBatchmate(currentUser, alumnus));
+                const isConnected = Boolean(
+                  currentUser && (
+                    isBatchmateWithMe ||
+                    getConnectionStateSync(currentUser.id, alumnus.id, alumni) === "connected"
+                  )
                 );
 
                 return (
@@ -471,8 +492,8 @@ export default function BirthdaysPage() {
                         <span>{hasWished ? "Wished! 🎉" : "Send Birthday Blessings"}</span>
                       </button>
 
-                      {/* WhatsApp Wish: Open to ANY logged-in alumni unconditionally */}
-                      {alumnus.whatsappNumber && currentUser && alumnus.id !== currentUser.id && (
+                      {/* WhatsApp Wish: Only if connected or batchmates */}
+                      {alumnus.whatsappNumber && currentUser && alumnus.id !== currentUser.id && isConnected && (
                         <a
                           href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
                             `Happy Birthday, ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`
@@ -483,7 +504,7 @@ export default function BirthdaysPage() {
                             void sendBirthdayWish(currentUser, alumnus.id);
                           }}
                           className="p-2.5 rounded-xl bg-emerald-600 text-white hover:bg-emerald-700 transition-colors shadow-sm flex items-center justify-center gap-1 text-xs font-bold"
-                          title="Wish on WhatsApp (बिना किसी रुकावट के सीधे WhatsApp पर बधाई दें)"
+                          title="Wish on WhatsApp"
                         >
                           <MessageCircle className="w-4 h-4" />
                           <span>WhatsApp Wish</span>
@@ -524,6 +545,13 @@ export default function BirthdaysPage() {
               const cardWishes = wishesByRecipient[alumnus.id] || [];
               const hasWished = Boolean(
                 currentUser && cardWishes.some((w) => w.senderId === currentUser.id)
+              );
+              const isBatchmateWithMe = Boolean(currentUser && isBatchmate(currentUser, alumnus));
+              const isConnected = Boolean(
+                currentUser && (
+                  isBatchmateWithMe ||
+                  getConnectionStateSync(currentUser.id, alumnus.id, alumni) === "connected"
+                )
               );
 
               return (
@@ -612,7 +640,8 @@ export default function BirthdaysPage() {
                         <span>{hasWished ? "Wished! 🎉" : "Wish"}</span>
                       </button>
 
-                      {alumnus.whatsappNumber && currentUser && alumnus.id !== currentUser.id && (
+                      {/* WhatsApp Wish: Only if connected or batchmates */}
+                      {alumnus.whatsappNumber && currentUser && alumnus.id !== currentUser.id && isConnected && (
                         <a
                           href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
                             `Happy Birthday in advance / on your special day, ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`
