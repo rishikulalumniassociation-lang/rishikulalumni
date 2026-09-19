@@ -87,6 +87,7 @@ export const SPECIALIZATION_OPTIONS = [
   "Samhita & Siddhanta",
   "Swasthavritta & Yoga",
   "Agada Tantra evum Vidhi Vaidyaka (Toxicology & Medical Jurisprudence)",
+  "Sangyaharan (Anesthesia)",
   "General Ayurvedic Practice"
 ];
 
