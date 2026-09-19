@@ -81,6 +81,7 @@ export const SPECIALIZATION_OPTIONS = [
   "Kaumarbhritya (Pediatrics)",
   "Dravyaguna (Pharmacology)",
   "Rasa Shastra & Bhaishajya Kalpana",
+  "Roganidan evum Vikriti Vigyan (Pathology & Diagnostics)",
   "Sharir Kriya (Physiology)",
   "Sharir Rachana (Anatomy)",
   "Samhita & Siddhanta",

@@ -35,7 +35,7 @@ import {
 import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost, getEffectiveConnectedAlumni } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
 import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType, CommunityPost, JobType } from "@/types";
-import { JOB_TYPE_OPTIONS } from "@/lib/mockData";
+import { JOB_TYPE_OPTIONS, SPECIALIZATION_OPTIONS } from "@/lib/mockData";
 import AlumniSearchSelect from "@/components/Common/AlumniSearchSelect";
 import DigitalIdCard from "@/components/Membership/DigitalIdCard";
 import CreatePostModal from "@/components/Community/CreatePostModal";
@@ -1712,22 +1712,7 @@ export default function AlumniProfilePage() {
                       className="w-full bg-[#FAF7F2] border border-slate-300 rounded-xl px-4 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#2D5A43]"
                     >
                       <option value="">Select PG Specialization</option>
-                      {[
-                        "Kayachikitsa (Internal Medicine)",
-                        "Panchakarma",
-                        "Shalya Tantra (Surgery)",
-                        "Shalakya Tantra (ENT & Ophthalmology)",
-                        "Prasuti & Stri Roga (Obstetrics & Gynecology)",
-                        "Kaumarbhritya (Pediatrics)",
-                        "Dravyaguna (Pharmacology)",
-                        "Rasa Shastra & Bhaishajya Kalpana",
-                        "Sharir Kriya (Physiology)",
-                        "Sharir Rachana (Anatomy)",
-                        "Samhita & Siddhanta",
-                        "Swasthavritta & Yoga",
-                        "Agada Tantra (Toxicology)",
-                        "General Ayurvedic Practice"
-                      ].map((spec) => (
+                      {SPECIALIZATION_OPTIONS.filter((s) => s !== "All Specializations").map((spec) => (
                         <option key={spec} value={spec}>{spec}</option>
                       ))}
                     </select>
