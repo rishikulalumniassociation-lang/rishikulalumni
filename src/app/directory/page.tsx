@@ -5,7 +5,16 @@ import AlumniCard from "@/components/Directory/AlumniCard";
 import FilterDrawer from "@/components/Directory/FilterDrawer";
 import StaggerReveal from "@/components/Motion/StaggerReveal";
 import { SPECIALIZATION_OPTIONS, BATCH_YEARS, JOB_TYPE_OPTIONS } from "@/lib/mockData";
-import { getAlumniList, getLoggedInAlumni, isAdminAuthenticated, toggleAlumniConnection } from "@/lib/store";
+import {
+  getAlumniList,
+  getLoggedInAlumni,
+  isAdminAuthenticated,
+  toggleAlumniConnection,
+  sendConnectionRequest,
+  cancelConnectionRequest,
+  acceptConnectionRequest,
+  getConnectionStateSync
+} from "@/lib/store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { AlumniProfile, DirectoryFilterState } from "@/types";
@@ -32,7 +41,8 @@ import {
   Stethoscope,
   Medal,
   Trophy,
-  Crown
+  Crown,
+  MessageCircle
 } from "lucide-react";
 
 export default function DirectoryPage() {
@@ -72,13 +82,19 @@ export default function DirectoryPage() {
       checkAuthAndLoad();
     };
 
+    const handleReqUpdate = () => {
+      checkAuthAndLoad();
+    };
+
     window.addEventListener("alumni_updated", handleUpdate);
     window.addEventListener("user_auth_changed", handleUpdate);
     window.addEventListener("admin_auth_changed", handleUpdate);
+    window.addEventListener("connection_requests_updated", handleReqUpdate);
     return () => {
       window.removeEventListener("alumni_updated", handleUpdate);
       window.removeEventListener("user_auth_changed", handleUpdate);
       window.removeEventListener("admin_auth_changed", handleUpdate);
+      window.removeEventListener("connection_requests_updated", handleReqUpdate);
     };
   }, []);
 
@@ -682,16 +698,22 @@ export default function DirectoryPage() {
                   
                   {/* UG / PG badges in modal */}
                   <div className="flex flex-wrap gap-1.5 mt-2">
-                    {selectedProfile.ugBatchYear && (
-                      <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[11px] font-bold border border-amber-300">
-                        UG: {selectedProfile.ugBatchYear}{selectedProfile.ugPassoutYear || (selectedProfile.ugBatchYear ? `-${selectedProfile.ugBatchYear + 5}` : "")} ({selectedProfile.ugDegree || "BAMS"})
-                      </span>
-                    )}
-                    {selectedProfile.pgBatchYear && (
-                      <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-[#2D5A43] text-[11px] font-bold border border-emerald-200">
-                        PG: {selectedProfile.pgBatchYear}{selectedProfile.pgPassoutYear || (selectedProfile.pgBatchYear ? `-${selectedProfile.pgBatchYear + 3}` : "")} ({selectedProfile.pgDegree || "MD"})
-                      </span>
-                    )}
+                    {selectedProfile.ugBatchYear && (() => {
+                      const ugEnd = selectedProfile.ugPassoutYear || (selectedProfile.ugBatchYear ? selectedProfile.ugBatchYear + 5 : null);
+                      return (
+                        <span className="px-2.5 py-0.5 rounded-md bg-amber-50 text-amber-900 text-[11px] font-bold border border-amber-300">
+                          UG: {selectedProfile.ugBatchYear}{ugEnd ? `-${ugEnd}` : ""} ({selectedProfile.ugDegree || "BAMS"})
+                        </span>
+                      );
+                    })()}
+                    {selectedProfile.pgBatchYear && (() => {
+                      const pgEnd = selectedProfile.pgPassoutYear || (selectedProfile.pgBatchYear ? selectedProfile.pgBatchYear + 3 : null);
+                      return (
+                        <span className="px-2.5 py-0.5 rounded-md bg-emerald-50 text-[#2D5A43] text-[11px] font-bold border border-emerald-200">
+                          PG: {selectedProfile.pgBatchYear}{pgEnd ? `-${pgEnd}` : ""} ({selectedProfile.pgDegree || "MD"})
+                        </span>
+                      );
+                    })()}
                     {selectedProfile.rishikulEducation !== "UG" && selectedProfile.specialization && selectedProfile.specialization !== "General Ayurvedic Practice" && (
                       <span className="px-2.5 py-0.5 rounded-md bg-slate-100 text-slate-700 text-[11px] font-semibold border border-slate-200">
                         PG Specialization: {selectedProfile.specialization}
@@ -1237,87 +1259,119 @@ export default function DirectoryPage() {
               )}
 
               {/* Modal Bottom Actions */}
-              <div className="flex flex-col sm:flex-row items-center gap-3 pt-4 border-t border-slate-100">
-                {currentUser && selectedProfile.id !== currentUser.id && (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const isConnected = (selectedProfile.connectedAlumniIds || []).includes(currentUser.id);
-                      const nextIds = isConnected
-                        ? (selectedProfile.connectedAlumniIds || []).filter((id) => id !== currentUser.id)
-                        : [...(selectedProfile.connectedAlumniIds || []), currentUser.id];
+              {(() => {
+                const modalConnStatus = currentUser && selectedProfile
+                  ? getConnectionStateSync(currentUser.id, selectedProfile.id, alumniList)
+                  : "none";
 
-                      const updatedProfile = { ...selectedProfile, connectedAlumniIds: nextIds };
-                      setSelectedProfile(updatedProfile);
+                const handleModalConnectClick = () => {
+                  if (!currentUser) {
+                    router.push("/login?redirect=/directory");
+                    return;
+                  }
+                  if (modalConnStatus === "connected") {
+                    toggleAlumniConnection(currentUser.id, selectedProfile.id).then(() => {
+                      getAlumniList().then((list) => setAlumniList(list));
+                      setCurrentUser(getLoggedInAlumni());
+                    });
+                    return;
+                  }
+                  if (modalConnStatus === "pending_sent") {
+                    cancelConnectionRequest(currentUser.id, selectedProfile.id).then(() => {
+                      getAlumniList().then((list) => setAlumniList(list));
+                    });
+                    return;
+                  }
+                  if (modalConnStatus === "pending_received") {
+                    acceptConnectionRequest(selectedProfile.id, currentUser.id).then(() => {
+                      getAlumniList().then((list) => setAlumniList(list));
+                      setCurrentUser(getLoggedInAlumni());
+                    });
+                    return;
+                  }
+                  // None -> send request
+                  sendConnectionRequest(currentUser.id, selectedProfile.id).then(() => {
+                    getAlumniList().then((list) => setAlumniList(list));
+                  });
+                };
 
-                      setAlumniList((prev) =>
-                        prev.map((a) => (a.id === selectedProfile.id ? updatedProfile : a))
-                      );
+                return (
+                  <div className="pt-4 border-t border-slate-100">
+                    <div className="flex flex-col sm:flex-row items-center gap-3">
+                      {currentUser && selectedProfile.id !== currentUser.id && (
+                        <button
+                          type="button"
+                          onClick={handleModalConnectClick}
+                          className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
+                            modalConnStatus === "connected"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                              : modalConnStatus === "pending_sent"
+                              ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                              : modalConnStatus === "pending_received"
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                              : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
+                          }`}
+                          title={
+                            modalConnStatus === "connected"
+                              ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
+                              : modalConnStatus === "pending_sent"
+                              ? "रिक्वेस्ट भेजी गई है (क्लिक करके कैंसिल करें)"
+                              : modalConnStatus === "pending_received"
+                              ? "कनेक्शन रिक्वेस्ट स्वीकार करें (Accept Request)"
+                              : "कनेक्शन रिक्वेस्ट भेजें"
+                          }
+                        >
+                          <Users2 className="w-4 h-4" />
+                          <span>
+                            {modalConnStatus === "connected"
+                              ? "Connected ✓"
+                              : modalConnStatus === "pending_sent"
+                              ? "Request Sent ⏳"
+                              : modalConnStatus === "pending_received"
+                              ? "Accept Request ✓"
+                              : "Connect"}
+                          </span>
+                        </button>
+                      )}
+                      {!currentUser && (
+                        <button
+                          type="button"
+                          onClick={() => router.push("/login?redirect=/directory")}
+                          className="w-full sm:flex-1 py-3 text-center rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Users2 className="w-4 h-4 text-[#C5A059]" />
+                          <span>Login to Connect</span>
+                        </button>
+                      )}
+                      {/* WhatsApp Connect - ONLY visible when mutually connected */}
+                      {selectedProfile.whatsappNumber && (!currentUser || selectedProfile.id !== currentUser.id) && modalConnStatus === "connected" && (
+                        <a
+                          href={`https://wa.me/${selectedProfile.whatsappNumber}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs flex items-center justify-center gap-1.5"
+                        >
+                          <MessageCircle className="w-4 h-4" />
+                          <span>WhatsApp Connect</span>
+                        </a>
+                      )}
+                      <button
+                        onClick={() => setSelectedProfile(null)}
+                        className="w-full sm:w-28 py-3 text-center rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider hover:bg-slate-200 transition-colors"
+                      >
+                        Close
+                      </button>
+                    </div>
 
-                      toggleAlumniConnection(currentUser.id, selectedProfile.id)
-                        .then(() => {
-                          setCurrentUser(getLoggedInAlumni());
-                        })
-                        .catch((err) => {
-                          console.error("Failed to toggle connection in modal:", err);
-                          setSelectedProfile(selectedProfile);
-                          setAlumniList((prev) =>
-                            prev.map((a) => (a.id === selectedProfile.id ? selectedProfile : a))
-                          );
-                        });
-                    }}
-                    className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
-                      (selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
-                        ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
-                        : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
-                    }`}
-                  >
-                    <Users2 className="w-4 h-4" />
-                    <span>
-                      {(selectedProfile.connectedAlumniIds || []).includes(currentUser.id)
-                        ? "Connected ✓"
-                        : "Connect"}
-                    </span>
-                  </button>
-                )}
-                {!currentUser && (
-                  <button
-                    type="button"
-                    onClick={() => router.push("/login?redirect=/directory")}
-                    className="w-full sm:flex-1 py-3 text-center rounded-xl bg-[#0F172A] text-white text-xs font-bold uppercase tracking-wider hover:bg-[#2D5A43] transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-                  >
-                    <Users2 className="w-4 h-4 text-[#C5A059]" />
-                    <span>Login to Connect</span>
-                  </button>
-                )}
-                {selectedProfile.whatsappNumber && (!currentUser || selectedProfile.id !== currentUser.id) && (
-                  currentUser ? (
-                    <a
-                      href={`https://wa.me/${selectedProfile.whatsappNumber}`}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="w-full sm:flex-1 py-3 text-center rounded-xl bg-emerald-600 text-white text-xs font-semibold uppercase tracking-wider hover:bg-emerald-700 transition-colors shadow-xs"
-                    >
-                      WhatsApp Connect
-                    </a>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => router.push("/login?redirect=/directory")}
-                      className="w-full sm:flex-1 py-3 text-center rounded-xl bg-amber-500/10 border border-amber-400/50 text-amber-900 text-xs font-bold uppercase tracking-wider hover:bg-amber-500/20 transition-colors flex items-center justify-center gap-1.5 shadow-xs"
-                    >
-                      <Lock className="w-3.5 h-3.5 text-amber-700" />
-                      <span>Login for WhatsApp</span>
-                    </button>
-                  )
-                )}
-                <button
-                  onClick={() => setSelectedProfile(null)}
-                  className="w-full sm:w-28 py-3 text-center rounded-xl bg-slate-100 text-slate-700 text-xs font-semibold uppercase tracking-wider hover:bg-slate-200 transition-colors"
-                >
-                  Close
-                </button>
-              </div>
+                    {/* Helper text under Connect button */}
+                    {currentUser && selectedProfile.id !== currentUser.id && modalConnStatus !== "connected" && (
+                      <p className="w-full text-center text-[11px] text-slate-500 italic mt-2.5">
+                        जब रिक्वेस्ट एक्सेप्ट होगी, तब आप WhatsApp पर कनेक्ट कर सकते हैं
+                      </p>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         );

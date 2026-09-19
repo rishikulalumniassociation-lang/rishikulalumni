@@ -1751,8 +1751,67 @@ export async function createNotification(
   return newNotif;
 }
 
-// 3. Connections
+// 3. Connections & Requests
+export async function establishAlumniConnection(fromId: string, toId: string): Promise<void> {
+  if (!fromId || !toId || fromId === toId) return;
+
+  // 1. In-memory cache & sessionStorage
+  if (memoryAlumniCache) {
+    memoryAlumniCache = memoryAlumniCache.map((p) => {
+      if (p.id === fromId) {
+        const cur = p.connectedAlumniIds || [];
+        const next = cur.includes(toId) ? cur : [...cur, toId];
+        return { ...p, connectedAlumniIds: next };
+      }
+      if (p.id === toId) {
+        const cur = p.connectedAlumniIds || [];
+        const next = cur.includes(fromId) ? cur : [...cur, fromId];
+        return { ...p, connectedAlumniIds: next };
+      }
+      return p;
+    });
+
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("rishikul_alumni_cache", JSON.stringify(memoryAlumniCache));
+      } catch {}
+    }
+  }
+
+  const currentUser = getLoggedInAlumni();
+  if (currentUser && currentUser.id === fromId) {
+    const cur = currentUser.connectedAlumniIds || [];
+    const next = cur.includes(toId) ? cur : [...cur, toId];
+    setLoggedInAlumni({ ...currentUser, connectedAlumniIds: next });
+  }
+
+  // 2. Fetch both profiles and update in parallel
+  const [fromProfile, toProfile] = await Promise.all([
+    getAlumniById(fromId),
+    getAlumniById(toId),
+  ]);
+
+  if (!fromProfile) return;
+
+  const current = fromProfile.connectedAlumniIds || [];
+  const newConnections = current.includes(toId) ? current : [...current, toId];
+
+  const updatePromises: Promise<any>[] = [
+    updateAlumniProfile(fromId, { connectedAlumniIds: newConnections })
+  ];
+
+  if (toProfile) {
+    const toCurrent = toProfile.connectedAlumniIds || [];
+    const toNewConnections = toCurrent.includes(fromId) ? toCurrent : [...toCurrent, fromId];
+    updatePromises.push(updateAlumniProfile(toId, { connectedAlumniIds: toNewConnections }));
+  }
+
+  await Promise.all(updatePromises);
+}
+
 export async function sendConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
+  if (!senderId || !receiverId || senderId === receiverId) return false;
+
   const newReq: ConnectionRequestItem = {
     id: "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
     senderId,
@@ -1761,33 +1820,211 @@ export async function sendConnectionRequest(senderId: string, receiverId: string
     createdAt: new Date().toISOString(),
   };
 
-  try {
-    await supabase.from("connection_requests").insert({
-      id: newReq.id,
-      sender_id: senderId,
-      receiver_id: receiverId,
-      status: "pending",
-      created_at: newReq.createdAt,
-    });
-  } catch {
-    // Fallback
+  // 1. Optimistic local cache
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  const filtered = local.filter(
+    (r) => !(r.senderId === senderId && r.receiverId === receiverId)
+  );
+  saveLocalItems(CONNECTIONS_STORAGE_KEY, [newReq, ...filtered]);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("connection_requests_updated"));
   }
 
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  saveLocalItems(CONNECTIONS_STORAGE_KEY, [newReq, ...local]);
+  // 2. Insert into Supabase community_posts (as system connection_request)
+  try {
+    const allAlumni = await getAlumniList();
+    const sender = allAlumni.find((a) => a.id === senderId);
+
+    await supabase.from("community_posts").insert({
+      id: newReq.id,
+      user_id: senderId,
+      author_name: sender?.fullName || "Alumni",
+      description: receiverId,
+      title: "pending",
+      content_type: "connection_request",
+      category: "System",
+      is_hidden: true,
+      created_at: newReq.createdAt,
+    });
+
+    // Also create a notification for receiver
+    if (sender) {
+      await createNotification({
+        userId: receiverId,
+        actorId: senderId,
+        actorName: sender.fullName,
+        actorAvatar: sender.avatarUrl,
+        type: "connection_request",
+        title: "नई कनेक्शन रिक्वेस्ट",
+        message: `${sender.fullName} ने आपको कनेक्शन रिक्वेस्ट भेजी है। स्वीकृति के बाद आप आपस में चैट व WhatsApp से जुड़ सकते हैं।`,
+        link: `/directory?id=${senderId}`,
+      });
+    }
+  } catch (err) {
+    console.error("sendConnectionRequest error:", err);
+  }
+
   return true;
 }
 
-export async function getConnectionState(
-  userId: string,
-  targetId: string
-): Promise<"none" | "pending_sent" | "pending_received" | "connected"> {
+export async function cancelConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  saveLocalItems(
+    CONNECTIONS_STORAGE_KEY,
+    local.filter((r) => !(r.senderId === senderId && r.receiverId === receiverId))
+  );
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("connection_requests_updated"));
+  }
+
+  try {
+    await supabase
+      .from("community_posts")
+      .delete()
+      .eq("content_type", "connection_request")
+      .eq("user_id", senderId)
+      .eq("description", receiverId)
+      .eq("title", "pending");
+  } catch (err) {
+    console.error("cancelConnectionRequest error:", err);
+  }
+
+  return true;
+}
+
+export async function acceptConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
+  // 1. Update local cache
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  saveLocalItems(
+    CONNECTIONS_STORAGE_KEY,
+    local.map((r) =>
+      r.senderId === senderId && r.receiverId === receiverId ? { ...r, status: "accepted" } : r
+    )
+  );
+
+  // 2. Establish mutual connection in both profiles
+  await establishAlumniConnection(senderId, receiverId);
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("connection_requests_updated"));
+    window.dispatchEvent(new Event("alumni_updated"));
+  }
+
+  try {
+    // 3. Mark as accepted in community_posts
+    await supabase
+      .from("community_posts")
+      .update({ title: "accepted" })
+      .eq("content_type", "connection_request")
+      .eq("user_id", senderId)
+      .eq("description", receiverId);
+
+    // 4. Notify sender that request was accepted
+    const allAlumni = await getAlumniList();
+    const receiver = allAlumni.find((a) => a.id === receiverId);
+    if (receiver) {
+      await createNotification({
+        userId: senderId,
+        actorId: receiverId,
+        actorName: receiver.fullName,
+        actorAvatar: receiver.avatarUrl,
+        type: "connection_accepted",
+        title: "कनेक्शन स्वीकृत ✓",
+        message: `${receiver.fullName} ने आपकी कनेक्शन रिक्वेस्ट स्वीकार कर ली है! अब आप WhatsApp व अन्य माध्यमों से सीधे जुड़ सकते हैं।`,
+        link: `/directory?id=${receiverId}`,
+      });
+    }
+  } catch (err) {
+    console.error("acceptConnectionRequest error:", err);
+  }
+
+  return true;
+}
+
+export async function rejectConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  saveLocalItems(
+    CONNECTIONS_STORAGE_KEY,
+    local.filter((r) => !(r.senderId === senderId && r.receiverId === receiverId))
+  );
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new Event("connection_requests_updated"));
+  }
+
+  try {
+    await supabase
+      .from("community_posts")
+      .delete()
+      .eq("content_type", "connection_request")
+      .eq("user_id", senderId)
+      .eq("description", receiverId);
+  } catch (err) {
+    console.error("rejectConnectionRequest error:", err);
+  }
+
+  return true;
+}
+
+export async function getIncomingConnectionRequests(userId: string): Promise<ConnectionRequestItem[]> {
+  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
+  const localPending = local.filter((r) => r.receiverId === userId && r.status === "pending");
+
+  try {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select("*")
+      .eq("content_type", "connection_request")
+      .eq("description", userId)
+      .eq("title", "pending")
+      .order("created_at", { ascending: false });
+
+    if (!error && data) {
+      const allAlumni = await getAlumniList();
+      const remoteReqs: ConnectionRequestItem[] = data.map((r: any) => ({
+        id: r.id,
+        senderId: r.user_id,
+        receiverId: r.description,
+        status: "pending",
+        createdAt: r.created_at,
+        senderProfile: allAlumni.find((a) => a.id === r.user_id),
+      }));
+
+      const mergedMap = new Map<string, ConnectionRequestItem>();
+      localPending.forEach((req) => mergedMap.set(`${req.senderId}_${req.receiverId}`, req));
+      remoteReqs.forEach((req) => mergedMap.set(`${req.senderId}_${req.receiverId}`, req));
+      const res = Array.from(mergedMap.values());
+      saveLocalItems(CONNECTIONS_STORAGE_KEY, res);
+      return res;
+    }
+  } catch (err) {
+    console.error("getIncomingConnectionRequests error:", err);
+  }
+
+  const allAlumni = await getAlumniList();
+  return localPending.map((r) => ({
+    ...r,
+    senderProfile: allAlumni.find((a) => a.id === r.senderId),
+  }));
+}
+
+export function getConnectionStateSync(
+  userId: string | undefined,
+  targetId: string,
+  allAlumni: AlumniProfile[]
+): "none" | "pending_sent" | "pending_received" | "connected" {
+  if (!userId || !targetId) return "none";
   if (userId === targetId) return "connected";
 
-  // Check profile connections list
-  const allAlumni = await getAlumniList();
   const user = allAlumni.find((a) => a.id === userId);
   if (user?.connectedAlumniIds?.includes(targetId)) {
+    return "connected";
+  }
+
+  const target = allAlumni.find((a) => a.id === targetId);
+  if (target?.connectedAlumniIds?.includes(userId)) {
     return "connected";
   }
 
@@ -1803,6 +2040,40 @@ export async function getConnectionState(
     if (rec.status === "accepted") return "connected";
     if (rec.status === "pending") return "pending_received";
   }
+
+  return "none";
+}
+
+export async function getConnectionState(
+  userId: string,
+  targetId: string
+): Promise<"none" | "pending_sent" | "pending_received" | "connected"> {
+  if (userId === targetId) return "connected";
+
+  const allAlumni = await getAlumniList();
+  const syncState = getConnectionStateSync(userId, targetId, allAlumni);
+  if (syncState !== "none") return syncState;
+
+  try {
+    const { data } = await supabase
+      .from("community_posts")
+      .select("*")
+      .eq("content_type", "connection_request")
+      .eq("title", "pending")
+      .or(`user_id.eq.${userId},description.eq.${userId}`);
+
+    if (data && data.length > 0) {
+      const match = data.find(
+        (r: any) =>
+          (r.user_id === userId && r.description === targetId) ||
+          (r.user_id === targetId && r.description === userId)
+      );
+      if (match) {
+        if (match.user_id === userId) return "pending_sent";
+        return "pending_received";
+      }
+    }
+  } catch {}
 
   return "none";
 }

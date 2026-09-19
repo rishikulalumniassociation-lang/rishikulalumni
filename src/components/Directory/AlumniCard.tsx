@@ -18,7 +18,13 @@ import {
   Heart,
   Crown
 } from "lucide-react";
-import { toggleAlumniConnection } from "@/lib/store";
+import {
+  toggleAlumniConnection,
+  sendConnectionRequest,
+  cancelConnectionRequest,
+  acceptConnectionRequest,
+  getConnectionStateSync
+} from "@/lib/store";
 import { useRouter } from "next/navigation";
 
 interface AlumniCardProps {
@@ -38,14 +44,23 @@ export default function AlumniCard({
 }: AlumniCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const initialConnected = Boolean(currentAlumniId && (alumni.connectedAlumniIds || []).includes(currentAlumniId));
-  const [isConnected, setIsConnected] = useState(initialConnected);
+  const [connectionStatus, setConnectionStatus] = useState<"none" | "pending_sent" | "pending_received" | "connected">(() =>
+    getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
+  );
   const [connectionsCount, setConnectionsCount] = useState((alumni.connectedAlumniIds || []).length);
 
   React.useEffect(() => {
-    setIsConnected(Boolean(currentAlumniId && (alumni.connectedAlumniIds || []).includes(currentAlumniId)));
+    setConnectionStatus(getConnectionStateSync(currentAlumniId, alumni.id, allAlumni));
     setConnectionsCount((alumni.connectedAlumniIds || []).length);
-  }, [alumni.connectedAlumniIds, currentAlumniId]);
+  }, [alumni.connectedAlumniIds, currentAlumniId, allAlumni, alumni.id]);
+
+  React.useEffect(() => {
+    const handleReqUpdate = () => {
+      setConnectionStatus(getConnectionStateSync(currentAlumniId, alumni.id, allAlumni));
+    };
+    window.addEventListener("connection_requests_updated", handleReqUpdate);
+    return () => window.removeEventListener("connection_requests_updated", handleReqUpdate);
+  }, [currentAlumniId, alumni.id, allAlumni]);
 
   const isSelf = Boolean(currentAlumniId && currentAlumniId === alumni.id);
 
@@ -78,17 +93,45 @@ export default function AlumniCard({
       router.push("/login?redirect=/directory");
       return;
     }
-    const nextState = !isConnected;
-    setIsConnected(nextState);
-    setConnectionsCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
 
-    toggleAlumniConnection(currentAlumniId, alumni.id).catch((err) => {
-      console.error("Failed to toggle connection:", err);
-      setIsConnected(!nextState);
-      setConnectionsCount((prev) => (!nextState ? prev + 1 : Math.max(0, prev - 1)));
+    if (connectionStatus === "connected") {
+      // Disconnect
+      setConnectionStatus("none");
+      setConnectionsCount((prev) => Math.max(0, prev - 1));
+      toggleAlumniConnection(currentAlumniId, alumni.id).catch(() => {
+        setConnectionStatus("connected");
+        setConnectionsCount((prev) => prev + 1);
+      });
+      if (onConnectionToggle) onConnectionToggle();
+      return;
+    }
+
+    if (connectionStatus === "pending_sent") {
+      // Cancel sent request
+      setConnectionStatus("none");
+      cancelConnectionRequest(currentAlumniId, alumni.id).catch(() => {
+        setConnectionStatus("pending_sent");
+      });
+      return;
+    }
+
+    if (connectionStatus === "pending_received") {
+      // Accept incoming request
+      setConnectionStatus("connected");
+      setConnectionsCount((prev) => prev + 1);
+      acceptConnectionRequest(alumni.id, currentAlumniId).catch(() => {
+        setConnectionStatus("pending_received");
+        setConnectionsCount((prev) => Math.max(0, prev - 1));
+      });
+      if (onConnectionToggle) onConnectionToggle();
+      return;
+    }
+
+    // Default 'none' -> Send connection request
+    setConnectionStatus("pending_sent");
+    sendConnectionRequest(currentAlumniId, alumni.id).catch(() => {
+      setConnectionStatus("none");
     });
-
-    if (onConnectionToggle) onConnectionToggle();
   };
 
   // Render UG / PG batch badges dynamically
@@ -350,10 +393,14 @@ export default function AlumniCard({
             <button
               onClick={handleConnectClick}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 ${
-                isConnected
+                connectionStatus === "connected"
                   ? isPatronMember
                     ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700"
                     : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                  : connectionStatus === "pending_sent"
+                  ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                  : connectionStatus === "pending_received"
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
                   : currentAlumniId
                   ? isPatronMember
                     ? "bg-amber-400 text-slate-950 hover:bg-amber-300"
@@ -365,15 +412,23 @@ export default function AlumniCard({
               title={
                 !currentAlumniId
                   ? "कनेक्ट करने के लिए कृपया पहले लॉगिन करें"
-                  : isConnected
+                  : connectionStatus === "connected"
                   ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
-                  : "अपने बैचमेट से कनेक्ट करें"
+                  : connectionStatus === "pending_sent"
+                  ? "रिक्वेस्ट भेजी गई है (क्लिक करके कैंसिल करें)"
+                  : connectionStatus === "pending_received"
+                  ? "कनेक्शन रिक्वेस्ट स्वीकार करें (Accept Request)"
+                  : "कनेक्शन रिक्वेस्ट भेजें"
               }
             >
               <Users2 className="w-3 h-3" />
               <span>
-                {isConnected
+                {connectionStatus === "connected"
                   ? "Connected ✓"
+                  : connectionStatus === "pending_sent"
+                  ? "Request Sent ⏳"
+                  : connectionStatus === "pending_received"
+                  ? "Accept Request ✓"
                   : currentAlumniId
                   ? "Connect"
                   : "Login to Connect"}
@@ -381,6 +436,15 @@ export default function AlumniCard({
             </button>
           )}
         </div>
+
+        {/* Helper text under connect button */}
+        {connectionStatus !== "connected" && !isSelf && (
+          <p className={`text-[10px] text-right mt-1 italic ${
+            isPatronMember ? "text-slate-400" : "text-slate-500"
+          }`}>
+            जब रिक्वेस्ट एक्सेप्ट होगी, तब आप WhatsApp पर कनेक्ट कर सकते हैं
+          </p>
+        )}
       </div>
 
       {/* Card Action Footer */}
@@ -394,39 +458,22 @@ export default function AlumniCard({
         </span>
 
         <div className="flex items-center gap-1.5">
-          {!isSelf && alumni.whatsappNumber && (
-            currentAlumniId ? (
-              <a
-                href={`https://wa.me/${alumni.whatsappNumber}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={(e) => e.stopPropagation()}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  isPatronMember
-                    ? "bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800"
-                    : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
-                }`}
-                title="Connect on WhatsApp"
-              >
-                <MessageCircle className="w-3.5 h-3.5" />
-              </a>
-            ) : (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  router.push("/login?redirect=/directory");
-                }}
-                className={`p-1.5 rounded-lg transition-colors ${
-                  isPatronMember
-                    ? "bg-slate-800 text-slate-300 hover:bg-slate-700 border border-slate-700"
-                    : "bg-slate-100 text-slate-400 hover:bg-amber-100 hover:text-amber-800"
-                }`}
-                title="लॉगिन करें WhatsApp से संपर्क करने हेतु (Login to message on WhatsApp)"
-              >
-                <Lock className="w-3.5 h-3.5" />
-              </button>
-            )
+          {/* WhatsApp button only visible when mutually connected */}
+          {!isSelf && alumni.whatsappNumber && connectionStatus === "connected" && (
+            <a
+              href={`https://wa.me/${alumni.whatsappNumber}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
+              className={`p-1.5 rounded-lg transition-colors ${
+                isPatronMember
+                  ? "bg-emerald-950 text-emerald-300 hover:bg-emerald-900 border border-emerald-800"
+                  : "bg-emerald-50 text-emerald-700 hover:bg-emerald-100"
+              }`}
+              title="Connect on WhatsApp"
+            >
+              <MessageCircle className="w-3.5 h-3.5" />
+            </a>
           )}
           <button
             type="button"

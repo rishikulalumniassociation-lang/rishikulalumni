@@ -21,6 +21,7 @@ import {
   Search,
   Bell,
   Users,
+  Users2,
   CheckCircle2,
   X,
   Sparkles,
@@ -41,7 +42,8 @@ import {
   ShradhanjaliRecord,
   LifetimeAchiever,
   PostComment,
-  NotificationItem
+  NotificationItem,
+  ConnectionRequestItem
 } from "@/types";
 import {
   getLoggedInAlumni,
@@ -58,7 +60,10 @@ import {
   createFeedTextPost,
   toggleCommunityPostLike,
   reportCommunityPost,
-  getMembershipSettings
+  getMembershipSettings,
+  getIncomingConnectionRequests,
+  acceptConnectionRequest,
+  rejectConnectionRequest
 } from "@/lib/store";
 import RevealOnScroll from "@/components/Motion/RevealOnScroll";
 
@@ -73,6 +78,7 @@ export default function FeedPage() {
   const [shradhanjali, setShradhanjali] = useState<ShradhanjaliRecord[]>([]);
   const [achievers, setAchievers] = useState<LifetimeAchiever[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<ConnectionRequestItem[]>([]);
 
   // UI state
   const [activeTab, setActiveTab] = useState<"all" | "posts" | "events" | "achievers" | "birthdays" | "shradhanjali">("all");
@@ -117,16 +123,25 @@ export default function FeedPage() {
       getShradhanjaliList(),
       getLifetimeAchievers(),
       getNotifications(user.id),
-    ]).then(([alumniRes, postsRes, eventsRes, shradhRes, achieversRes, notifsRes]) => {
+      getIncomingConnectionRequests(user.id),
+    ]).then(([alumniRes, postsRes, eventsRes, shradhRes, achieversRes, notifsRes, reqsRes]) => {
       if (alumniRes.status === "fulfilled") setAlumniList(alumniRes.value || []);
       if (postsRes.status === "fulfilled") setPosts(postsRes.value || []);
       if (eventsRes.status === "fulfilled") setEvents(eventsRes.value || []);
       if (shradhRes.status === "fulfilled") setShradhanjali(shradhRes.value || []);
       if (achieversRes.status === "fulfilled") setAchievers(achieversRes.value || []);
       if (notifsRes.status === "fulfilled") setNotifications(notifsRes.value || []);
+      if (reqsRes.status === "fulfilled") setIncomingRequests(reqsRes.value || []);
     }).catch((err) => {
       console.error("Feed load error:", err);
     });
+
+    const handleReqUpdate = () => {
+      if (user?.id) {
+        getIncomingConnectionRequests(user.id).then((r) => setIncomingRequests(r));
+        getNotifications(user.id).then((n) => setNotifications(n));
+      }
+    };
 
     const handleAuthChange = () => {
       const u = getLoggedInAlumni();
@@ -135,7 +150,11 @@ export default function FeedPage() {
     };
 
     window.addEventListener("user_auth_changed", handleAuthChange);
-    return () => window.removeEventListener("user_auth_changed", handleAuthChange);
+    window.addEventListener("connection_requests_updated", handleReqUpdate);
+    return () => {
+      window.removeEventListener("user_auth_changed", handleAuthChange);
+      window.removeEventListener("connection_requests_updated", handleReqUpdate);
+    };
   }, [router]);
 
   // Load comments when drawer is opened for a post
@@ -374,8 +393,8 @@ export default function FeedPage() {
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
-            {notifications.some((n) => !n.isRead) && (
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+            {(notifications.some((n) => !n.isRead) || incomingRequests.length > 0) && (
+              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#0F172A]" />
             )}
           </button>
 
@@ -719,6 +738,32 @@ export default function FeedPage() {
           {/* MIDDLE COLUMN: Post Composer & Unified Social Feed             */}
           {/* ============================================================== */}
           <main className="lg:col-span-6 space-y-5">
+            {/* Incoming Connection Requests Banner */}
+            {incomingRequests.length > 0 && (
+              <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border-2 border-amber-400/60 rounded-3xl p-4 shadow-sm flex items-center justify-between gap-3">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-md">
+                    <Users2 className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-bold text-[#0F172A]">
+                      {incomingRequests.length} नए कनेक्शन अनुरोध प्राप्त हुए!
+                    </h4>
+                    <p className="text-[11px] text-slate-600 leading-tight">
+                      स्वीकार करने पर आप एक-दूसरे के साथ WhatsApp पर भी कनेक्ट हो सकेंगे।
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowNotificationsDrawer(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-white text-xs font-bold shrink-0 transition-colors shadow-xs active:scale-95"
+                >
+                  अनुरोध देखें
+                </button>
+              </div>
+            )}
+
             {/* Top Post Composer (X / Twitter Style + Media Shortcut) */}
             <div className="bg-white rounded-3xl p-5 border-2 border-[#C5A059]/30 shadow-md">
               <form onSubmit={handleCreatePost} className="space-y-3">
@@ -1561,7 +1606,7 @@ export default function FeedPage() {
           className="flex flex-col items-center gap-0.5 text-xs text-slate-500 hover:text-[#0F172A] relative"
         >
           <Bell className="w-5 h-5" />
-          {notifications.some((n) => !n.isRead) && (
+          {(notifications.some((n) => !n.isRead) || incomingRequests.length > 0) && (
             <span className="absolute top-0 right-3 w-2 h-2 rounded-full bg-red-500" />
           )}
           <span className="text-[10px]">Alerts</span>
@@ -1671,6 +1716,74 @@ export default function FeedPage() {
               </div>
 
               <div className="space-y-2.5 max-h-[75vh] overflow-y-auto pr-1">
+                {/* Incoming Connection Requests Section */}
+                {incomingRequests.length > 0 && (
+                  <div className="mb-4 pb-3 border-b border-amber-200/60">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[11px] font-bold text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                        <Users2 className="w-3.5 h-3.5 text-amber-600" />
+                        कनेक्शन अनुरोध ({incomingRequests.length})
+                      </span>
+                    </div>
+                    <div className="space-y-2">
+                      {incomingRequests.map((req) => (
+                        <div
+                          key={req.id}
+                          className="p-3 rounded-2xl bg-amber-50/90 border border-amber-300 shadow-xs flex items-center justify-between gap-3"
+                        >
+                          <div className="flex items-center gap-2.5 min-w-0">
+                            <img
+                              src={req.senderProfile?.avatarUrl || "/images/default-avatar.png"}
+                              alt={req.senderProfile?.fullName || "Alumni"}
+                              className="w-10 h-10 rounded-full object-cover border border-amber-300 shrink-0"
+                            />
+                            <div className="min-w-0">
+                              <h4 className="text-xs font-bold text-[#0F172A] truncate">
+                                {req.senderProfile?.fullName || "Alumni Member"}
+                              </h4>
+                              <p className="text-[10px] text-slate-500 truncate">
+                                {req.senderProfile?.ugBatchYear ? `UG ${req.senderProfile.ugBatchYear}` : ""}{req.senderProfile?.city ? ` • ${req.senderProfile.city}` : ""}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-1.5 shrink-0">
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!currentUser) return;
+                                await acceptConnectionRequest(req.senderId, currentUser.id);
+                                const [updatedReqs, freshList] = await Promise.all([
+                                  getIncomingConnectionRequests(currentUser.id),
+                                  getAlumniList(true),
+                                ]);
+                                setIncomingRequests(updatedReqs);
+                                setAlumniList(freshList);
+                                setCurrentUser(getLoggedInAlumni());
+                              }}
+                              className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs active:scale-95 transition-all"
+                            >
+                              स्वीकार करें
+                            </button>
+                            <button
+                              type="button"
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (!currentUser) return;
+                                await rejectConnectionRequest(req.senderId, currentUser.id);
+                                const updatedReqs = await getIncomingConnectionRequests(currentUser.id);
+                                setIncomingRequests(updatedReqs);
+                              }}
+                              className="px-2 py-1.5 rounded-lg bg-slate-200 hover:bg-rose-100 hover:text-rose-700 text-slate-700 text-[11px] font-semibold transition-colors"
+                            >
+                              अस्वीकार
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
                 {notifications.length === 0 ? (
                   <div className="text-center py-12 text-slate-400 text-xs">
                     कोई नई सूचना नहीं है।
@@ -1782,7 +1895,7 @@ export default function FeedPage() {
                           <p className="text-[11px] text-slate-500 truncate mt-0.5">{a.designation}</p>
                         )}
                       </div>
-                      {a.whatsappNumber && (
+                      {a.whatsappNumber && currentUser?.connectedAlumniIds?.includes(a.id) && (
                         <a
                           href={`https://wa.me/91${a.whatsappNumber.replace(/\D/g, "")}`}
                           target="_blank"
