@@ -234,6 +234,53 @@ export default function DirectoryPage() {
     return count;
   }, [filters]);
 
+  // Batchmate counts for the logged-in alumnus
+  const ugBatchmatesCount = useMemo(() => {
+    if (!currentUser?.ugBatchYear) return 0;
+    return verifiedAlumni.filter((a) => Number(a.ugBatchYear) === Number(currentUser.ugBatchYear)).length;
+  }, [currentUser, verifiedAlumni]);
+
+  const pgBatchmatesCount = useMemo(() => {
+    if (!currentUser?.pgBatchYear) return 0;
+    return verifiedAlumni.filter((a) => Number(a.pgBatchYear) === Number(currentUser.pgBatchYear)).length;
+  }, [currentUser, verifiedAlumni]);
+
+  const isUgBatchFilterActive = Boolean(
+    currentUser?.ugBatchYear && String(filters.ugBatchYear) === String(currentUser.ugBatchYear)
+  );
+
+  const isPgBatchFilterActive = Boolean(
+    currentUser?.pgBatchYear && String(filters.pgBatchYear) === String(currentUser.pgBatchYear)
+  );
+
+  const handleToggleUgBatchmates = () => {
+    if (!currentUser?.ugBatchYear) return;
+    if (isUgBatchFilterActive) {
+      setFilters((prev) => ({ ...prev, ugBatchYear: "" }));
+    } else {
+      setFilters((prev) => ({
+        ...prev,
+        ugBatchYear: String(currentUser.ugBatchYear),
+        pgBatchYear: "",
+        educationFilter: "ALL",
+      }));
+    }
+  };
+
+  const handleTogglePgBatchmates = () => {
+    if (!currentUser?.pgBatchYear) return;
+    if (isPgBatchFilterActive) {
+      setFilters((prev) => ({ ...prev, pgBatchYear: "" }));
+    } else {
+      setFilters((prev) => ({
+        ...prev,
+        pgBatchYear: String(currentUser.pgBatchYear),
+        ugBatchYear: "",
+        educationFilter: "ALL",
+      }));
+    }
+  };
+
   // 1. Loading state while checking local session auth
   if (!isAuthChecked) {
     return (
@@ -442,6 +489,68 @@ export default function DirectoryPage() {
             </button>
           </div>
 
+          {/* Dedicated "My Batchmates" Quick Filter Buttons */}
+          {currentUser && (Boolean(currentUser.ugBatchYear) || Boolean(currentUser.pgBatchYear)) && (
+            <div className="flex flex-wrap items-center gap-2 pt-3 pb-1">
+              <span className="text-[11px] font-bold text-slate-500 uppercase tracking-wider flex items-center gap-1 shrink-0">
+                <Users className="w-3.5 h-3.5 text-[#C5A059]" />
+                <span>My Batchmates:</span>
+              </span>
+
+              {Boolean(currentUser.ugBatchYear) && (
+                <button
+                  type="button"
+                  onClick={handleToggleUgBatchmates}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 ${
+                    isUgBatchFilterActive
+                      ? "bg-[#2D5A43] text-white ring-2 ring-[#2D5A43] ring-offset-1"
+                      : "bg-amber-50 hover:bg-amber-100/90 text-amber-950 border border-amber-300"
+                  }`}
+                  title={isUgBatchFilterActive ? "Remove filter" : "View my UG batchmates"}
+                >
+                  <GraduationCap className={`w-3.5 h-3.5 ${isUgBatchFilterActive ? "text-[#C5A059]" : "text-amber-700"}`} />
+                  <span>My UG Batchmates ({currentUser.ugBatchYear})</span>
+                  {ugBatchmatesCount > 0 && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                        isUgBatchFilterActive ? "bg-white/25 text-white" : "bg-amber-200 text-amber-950"
+                      }`}
+                    >
+                      {ugBatchmatesCount}
+                    </span>
+                  )}
+                  {isUgBatchFilterActive && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+                </button>
+              )}
+
+              {Boolean(currentUser.pgBatchYear) && (
+                <button
+                  type="button"
+                  onClick={handleTogglePgBatchmates}
+                  className={`inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shadow-xs shrink-0 ${
+                    isPgBatchFilterActive
+                      ? "bg-[#2D5A43] text-white ring-2 ring-[#2D5A43] ring-offset-1"
+                      : "bg-emerald-50 hover:bg-emerald-100/90 text-emerald-950 border border-emerald-300"
+                  }`}
+                  title={isPgBatchFilterActive ? "Remove filter" : "View my PG batchmates"}
+                >
+                  <Stethoscope className={`w-3.5 h-3.5 ${isPgBatchFilterActive ? "text-emerald-300" : "text-emerald-700"}`} />
+                  <span>My PG Batchmates ({currentUser.pgBatchYear})</span>
+                  {pgBatchmatesCount > 0 && (
+                    <span
+                      className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                        isPgBatchFilterActive ? "bg-white/25 text-white" : "bg-emerald-200 text-emerald-950"
+                      }`}
+                    >
+                      {pgBatchmatesCount}
+                    </span>
+                  )}
+                  {isPgBatchFilterActive && <X className="w-3 h-3 ml-0.5 opacity-80" />}
+                </button>
+              )}
+            </div>
+          )}
+
           {/* Quick Degree Filter Pills (UG / PG / Both) */}
           <div className="flex items-center gap-2 overflow-x-auto pt-3 pb-1 no-scrollbar text-xs">
             {[
@@ -490,6 +599,11 @@ export default function DirectoryPage() {
             {filters.ugBatchYear && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-950 text-xs font-bold border border-amber-300 shadow-xs">
                 🎓 UG Batch: {filters.ugBatchYear}
+                {isUgBatchFilterActive && (
+                  <span className="text-[10px] bg-amber-200 text-amber-950 px-1.5 py-0.2 rounded-md font-bold">
+                    My Batch
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => handleFilterChange("ugBatchYear", "")}
@@ -503,6 +617,11 @@ export default function DirectoryPage() {
             {filters.pgBatchYear && (
               <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#2D5A43]/10 text-[#2D5A43] text-xs font-bold border border-[#2D5A43]/30 shadow-xs">
                 🎓 PG Batch: {filters.pgBatchYear}
+                {isPgBatchFilterActive && (
+                  <span className="text-[10px] bg-emerald-200 text-emerald-950 px-1.5 py-0.2 rounded-md font-bold">
+                    My Batch
+                  </span>
+                )}
                 <button
                   type="button"
                   onClick={() => handleFilterChange("pgBatchYear", "")}
