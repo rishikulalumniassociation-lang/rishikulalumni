@@ -15,6 +15,7 @@ import {
   PostComment,
   NotificationItem,
   ConnectionRequestItem,
+  BirthdayWishItem,
 } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -1289,7 +1290,8 @@ export async function hideCommunityPost(
 // Likes
 export async function toggleCommunityPostLike(
   postId: string,
-  userId: string
+  userId: string,
+  actorProfile?: AlumniProfile | null
 ): Promise<{ liked: boolean; likesCount: number }> {
   const { data: existing } = await supabase
     .from("community_post_likes")
@@ -1305,15 +1307,69 @@ export async function toggleCommunityPostLike(
     const { data: post } = await supabase.from("community_posts").select("likes_count").eq("id", postId).single();
     const newCount = Math.max(0, ((post?.likes_count as number) || 1) - 1);
     await supabase.from("community_posts").update({ likes_count: newCount }).eq("id", postId);
+
+    // Update local cache
+    const currentLikes = getLocalItems<{ postId: string; userId: string; createdAt: string }>("rishikul_post_likes_cache") || [];
+    saveLocalItems("rishikul_post_likes_cache", currentLikes.filter((l) => !(l.postId === postId && l.userId === userId)));
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("community_post_likes_updated", { detail: { postId, userId, liked: false, likesCount: newCount } }));
+    }
     return { liked: false, likesCount: newCount };
   } else {
     // Like
+    const nowIso = new Date().toISOString();
     await supabase.from("community_post_likes").insert({ post_id: postId, user_id: userId });
-    const { data: post } = await supabase.from("community_posts").select("likes_count").eq("id", postId).single();
+    const { data: post } = await supabase.from("community_posts").select("likes_count, user_id, title").eq("id", postId).single();
     const newCount = ((post?.likes_count as number) || 0) + 1;
     await supabase.from("community_posts").update({ likes_count: newCount }).eq("id", postId);
+
+    // Update local cache
+    const currentLikes = getLocalItems<{ postId: string; userId: string; createdAt: string }>("rishikul_post_likes_cache") || [];
+    saveLocalItems("rishikul_post_likes_cache", [{ postId, userId, createdAt: nowIso }, ...currentLikes]);
+
+    // Send notification to author if author is not the liker
+    const postAuthorId = post?.user_id as string | undefined;
+    if (postAuthorId && postAuthorId !== userId) {
+      const actorName = actorProfile?.fullName || "एक साथी एलुमनाई";
+      const postTitle = (post?.title as string) || "आपकी पोस्ट";
+      await createNotification({
+        userId: postAuthorId,
+        actorId: userId,
+        actorName,
+        actorAvatar: actorProfile?.avatarUrl,
+        type: "post_like",
+        title: "नई पोस्ट लाइक ❤️",
+        message: `${actorName} ने आपकी पोस्ट "${postTitle}" को लाइक किया है।`,
+        link: "/feed",
+      });
+    }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new CustomEvent("community_post_likes_updated", { detail: { postId, userId, liked: true, likesCount: newCount } }));
+    }
     return { liked: true, likesCount: newCount };
   }
+}
+
+export async function getAllPostLikes(): Promise<{ postId: string; userId: string; createdAt: string }[]> {
+  try {
+    const { data, error } = await supabase
+      .from("community_post_likes")
+      .select("post_id, user_id, created_at");
+    if (!error && data) {
+      const list = data.map((r: any) => ({
+        postId: r.post_id as string,
+        userId: r.user_id as string,
+        createdAt: r.created_at as string,
+      }));
+      saveLocalItems("rishikul_post_likes_cache", list);
+      return list;
+    }
+  } catch {
+    // Ignore
+  }
+  return getLocalItems<{ postId: string; userId: string; createdAt: string }>("rishikul_post_likes_cache") || [];
 }
 
 export async function getMyLikedPostIds(userId: string): Promise<string[]> {
@@ -2164,5 +2220,93 @@ export async function createFeedTextPost(
   return newPost;
 }
 
+// ---------------------------------------------------------------------------
+// Birthday Wishes (जन्मदिन की शुभकामनाएं)
+// ---------------------------------------------------------------------------
 
+const BIRTHDAY_WISHES_STORAGE_KEY = "rishikul_birthday_wishes";
 
+export async function sendBirthdayWish(
+  sender: AlumniProfile,
+  recipientId: string,
+  customMessage?: string
+): Promise<{ success: boolean; wish: BirthdayWishItem }> {
+  const newWish: BirthdayWishItem = {
+    id: "bwish_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
+    recipientId,
+    senderId: sender.id,
+    senderName: sender.fullName,
+    senderAvatar: sender.avatarUrl,
+    senderUgBatchYear: sender.ugBatchYear ? String(sender.ugBatchYear) : undefined,
+    senderPgBatchYear: sender.pgBatchYear ? String(sender.pgBatchYear) : undefined,
+    message: customMessage || "जन्मदिन की हार्दिक शुभकामनाएं और बहुत-बहुत बधाई! 🎂💐",
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await supabase.from("birthday_wishes").insert({
+      id: newWish.id,
+      recipient_id: newWish.recipientId,
+      sender_id: newWish.senderId,
+      sender_name: newWish.senderName,
+      sender_avatar: newWish.senderAvatar,
+      sender_ug_batch_year: newWish.senderUgBatchYear,
+      sender_pg_batch_year: newWish.senderPgBatchYear,
+      message: newWish.message,
+      created_at: newWish.createdAt,
+    });
+  } catch {
+    // If Supabase table doesn't exist yet, continue with local storage fallback
+  }
+
+  // Update local storage
+  const local = getLocalItems<BirthdayWishItem>(BIRTHDAY_WISHES_STORAGE_KEY) || [];
+  saveLocalItems(BIRTHDAY_WISHES_STORAGE_KEY, [newWish, ...local]);
+
+  // Create notification for recipient
+  await createNotification({
+    userId: recipientId,
+    actorId: sender.id,
+    actorName: sender.fullName,
+    actorAvatar: sender.avatarUrl,
+    type: "birthday",
+    title: "जन्मदिन की शुभकामनाएं! 🎂",
+    message: `${sender.fullName} (${sender.ugBatchYear ? `UG ${sender.ugBatchYear}` : "Alumnus"}) ने आपको जन्मदिन की हार्दिक शुभकामनाएं भेजी हैं!`,
+    link: "/birthdays",
+  });
+
+  if (typeof window !== "undefined") {
+    window.dispatchEvent(new CustomEvent("birthday_wishes_updated", { detail: newWish }));
+  }
+
+  return { success: true, wish: newWish };
+}
+
+export async function getBirthdayWishes(): Promise<BirthdayWishItem[]> {
+  try {
+    const { data, error } = await supabase
+      .from("birthday_wishes")
+      .select("*")
+      .order("created_at", { ascending: false });
+
+    if (!error && data && data.length > 0) {
+      const items: BirthdayWishItem[] = data.map((r: any) => ({
+        id: r.id,
+        recipientId: r.recipient_id,
+        senderId: r.sender_id,
+        senderName: r.sender_name,
+        senderAvatar: r.sender_avatar,
+        senderUgBatchYear: r.sender_ug_batch_year,
+        senderPgBatchYear: r.sender_pg_batch_year,
+        message: r.message,
+        createdAt: r.created_at,
+      }));
+      saveLocalItems(BIRTHDAY_WISHES_STORAGE_KEY, items);
+      return items;
+    }
+  } catch {
+    // Fallback
+  }
+
+  return getLocalItems<BirthdayWishItem>(BIRTHDAY_WISHES_STORAGE_KEY) || [];
+}

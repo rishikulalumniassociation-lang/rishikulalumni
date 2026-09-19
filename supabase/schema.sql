@@ -459,3 +459,29 @@ CREATE POLICY "Enable all community_post_reports" ON public.community_post_repor
 CREATE POLICY "Public read community_post_likes" ON public.community_post_likes FOR SELECT USING (true);
 CREATE POLICY "Enable all community_post_likes" ON public.community_post_likes FOR ALL USING (true);
 
+-- Birthday Wishes (जन्मदिन की शुभकामनाएं)
+CREATE TABLE IF NOT EXISTS public.birthday_wishes (
+    id TEXT PRIMARY KEY,
+    recipient_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    sender_id TEXT NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+    sender_name TEXT NOT NULL,
+    sender_avatar TEXT,
+    sender_ug_batch_year TEXT,
+    sender_pg_batch_year TEXT,
+    message TEXT,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.birthday_wishes ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Public read birthday_wishes" ON public.birthday_wishes;
+    DROP POLICY IF EXISTS "Enable all birthday_wishes" ON public.birthday_wishes;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+CREATE POLICY "Public read birthday_wishes" ON public.birthday_wishes FOR SELECT USING (true);
+CREATE POLICY "Enable all birthday_wishes" ON public.birthday_wishes FOR ALL USING (true);
+

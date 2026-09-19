@@ -300,6 +300,18 @@ export interface ConnectionRequestItem {
   senderProfile?: AlumniProfile;
 }
 
+export interface BirthdayWishItem {
+  id: string;
+  recipientId: string;
+  senderId: string;
+  senderName: string;
+  senderAvatar?: string;
+  senderUgBatchYear?: string;
+  senderPgBatchYear?: string;
+  message?: string;
+  createdAt: string;
+}
+
 export type PostCategory =
   | 'All'
   | 'Photos'

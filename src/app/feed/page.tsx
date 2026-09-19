@@ -65,7 +65,8 @@ import {
   acceptConnectionRequest,
   rejectConnectionRequest,
   isBatchmate,
-  getEffectiveConnectedAlumni
+  getEffectiveConnectedAlumni,
+  getAllPostLikes
 } from "@/lib/store";
 import RevealOnScroll from "@/components/Motion/RevealOnScroll";
 
@@ -81,6 +82,8 @@ export default function FeedPage() {
   const [achievers, setAchievers] = useState<LifetimeAchiever[]>([]);
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [incomingRequests, setIncomingRequests] = useState<ConnectionRequestItem[]>([]);
+  const [allPostLikes, setAllPostLikes] = useState<{ postId: string; userId: string; createdAt: string }[]>([]);
+  const [likedByModalPost, setLikedByModalPost] = useState<CommunityPost | null>(null);
 
   // UI state
   const [activeTab, setActiveTab] = useState<"all" | "posts" | "events" | "achievers" | "birthdays" | "shradhanjali">("all");
@@ -126,7 +129,8 @@ export default function FeedPage() {
       getLifetimeAchievers(),
       getNotifications(user.id),
       getIncomingConnectionRequests(user.id),
-    ]).then(([alumniRes, postsRes, eventsRes, shradhRes, achieversRes, notifsRes, reqsRes]) => {
+      getAllPostLikes(),
+    ]).then(([alumniRes, postsRes, eventsRes, shradhRes, achieversRes, notifsRes, reqsRes, likesRes]) => {
       if (alumniRes.status === "fulfilled") setAlumniList(alumniRes.value || []);
       if (postsRes.status === "fulfilled") setPosts(postsRes.value || []);
       if (eventsRes.status === "fulfilled") setEvents(eventsRes.value || []);
@@ -134,6 +138,7 @@ export default function FeedPage() {
       if (achieversRes.status === "fulfilled") setAchievers(achieversRes.value || []);
       if (notifsRes.status === "fulfilled") setNotifications(notifsRes.value || []);
       if (reqsRes.status === "fulfilled") setIncomingRequests(reqsRes.value || []);
+      if (likesRes.status === "fulfilled") setAllPostLikes(likesRes.value || []);
     }).catch((err) => {
       console.error("Feed load error:", err);
     });
@@ -145,6 +150,10 @@ export default function FeedPage() {
       }
     };
 
+    const handleLikesUpdate = () => {
+      getAllPostLikes().then((l) => setAllPostLikes(l));
+    };
+
     const handleAuthChange = () => {
       const u = getLoggedInAlumni();
       if (!u) router.push("/login");
@@ -153,11 +162,28 @@ export default function FeedPage() {
 
     window.addEventListener("user_auth_changed", handleAuthChange);
     window.addEventListener("connection_requests_updated", handleReqUpdate);
+    window.addEventListener("community_post_likes_updated", handleLikesUpdate);
     return () => {
       window.removeEventListener("user_auth_changed", handleAuthChange);
       window.removeEventListener("connection_requests_updated", handleReqUpdate);
+      window.removeEventListener("community_post_likes_updated", handleLikesUpdate);
     };
   }, [router]);
+
+  // Map post likes to liker profiles
+  const postLikersMap = useMemo(() => {
+    const map: Record<string, AlumniProfile[]> = {};
+    for (const l of allPostLikes) {
+      const u = alumniList.find((a) => a.id === l.userId);
+      if (u) {
+        if (!map[l.postId]) map[l.postId] = [];
+        if (!map[l.postId].some((existing) => existing.id === u.id)) {
+          map[l.postId].push(u);
+        }
+      }
+    }
+    return map;
+  }, [allPostLikes, alumniList]);
 
   // Load comments when drawer is opened for a post
   const toggleComments = async (postId: string) => {
@@ -222,7 +248,7 @@ export default function FeedPage() {
     }));
   };
 
-  // Handle like toggle
+  // Handle like toggle (pass currentUser so post author gets real-time notification)
   const handleLike = async (postId: string) => {
     if (!currentUser) return;
     const isLiked = likedPostIds.includes(postId);
@@ -231,13 +257,15 @@ export default function FeedPage() {
       setPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, likesCount: Math.max((p.likesCount || 1) - 1, 0) } : p))
       );
+      await toggleCommunityPostLike(postId, currentUser.id, currentUser);
     } else {
       setLikedPostIds((prev) => [...prev, postId]);
       setPosts((prev) =>
         prev.map((p) => (p.id === postId ? { ...p, likesCount: (p.likesCount || 0) + 1 } : p))
       );
-      await toggleCommunityPostLike(postId, currentUser.id);
+      await toggleCommunityPostLike(postId, currentUser.id, currentUser);
     }
+    getAllPostLikes().then((l) => setAllPostLikes(l));
   };
 
   // Handle share link copy
@@ -1215,20 +1243,77 @@ export default function FeedPage() {
                       </div>
                     )}
 
+                    {/* Likers Social Summary */}
+                    {postLikersMap[post.id]?.length > 0 && (() => {
+                      const likers = postLikersMap[post.id] || [];
+                      return (
+                        <div className="pt-2.5 pb-1">
+                          <button
+                            type="button"
+                            onClick={() => setLikedByModalPost(post)}
+                            className="flex items-center gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
+                          >
+                            <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                              {likers.slice(0, 3).map((u) => (
+                                <img
+                                  key={u.id}
+                                  src={u.avatarUrl || "/images/default-avatar.png"}
+                                  alt={u.fullName}
+                                  className="w-4 h-4 rounded-full border border-white object-cover"
+                                />
+                              ))}
+                            </div>
+                            <span className="truncate">
+                              ❤️ Liked by{" "}
+                              {likers.length === 1 && (
+                                <strong className="font-semibold text-slate-700 group-hover:text-rose-600">{likers[0].fullName}</strong>
+                              )}
+                              {likers.length === 2 && (
+                                <>
+                                  <strong className="font-semibold text-slate-700 group-hover:text-rose-600">{likers[0].fullName}</strong> and{" "}
+                                  <strong className="font-semibold text-slate-700 group-hover:text-rose-600">{likers[1].fullName}</strong>
+                                </>
+                              )}
+                              {likers.length > 2 && (
+                                <>
+                                  <strong className="font-semibold text-slate-700 group-hover:text-rose-600">{likers[0].fullName}</strong>,{" "}
+                                  <strong className="font-semibold text-slate-700 group-hover:text-rose-600">{likers[1].fullName}</strong> and{" "}
+                                  <span className="underline decoration-dotted font-medium">{likers.length - 2} others</span>
+                                </>
+                              )}
+                            </span>
+                          </button>
+                        </div>
+                      );
+                    })()}
+
                     {/* Action Bar */}
                     <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-600">
                       <div className="flex items-center gap-4">
-                        <button
-                          onClick={() => handleLike(post.id)}
-                          className={`flex items-center gap-1.5 font-semibold transition-colors ${
-                            isLiked ? "text-rose-600" : "hover:text-rose-600"
-                          }`}
-                        >
-                          <Heart
-                            className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`}
-                          />
-                          <span>{post.likesCount || 0} Appreciate</span>
-                        </button>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => handleLike(post.id)}
+                            className={`flex items-center gap-1 font-semibold transition-colors ${
+                              isLiked ? "text-rose-600" : "hover:text-rose-600"
+                            }`}
+                          >
+                            <Heart
+                              className={`w-4 h-4 ${isLiked ? "fill-rose-600" : ""}`}
+                            />
+                            <span>{isLiked ? "Liked" : "Like"}</span>
+                          </button>
+
+                          {(post.likesCount || 0) > 0 && (
+                            <button
+                              type="button"
+                              onClick={() => setLikedByModalPost(post)}
+                              className="text-[11px] font-medium text-slate-500 hover:text-rose-600 hover:underline"
+                              title="लाईक करने वाले सदस्य देखें"
+                            >
+                              ({post.likesCount})
+                            </button>
+                          )}
+                        </div>
 
                         <button
                           onClick={() => toggleComments(post.id)}
@@ -1932,6 +2017,88 @@ export default function FeedPage() {
           </div>
         </div>
       )}
+
+      {/* Liked By Modal: Shows who liked the post with their names */}
+      {likedByModalPost && (() => {
+        const likers = postLikersMap[likedByModalPost.id] || [];
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+            <div className="bg-white rounded-3xl max-w-md w-full max-h-[80vh] flex flex-col shadow-2xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+              <div className="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center">
+                    <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-sm text-[#0F172A]">
+                      लाईक करने वाले सदस्य ({likers.length})
+                    </h3>
+                    <p className="text-[11px] text-slate-500 truncate max-w-[240px]">
+                      {likedByModalPost.title || "Post"}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setLikedByModalPost(null)}
+                  className="p-1.5 rounded-full hover:bg-slate-100 text-slate-400 hover:text-slate-600"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-4 overflow-y-auto space-y-2.5 divide-y divide-slate-100">
+                {likers.length === 0 ? (
+                  <p className="text-center text-xs text-slate-500 py-6">
+                    अभी इस पोस्ट पर कोई लाइक नहीं है।
+                  </p>
+                ) : (
+                  likers.map((user) => (
+                    <div key={user.id} className="pt-2.5 first:pt-0 flex items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <img
+                          src={user.avatarUrl || "/images/default-avatar.png"}
+                          alt={user.fullName}
+                          className="w-10 h-10 rounded-xl object-cover border border-slate-200"
+                        />
+                        <div>
+                          <h4 className="font-bold text-xs text-[#0F172A]">
+                            {user.fullName}
+                          </h4>
+                          <p className="text-[10px] text-emerald-800 font-medium">
+                            {user.ugBatchYear ? `BAMS Batch ${user.ugBatchYear}` : user.designation || "Alumnus"}
+                          </p>
+                          {user.city && (
+                            <p className="text-[9px] text-slate-400">{user.city}</p>
+                          )}
+                        </div>
+                      </div>
+
+                      <Link
+                        href={`/directory?id=${user.id}`}
+                        onClick={() => setLikedByModalPost(null)}
+                        className="px-3 py-1 rounded-lg bg-slate-100 hover:bg-[#2D5A43] hover:text-white text-slate-700 text-[11px] font-bold transition-colors"
+                      >
+                        Profile
+                      </Link>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="px-5 py-3 border-t border-slate-100 flex justify-end">
+                <button
+                  type="button"
+                  onClick={() => setLikedByModalPost(null)}
+                  className="px-4 py-1.5 rounded-full bg-[#0F172A] text-white text-xs font-bold"
+                >
+                  बंद करें
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 }

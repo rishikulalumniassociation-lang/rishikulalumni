@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Link from 'next/link';
 import {
   Heart,
   Share2,
@@ -20,9 +21,10 @@ import {
   BookOpen,
   Feather,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { CommunityPost, AlumniProfile } from '@/types';
-import { toggleCommunityPostLike } from '@/lib/store';
+import { toggleCommunityPostLike, getAllPostLikes, getAlumniList } from '@/lib/store';
 
 interface PostCardProps {
   post: CommunityPost;
@@ -66,6 +68,22 @@ export default function PostCard({
   const [menuOpen, setMenuOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [expandedText, setExpandedText] = useState(false);
+  const [showLikersModal, setShowLikersModal] = useState(false);
+  const [likersList, setLikersList] = useState<AlumniProfile[]>([]);
+
+  useEffect(() => {
+    let isMounted = true;
+    Promise.all([getAllPostLikes(), getAlumniList()]).then(([likes, allAlumni]) => {
+      if (!isMounted) return;
+      const postLikes = likes.filter((l) => l.postId === post.id);
+      const userIds = new Set(postLikes.map((l) => l.userId));
+      const list = allAlumni.filter((a) => userIds.has(a.id));
+      setLikersList(list);
+    });
+    return () => {
+      isMounted = false;
+    };
+  }, [post.id, likesCount]);
 
   const isAuthor = currentUser?.id === post.userId;
   const canManage = isAuthor || isAdmin;
@@ -83,7 +101,7 @@ export default function PostCard({
     setLikesCount((prev) => (nextLiked ? prev + 1 : Math.max(0, prev - 1)));
 
     try {
-      const res = await toggleCommunityPostLike(post.id, currentUser.id);
+      const res = await toggleCommunityPostLike(post.id, currentUser.id, currentUser);
       setLiked(res.liked);
       setLikesCount(res.likesCount);
     } catch {
@@ -421,19 +439,73 @@ export default function PostCard({
           )}
         </div>
 
+        {/* Likers Summary */}
+        {likersList.length > 0 && (
+          <div className="pt-2.5 pb-1">
+            <button
+              type="button"
+              onClick={() => setShowLikersModal(true)}
+              className="flex items-center gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
+            >
+              <div className="flex -space-x-1.5 overflow-hidden shrink-0">
+                {likersList.slice(0, 3).map((u) => (
+                  <img
+                    key={u.id}
+                    src={u.avatarUrl || "/images/default-avatar.png"}
+                    alt={u.fullName}
+                    className="w-4 h-4 rounded-full border border-white object-cover"
+                  />
+                ))}
+              </div>
+              <span className="truncate">
+                ❤️ Liked by{" "}
+                {likersList.length === 1 && (
+                  <strong className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">{likersList[0].fullName}</strong>
+                )}
+                {likersList.length === 2 && (
+                  <>
+                    <strong className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">{likersList[0].fullName}</strong> and{" "}
+                    <strong className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">{likersList[1].fullName}</strong>
+                  </>
+                )}
+                {likersList.length > 2 && (
+                  <>
+                    <strong className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">{likersList[0].fullName}</strong>,{" "}
+                    <strong className="font-semibold text-slate-700 dark:text-slate-200 group-hover:text-rose-600">{likersList[1].fullName}</strong> and{" "}
+                    <span className="underline decoration-dotted font-medium">{likersList.length - 2} others</span>
+                  </>
+                )}
+              </span>
+            </button>
+          </div>
+        )}
+
         {/* Footer Actions */}
         <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
-          <button
-            onClick={handleLike}
-            className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition ${
-              liked
-                ? 'text-rose-600 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/30'
-                : 'hover:bg-slate-100 dark:hover:bg-slate-800'
-            }`}
-          >
-            <Heart className={`w-4 h-4 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} />
-            <span>{likesCount}</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleLike}
+              className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg transition ${
+                liked
+                  ? 'text-rose-600 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/30'
+                  : 'hover:bg-slate-100 dark:hover:bg-slate-800'
+              }`}
+            >
+              <Heart className={`w-4 h-4 ${liked ? 'fill-rose-500 text-rose-500' : ''}`} />
+              <span>{liked ? 'Liked' : 'Like'}</span>
+            </button>
+
+            {likesCount > 0 && (
+              <button
+                type="button"
+                onClick={() => setShowLikersModal(true)}
+                className="text-[11px] font-medium text-slate-500 hover:text-rose-600 hover:underline"
+                title="लाईक करने वाले सदस्य देखें"
+              >
+                ({likesCount})
+              </button>
+            )}
+          </div>
 
           <div className="flex items-center gap-1">
             <button
@@ -460,6 +532,85 @@ export default function PostCard({
           </div>
         </div>
       </div>
+
+      {/* Liked By Modal */}
+      {showLikersModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl max-w-md w-full max-h-[80vh] flex flex-col shadow-2xl overflow-hidden">
+            <div className="px-5 py-4 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-full bg-rose-50 dark:bg-rose-950/40 text-rose-600 flex items-center justify-center">
+                  <Heart className="w-4 h-4 fill-rose-500 text-rose-500" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-[#0F172A] dark:text-slate-100">
+                    लाईक करने वाले सदस्य ({likersList.length})
+                  </h3>
+                  <p className="text-[11px] text-slate-500 truncate max-w-[240px]">
+                    {post.title}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setShowLikersModal(false)}
+                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="p-4 overflow-y-auto space-y-2.5 divide-y divide-slate-100 dark:divide-slate-800">
+              {likersList.length === 0 ? (
+                <p className="text-center text-xs text-slate-500 py-6">
+                  अभी इस पोस्ट पर कोई लाइक नहीं है।
+                </p>
+              ) : (
+                likersList.map((user) => (
+                  <div key={user.id} className="pt-2.5 first:pt-0 flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={user.avatarUrl || "/images/default-avatar.png"}
+                        alt={user.fullName}
+                        className="w-10 h-10 rounded-xl object-cover border border-slate-200 dark:border-slate-700"
+                      />
+                      <div>
+                        <h4 className="font-bold text-xs text-[#0F172A] dark:text-slate-100">
+                          {user.fullName}
+                        </h4>
+                        <p className="text-[10px] text-emerald-700 dark:text-emerald-400 font-medium">
+                          {user.ugBatchYear ? `BAMS Batch ${user.ugBatchYear}` : user.designation || "Alumnus"}
+                        </p>
+                        {user.city && (
+                          <p className="text-[9px] text-slate-400">{user.city}</p>
+                        )}
+                      </div>
+                    </div>
+
+                    <Link
+                      href={`/directory?id=${user.id}`}
+                      onClick={() => setShowLikersModal(false)}
+                      className="px-3 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-[#2D5A43] hover:text-white text-slate-700 dark:text-slate-300 text-[11px] font-bold transition-colors"
+                    >
+                      Profile
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="px-5 py-3 border-t border-slate-100 dark:border-slate-800 flex justify-end">
+              <button
+                type="button"
+                onClick={() => setShowLikersModal(false)}
+                className="px-4 py-1.5 rounded-full bg-[#0F172A] text-white text-xs font-bold"
+              >
+                बंद करें
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }
