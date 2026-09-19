@@ -2032,6 +2032,34 @@ export async function getIncomingConnectionRequests(userId: string): Promise<Con
   return [];
 }
 
+export async function getUserPendingConnectionIds(userId: string): Promise<{
+  sentTargetIds: string[];
+  receivedSenderIds: string[];
+}> {
+  if (!userId) return { sentTargetIds: [], receivedSenderIds: [] };
+  try {
+    const { data, error } = await supabase
+      .from("community_posts")
+      .select("user_id, description")
+      .eq("content_type", "connection_request")
+      .eq("title", "pending")
+      .or(`user_id.eq.${userId},description.eq.${userId}`);
+
+    if (!error && data) {
+      const sentTargetIds = data
+        .filter((r: any) => r.user_id === userId)
+        .map((r: any) => r.description as string);
+      const receivedSenderIds = data
+        .filter((r: any) => r.description === userId)
+        .map((r: any) => r.user_id as string);
+      return { sentTargetIds, receivedSenderIds };
+    }
+  } catch (err) {
+    console.error("getUserPendingConnectionIds error:", err);
+  }
+  return { sentTargetIds: [], receivedSenderIds: [] };
+}
+
 export function isBatchmate(a?: AlumniProfile | null, b?: AlumniProfile | null): boolean {
   if (!a || !b || a.id === b.id) return false;
   const ugMatch = Boolean(a.ugBatchYear && b.ugBatchYear && a.ugBatchYear === b.ugBatchYear);

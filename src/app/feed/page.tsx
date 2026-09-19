@@ -33,7 +33,10 @@ import {
   Camera,
   Home,
   UserCheck,
-  Clock
+  Clock,
+  UserPlus,
+  ChevronDown,
+  Check
 } from "lucide-react";
 import {
   AlumniProfile,
@@ -94,9 +97,52 @@ export default function FeedPage() {
   const [commentInputMap, setCommentInputMap] = useState<Record<string, string>>({});
   const [likedPostIds, setLikedPostIds] = useState<string[]>([]);
   const [showNotificationsDrawer, setShowNotificationsDrawer] = useState(false);
+  const [showRequestsDropdown, setShowRequestsDropdown] = useState(false);
+  const requestsDropdownRef = React.useRef<HTMLDivElement>(null);
+  const mobileRequestsRef = React.useRef<HTMLDivElement>(null);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [copiedLinkPostId, setCopiedLinkPostId] = useState<string | null>(null);
+
+  // Close requests dropdown on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (
+        requestsDropdownRef.current &&
+        !requestsDropdownRef.current.contains(e.target as Node) &&
+        (!mobileRequestsRef.current || !mobileRequestsRef.current.contains(e.target as Node))
+      ) {
+        setShowRequestsDropdown(false);
+      }
+    };
+    if (showRequestsDropdown) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [showRequestsDropdown]);
+
+  const handleAcceptConnection = async (req: ConnectionRequestItem) => {
+    if (!currentUser) return;
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== req.id));
+    await acceptConnectionRequest(req.senderId, currentUser.id);
+    const [updatedReqs, freshList] = await Promise.all([
+      getIncomingConnectionRequests(currentUser.id),
+      getAlumniList(true),
+    ]);
+    setIncomingRequests(updatedReqs);
+    setAlumniList(freshList);
+    setCurrentUser(getLoggedInAlumni());
+  };
+
+  const handleRejectConnection = async (req: ConnectionRequestItem) => {
+    if (!currentUser) return;
+    setIncomingRequests((prev) => prev.filter((r) => r.id !== req.id));
+    await rejectConnectionRequest(req.senderId, currentUser.id);
+    const updatedReqs = await getIncomingConnectionRequests(currentUser.id);
+    setIncomingRequests(updatedReqs);
+  };
 
   // Network group modal: which panel is open + what label to show
   type NetworkGroup = {
@@ -415,13 +461,34 @@ export default function FeedPage() {
             <Search className="w-4 h-4" />
           </button>
 
+          {/* Mobile Requests Button */}
+          <div className="relative" ref={mobileRequestsRef}>
+            <button
+              onClick={() => setShowRequestsDropdown((prev) => !prev)}
+              className={`p-2 rounded-full transition-all relative ${
+                incomingRequests.length > 0
+                  ? "bg-amber-400 text-slate-950 font-bold"
+                  : "bg-white/10 hover:bg-white/20 text-white"
+              }`}
+              aria-label="Connection Requests"
+              title="कनेक्शन अनुरोध (Requests)"
+            >
+              <UserPlus className="w-4 h-4" />
+              {incomingRequests.length > 0 && (
+                <span className="absolute -top-1 -right-1 min-w-[18px] h-[18px] px-1 bg-rose-600 text-white text-[10px] font-extrabold rounded-full flex items-center justify-center shadow-xs">
+                  {incomingRequests.length}
+                </span>
+              )}
+            </button>
+          </div>
+
           <button
             onClick={() => setShowNotificationsDrawer(true)}
             className="p-2 rounded-full bg-white/10 hover:bg-white/20 text-white relative"
             aria-label="Notifications"
           >
             <Bell className="w-4 h-4" />
-            {(notifications.some((n) => !n.isRead) || incomingRequests.length > 0) && (
+            {notifications.some((n) => !n.isRead) && (
               <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-amber-400 ring-2 ring-[#0F172A]" />
             )}
           </button>
@@ -765,7 +832,115 @@ export default function FeedPage() {
           {/* ============================================================== */}
           {/* MIDDLE COLUMN: Post Composer & Unified Social Feed             */}
           {/* ============================================================== */}
-          <main className="lg:col-span-6 space-y-5">
+          {/* ============================================================== */}
+          {/* MIDDLE COLUMN: Post Composer & Unified Social Feed             */}
+          {/* ============================================================== */}
+          <main className="lg:col-span-6 space-y-4">
+            {/* Feed Top Action Bar with Requests Dropdown */}
+            <div className="flex items-center justify-between bg-white rounded-2xl px-4 py-2.5 border border-[#C5A059]/30 shadow-xs relative">
+              <div className="flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-[#2D5A43] animate-pulse" />
+                <h2 className="font-serif-heading text-sm sm:text-base font-bold text-[#0F172A]">
+                  Community Feed
+                </h2>
+                <span className="text-[11px] text-slate-400 hidden sm:inline">• ऋषिकुल संगम</span>
+              </div>
+
+              {/* Requests Dropdown Trigger */}
+              <div className="relative" ref={requestsDropdownRef}>
+                <button
+                  type="button"
+                  onClick={() => setShowRequestsDropdown((prev) => !prev)}
+                  className={`px-3 sm:px-3.5 py-1.5 rounded-xl flex items-center gap-1.5 sm:gap-2 text-xs font-bold transition-all shadow-xs border cursor-pointer active:scale-95 ${
+                    incomingRequests.length > 0
+                      ? "bg-amber-400 hover:bg-amber-500 text-slate-950 border-amber-500 ring-2 ring-amber-300 font-extrabold"
+                      : "bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-200"
+                  }`}
+                  title="कनेक्शन अनुरोध देखें व प्रबंधित करें"
+                >
+                  <UserPlus className="w-3.5 h-3.5 text-[#2D5A43]" />
+                  <span>Requests</span>
+                  {incomingRequests.length > 0 ? (
+                    <span className="bg-rose-600 text-white text-[10px] font-bold px-1.5 py-0.2 rounded-full min-w-[18px] text-center shadow-xs">
+                      {incomingRequests.length}
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-slate-400 font-normal">0</span>
+                  )}
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${showRequestsDropdown ? "rotate-180" : ""}`} />
+                </button>
+
+                {/* Dropdown Menu */}
+                {showRequestsDropdown && (
+                  <div className="absolute right-0 top-full mt-2 w-80 sm:w-96 bg-white rounded-3xl p-4 shadow-2xl border-2 border-[#C5A059]/40 z-50 animate-in fade-in slide-in-from-top-2">
+                    <div className="flex items-center justify-between pb-2.5 mb-2.5 border-b border-slate-100">
+                      <div className="flex items-center gap-2">
+                        <Users2 className="w-4 h-4 text-[#2D5A43]" />
+                        <h4 className="font-serif-heading text-xs sm:text-sm font-bold text-[#0F172A]">
+                          कनेक्शन अनुरोध (Requests)
+                        </h4>
+                      </div>
+                      <span className="bg-amber-100 text-amber-900 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-200">
+                        {incomingRequests.length}
+                      </span>
+                    </div>
+
+                    {incomingRequests.length === 0 ? (
+                      <div className="text-center py-6 text-slate-400 text-xs">
+                        <Users2 className="w-8 h-8 mx-auto text-slate-300 mb-1.5" />
+                        कोई नया कनेक्शन अनुरोध नहीं है।
+                      </div>
+                    ) : (
+                      <div className="space-y-2 max-h-72 overflow-y-auto pr-1">
+                        {incomingRequests.map((req) => (
+                          <div
+                            key={req.id}
+                            className="p-2.5 sm:p-3 rounded-2xl bg-amber-50/70 border border-amber-200/80 hover:border-amber-300 transition-all flex items-center justify-between gap-2.5 shadow-2xs"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <img
+                                src={req.senderProfile?.avatarUrl || "/images/default-avatar.png"}
+                                alt={req.senderProfile?.fullName || "Alumni"}
+                                className="w-10 h-10 rounded-full object-cover border border-[#C5A059] shrink-0"
+                              />
+                              <div className="min-w-0">
+                                <h5 className="text-xs font-bold text-[#0F172A] truncate">
+                                  {req.senderProfile?.fullName || "Alumni Member"}
+                                </h5>
+                                <p className="text-[10px] text-slate-500 truncate">
+                                  {req.senderProfile?.ugBatchYear ? `UG ${req.senderProfile.ugBatchYear}` : ""}{req.senderProfile?.city ? ` • ${req.senderProfile.city}` : ""}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <button
+                                type="button"
+                                onClick={() => handleAcceptConnection(req)}
+                                className="px-2.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-bold shadow-xs active:scale-95 transition-all flex items-center gap-1 cursor-pointer"
+                                title="अनुरोध स्वीकार करें"
+                              >
+                                <Check className="w-3 h-3" />
+                                <span>स्वीकार</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => handleRejectConnection(req)}
+                                className="px-2 py-1.5 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-[11px] font-semibold active:scale-95 transition-colors cursor-pointer"
+                                title="अनुरोध अस्वीकार करें"
+                              >
+                                <X className="w-3 h-3" />
+                                <span>अस्वीकार</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </div>
+
             {/* Incoming Connection Requests Banner */}
             {incomingRequests.length > 0 && (
               <div className="bg-gradient-to-r from-amber-500/15 via-amber-400/10 to-transparent border-2 border-amber-400/60 rounded-3xl p-4 shadow-sm flex items-center justify-between gap-3">
@@ -784,8 +959,8 @@ export default function FeedPage() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => setShowNotificationsDrawer(true)}
-                  className="px-3.5 py-2 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-white text-xs font-bold shrink-0 transition-colors shadow-xs active:scale-95"
+                  onClick={() => setShowRequestsDropdown(true)}
+                  className="px-3.5 py-2 rounded-xl bg-[#0F172A] hover:bg-[#2D5A43] text-white text-xs font-bold shrink-0 transition-colors shadow-xs active:scale-95 cursor-pointer"
                 >
                   अनुरोध देखें
                 </button>

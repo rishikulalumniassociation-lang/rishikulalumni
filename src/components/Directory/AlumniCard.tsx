@@ -16,7 +16,9 @@ import {
   Medal,
   Lock,
   Heart,
-  Crown
+  Crown,
+  Clock,
+  Check
 } from "lucide-react";
 import {
   toggleAlumniConnection,
@@ -33,16 +35,22 @@ interface AlumniCardProps {
   alumni: AlumniProfile;
   allAlumni?: AlumniProfile[];
   currentAlumniId?: string;
+  sentRequestTargetIds?: Set<string>;
+  receivedRequestSenderIds?: Set<string>;
   onSelect?: (alumni: AlumniProfile) => void;
   onConnectionToggle?: () => void;
+  onConnectionRequestSent?: (targetId: string) => void;
 }
 
 export default function AlumniCard({
   alumni,
   allAlumni = [],
   currentAlumniId,
+  sentRequestTargetIds,
+  receivedRequestSenderIds,
   onSelect,
-  onConnectionToggle
+  onConnectionToggle,
+  onConnectionRequestSent
 }: AlumniCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
@@ -59,27 +67,32 @@ export default function AlumniCard({
     return getEffectiveConnectedAlumni(alumni, allAlumni);
   }, [alumni, allAlumni]);
 
-  const [connectionStatus, setConnectionStatus] = useState<"none" | "pending_sent" | "pending_received" | "connected">(() =>
-    isBatchmateWithMe ? "connected" : getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
-  );
+  const [localPendingSent, setLocalPendingSent] = useState(false);
+  const [isSending, setIsSending] = useState(false);
   const [connectionsCount, setConnectionsCount] = useState(connectedPeople.length);
 
-  React.useEffect(() => {
-    setConnectionStatus(
-      isBatchmateWithMe ? "connected" : getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
-    );
-    setConnectionsCount(connectedPeople.length);
-  }, [alumni.connectedAlumniIds, currentAlumniId, allAlumni, alumni.id, isBatchmateWithMe, connectedPeople.length]);
+  const connectionStatus: "none" | "pending_sent" | "pending_received" | "connected" = React.useMemo(() => {
+    if (!currentAlumniId || currentAlumniId === alumni.id) return "connected";
+    if (isBatchmateWithMe) return "connected";
+    if (currentUserProfile?.connectedAlumniIds?.includes(alumni.id)) return "connected";
+    if (alumni.connectedAlumniIds?.includes(currentAlumniId)) return "connected";
+    if (localPendingSent || sentRequestTargetIds?.has(alumni.id)) return "pending_sent";
+    if (receivedRequestSenderIds?.has(alumni.id)) return "pending_received";
+    return "none";
+  }, [
+    currentAlumniId,
+    alumni.id,
+    isBatchmateWithMe,
+    currentUserProfile?.connectedAlumniIds,
+    alumni.connectedAlumniIds,
+    localPendingSent,
+    sentRequestTargetIds,
+    receivedRequestSenderIds
+  ]);
 
   React.useEffect(() => {
-    const handleReqUpdate = () => {
-      setConnectionStatus(
-        isBatchmateWithMe ? "connected" : getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
-      );
-    };
-    window.addEventListener("connection_requests_updated", handleReqUpdate);
-    return () => window.removeEventListener("connection_requests_updated", handleReqUpdate);
-  }, [currentAlumniId, alumni.id, allAlumni, isBatchmateWithMe]);
+    setConnectionsCount(connectedPeople.length);
+  }, [connectedPeople.length]);
 
   const isSelf = Boolean(currentAlumniId && currentAlumniId === alumni.id);
 
@@ -102,7 +115,7 @@ export default function AlumniCard({
     }
   };
 
-  const handleConnectClick = (e: React.MouseEvent) => {
+  const handleConnectClick = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!currentAlumniId) {
       router.push("/login?redirect=/directory");
@@ -110,16 +123,15 @@ export default function AlumniCard({
     }
 
     if (isBatchmateWithMe) {
-      // Always connected batchmates — direct WhatsApp enabled
+      // Always connected batchmates
       return;
     }
 
     if (connectionStatus === "connected") {
       // Disconnect
-      setConnectionStatus("none");
+      setLocalPendingSent(false);
       setConnectionsCount((prev) => Math.max(0, prev - 1));
-      toggleAlumniConnection(currentAlumniId, alumni.id).catch(() => {
-        setConnectionStatus("connected");
+      await toggleAlumniConnection(currentAlumniId, alumni.id).catch(() => {
         setConnectionsCount((prev) => prev + 1);
       });
       if (onConnectionToggle) onConnectionToggle();
@@ -127,31 +139,37 @@ export default function AlumniCard({
     }
 
     if (connectionStatus === "pending_sent") {
-      // Cancel sent request
-      setConnectionStatus("none");
-      cancelConnectionRequest(currentAlumniId, alumni.id).catch(() => {
-        setConnectionStatus("pending_sent");
-      });
+      // Once requested, stays requested until accepted
       return;
     }
 
     if (connectionStatus === "pending_received") {
       // Accept incoming request
-      setConnectionStatus("connected");
       setConnectionsCount((prev) => prev + 1);
-      acceptConnectionRequest(alumni.id, currentAlumniId).catch(() => {
-        setConnectionStatus("pending_received");
+      await acceptConnectionRequest(alumni.id, currentAlumniId).catch(() => {
         setConnectionsCount((prev) => Math.max(0, prev - 1));
       });
       if (onConnectionToggle) onConnectionToggle();
       return;
     }
 
-    // Default 'none' -> Send connection request
-    setConnectionStatus("pending_sent");
-    sendConnectionRequest(currentAlumniId, alumni.id).catch(() => {
-      setConnectionStatus("none");
-    });
+    // Default 'none' -> Send connection request immediately & grey out button
+    setLocalPendingSent(true);
+    setIsSending(true);
+    if (onConnectionRequestSent) {
+      onConnectionRequestSent(alumni.id);
+    }
+
+    try {
+      const ok = await sendConnectionRequest(currentAlumniId, alumni.id);
+      if (!ok) {
+        setLocalPendingSent(false);
+      }
+    } catch {
+      setLocalPendingSent(false);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   // Render UG / PG batch badges dynamically
@@ -412,26 +430,29 @@ export default function AlumniCard({
           ) : (
             <button
               onClick={handleConnectClick}
-              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 ${
+              disabled={connectionStatus === "pending_sent" || isSending}
+              className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-xs ${
                 isBatchmateWithMe
                   ? isPatronMember
-                    ? "bg-amber-400 text-slate-950 border border-amber-300"
-                    : "bg-[#2D5A43] text-white border border-emerald-700"
+                    ? "bg-amber-400 text-slate-950 border border-amber-300 cursor-default"
+                    : "bg-[#2D5A43] text-white border border-emerald-700 cursor-default"
                   : connectionStatus === "connected"
                   ? isPatronMember
-                    ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700"
-                    : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                    ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700 active:scale-95"
+                    : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 active:scale-95"
                   : connectionStatus === "pending_sent"
-                  ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                  ? "bg-slate-200 text-slate-600 border border-slate-300 cursor-not-allowed opacity-85 shadow-none"
                   : connectionStatus === "pending_received"
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm active:scale-95"
+                  : isSending
+                  ? "bg-slate-200 text-slate-500 border border-slate-300 cursor-wait opacity-80"
                   : currentAlumniId
                   ? isPatronMember
-                    ? "bg-amber-400 text-slate-950 hover:bg-amber-300"
-                    : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
+                    ? "bg-amber-400 text-slate-950 hover:bg-amber-300 active:scale-95"
+                    : "bg-[#0F172A] text-white hover:bg-[#2D5A43] active:scale-95"
                   : isPatronMember
-                  ? "bg-slate-800 text-slate-100 border border-slate-600 hover:bg-amber-400 hover:text-slate-950"
-                  : "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-[#0F172A] hover:text-white"
+                  ? "bg-slate-800 text-slate-100 border border-slate-600 hover:bg-amber-400 hover:text-slate-950 active:scale-95"
+                  : "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-[#0F172A] hover:text-white active:scale-95"
               }`}
               title={
                 !currentAlumniId
@@ -441,22 +462,30 @@ export default function AlumniCard({
                   : connectionStatus === "connected"
                   ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                   : connectionStatus === "pending_sent"
-                  ? "रिक्वेस्ट भेजी गई है (क्लिक करके कैंसिल करें)"
+                  ? "कनेक्शन अनुरोध भेजा जा चुका है (Connection Requested)"
                   : connectionStatus === "pending_received"
                   ? "कनेक्शन रिक्वेस्ट स्वीकार करें (Accept Request)"
                   : "कनेक्शन रिक्वेस्ट भेजें"
               }
             >
-              <Users2 className="w-3 h-3" />
+              {connectionStatus === "pending_sent" ? (
+                <Clock className="w-3.5 h-3.5 text-slate-500 animate-pulse" />
+              ) : connectionStatus === "connected" ? (
+                <Check className="w-3.5 h-3.5 text-emerald-600" />
+              ) : (
+                <Users2 className="w-3 h-3" />
+              )}
               <span>
                 {isBatchmateWithMe
                   ? "Batchmate ✓"
                   : connectionStatus === "connected"
                   ? "Connected ✓"
                   : connectionStatus === "pending_sent"
-                  ? "Request Sent ⏳"
+                  ? "Connection Requested"
                   : connectionStatus === "pending_received"
                   ? "Accept Request ✓"
+                  : isSending
+                  ? "Sending..."
                   : currentAlumniId
                   ? "Connect"
                   : "Login to Connect"}

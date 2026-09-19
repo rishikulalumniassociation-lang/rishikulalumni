@@ -15,7 +15,8 @@ import {
   acceptConnectionRequest,
   getConnectionStateSync,
   isBatchmate,
-  getEffectiveConnectedAlumni
+  getEffectiveConnectedAlumni,
+  getUserPendingConnectionIds
 } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -38,12 +39,15 @@ import {
   Briefcase,
   Heart,
   Sparkles,
+  Award,
+  Crown,
+  Check,
+  Clock,
   Lock,
   ChevronRight,
   Stethoscope,
   Medal,
   Trophy,
-  Crown,
   MessageCircle
 } from "lucide-react";
 
@@ -57,6 +61,8 @@ export default function DirectoryPage() {
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isPendingApproval, setIsPendingApproval] = useState(false);
   const [modalTab, setModalTab] = useState<"info" | "achievements" | "connections" | "teachers" | "family" | "specialty" | "work">("info");
+  const [pendingSentIds, setPendingSentIds] = useState<Set<string>>(new Set());
+  const [pendingReceivedIds, setPendingReceivedIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     const checkAuthAndLoad = () => {
@@ -76,6 +82,16 @@ export default function DirectoryPage() {
       } else {
         setAlumniList([]);
       }
+
+      if (user?.id) {
+        getUserPendingConnectionIds(user.id).then(({ sentTargetIds, receivedSenderIds }) => {
+          setPendingSentIds(new Set(sentTargetIds));
+          setPendingReceivedIds(new Set(receivedSenderIds));
+        });
+      } else {
+        setPendingSentIds(new Set());
+        setPendingReceivedIds(new Set());
+      }
     };
 
     checkAuthAndLoad();
@@ -85,7 +101,13 @@ export default function DirectoryPage() {
     };
 
     const handleReqUpdate = () => {
-      checkAuthAndLoad();
+      const user = getLoggedInAlumni();
+      if (user?.id) {
+        getUserPendingConnectionIds(user.id).then(({ sentTargetIds, receivedSenderIds }) => {
+          setPendingSentIds(new Set(sentTargetIds));
+          setPendingReceivedIds(new Set(receivedSenderIds));
+        });
+      }
     };
 
     window.addEventListener("alumni_updated", handleUpdate);
@@ -703,10 +725,15 @@ export default function DirectoryPage() {
                 alumni={alumni}
                 allAlumni={alumniList}
                 currentAlumniId={currentUser?.id}
+                sentRequestTargetIds={pendingSentIds}
+                receivedRequestSenderIds={pendingReceivedIds}
                 onSelect={(selected) => setSelectedProfile(selected)}
                 onConnectionToggle={() => {
                   getAlumniList().then((list) => setAlumniList(list));
                   setCurrentUser(getLoggedInAlumni());
+                }}
+                onConnectionRequestSent={(targetId) => {
+                  setPendingSentIds((prev) => new Set([...prev, targetId]));
                 }}
               />
             ))}
@@ -1382,43 +1409,48 @@ export default function DirectoryPage() {
                 const isBatchmateWithMe = Boolean(
                   currentUser && selectedProfile && isBatchmate(currentUser, selectedProfile)
                 );
+                const isDirectlyConnected = Boolean(
+                  currentUser && selectedProfile && (
+                    currentUser.connectedAlumniIds?.includes(selectedProfile.id) ||
+                    selectedProfile.connectedAlumniIds?.includes(currentUser.id)
+                  )
+                );
                 const modalConnStatus = currentUser && selectedProfile
-                  ? (isBatchmateWithMe ? "connected" : getConnectionStateSync(currentUser.id, selectedProfile.id, alumniList))
+                  ? (isBatchmateWithMe || isDirectlyConnected
+                      ? "connected"
+                      : pendingSentIds.has(selectedProfile.id)
+                      ? "pending_sent"
+                      : pendingReceivedIds.has(selectedProfile.id)
+                      ? "pending_received"
+                      : "none")
                   : "none";
 
-                const handleModalConnectClick = () => {
-                  if (!currentUser) {
+                const handleModalConnectClick = async () => {
+                  if (!currentUser || !selectedProfile) {
                     router.push("/login?redirect=/directory");
                     return;
                   }
                   if (isBatchmateWithMe) {
-                    // Always connected batchmates
                     return;
                   }
                   if (modalConnStatus === "connected") {
-                    toggleAlumniConnection(currentUser.id, selectedProfile.id).then(() => {
-                      getAlumniList().then((list) => setAlumniList(list));
-                      setCurrentUser(getLoggedInAlumni());
-                    });
+                    await toggleAlumniConnection(currentUser.id, selectedProfile.id);
+                    getAlumniList().then((list) => setAlumniList(list));
+                    setCurrentUser(getLoggedInAlumni());
                     return;
                   }
                   if (modalConnStatus === "pending_sent") {
-                    cancelConnectionRequest(currentUser.id, selectedProfile.id).then(() => {
-                      getAlumniList().then((list) => setAlumniList(list));
-                    });
                     return;
                   }
                   if (modalConnStatus === "pending_received") {
-                    acceptConnectionRequest(selectedProfile.id, currentUser.id).then(() => {
-                      getAlumniList().then((list) => setAlumniList(list));
-                      setCurrentUser(getLoggedInAlumni());
-                    });
+                    await acceptConnectionRequest(selectedProfile.id, currentUser.id);
+                    getAlumniList().then((list) => setAlumniList(list));
+                    setCurrentUser(getLoggedInAlumni());
                     return;
                   }
-                  // None -> send request
-                  sendConnectionRequest(currentUser.id, selectedProfile.id).then(() => {
-                    getAlumniList().then((list) => setAlumniList(list));
-                  });
+                  // None -> send request immediately & mark as pending_sent
+                  setPendingSentIds((prev) => new Set([...prev, selectedProfile.id]));
+                  await sendConnectionRequest(currentUser.id, selectedProfile.id);
                 };
 
                 return (
@@ -1428,16 +1460,17 @@ export default function DirectoryPage() {
                         <button
                           type="button"
                           onClick={handleModalConnectClick}
-                          className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
+                          disabled={modalConnStatus === "pending_sent"}
+                          className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs ${
                             isBatchmateWithMe
-                              ? "bg-[#2D5A43] text-white border border-emerald-700 shadow-xs"
+                              ? "bg-[#2D5A43] text-white border border-emerald-700 shadow-xs cursor-default"
                               : modalConnStatus === "connected"
-                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                              ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 active:scale-95"
                               : modalConnStatus === "pending_sent"
-                              ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
+                              ? "bg-slate-200 text-slate-600 border border-slate-300 cursor-not-allowed opacity-85 shadow-none"
                               : modalConnStatus === "pending_received"
-                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm"
-                              : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
+                              ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm active:scale-95"
+                              : "bg-[#0F172A] text-white hover:bg-[#2D5A43] active:scale-95"
                           }`}
                           title={
                             isBatchmateWithMe
@@ -1445,20 +1478,26 @@ export default function DirectoryPage() {
                               : modalConnStatus === "connected"
                               ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                               : modalConnStatus === "pending_sent"
-                              ? "रिक्वेस्ट भेजी गई है (क्लिक करके कैंसिल करें)"
+                              ? "कनेक्शन अनुरोध भेजा जा चुका है (Connection Requested)"
                               : modalConnStatus === "pending_received"
                               ? "कनेक्शन रिक्वेस्ट स्वीकार करें (Accept Request)"
                               : "कनेक्शन रिक्वेस्ट भेजें"
                           }
                         >
-                          <Users2 className="w-4 h-4" />
+                          {modalConnStatus === "pending_sent" ? (
+                            <Clock className="w-4 h-4 text-slate-500 animate-pulse" />
+                          ) : modalConnStatus === "connected" ? (
+                            <Check className="w-4 h-4 text-emerald-600" />
+                          ) : (
+                            <Users2 className="w-4 h-4" />
+                          )}
                           <span>
                             {isBatchmateWithMe
                               ? "Batchmate ✓"
                               : modalConnStatus === "connected"
                               ? "Connected ✓"
                               : modalConnStatus === "pending_sent"
-                              ? "Request Sent ⏳"
+                              ? "Connection Requested"
                               : modalConnStatus === "pending_received"
                               ? "Accept Request ✓"
                               : "Connect"}
