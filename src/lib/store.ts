@@ -1926,6 +1926,7 @@ export async function sendConnectionRequest(senderId: string, receiverId: string
 
 export async function cancelConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
   try {
+    // 1. Remove connection request record
     await supabase
       .from("community_posts")
       .delete()
@@ -1933,6 +1934,14 @@ export async function cancelConnectionRequest(senderId: string, receiverId: stri
       .eq("user_id", senderId)
       .eq("description", receiverId)
       .eq("title", "pending");
+
+    // 2. Also clean up any unread notification created for this request
+    await supabase
+      .from("notifications")
+      .delete()
+      .eq("user_id", receiverId)
+      .eq("actor_id", senderId)
+      .eq("type", "connection_request");
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("connection_requests_updated"));
@@ -2006,24 +2015,42 @@ export async function rejectConnectionRequest(senderId: string, receiverId: stri
 
 export async function getIncomingConnectionRequests(userId: string): Promise<ConnectionRequestItem[]> {
   try {
+    // 1. First fetch users that current user has already sent a pending request to
+    const { data: sentData } = await supabase
+      .from("community_posts")
+      .select("description")
+      .eq("content_type", "connection_request")
+      .eq("user_id", userId)
+      .eq("title", "pending");
+
+    const sentTargetSet = new Set((sentData || []).map((r: any) => r.description as string));
+
+    // 2. Fetch requests sent TO this user (strictly receiver is userId, sender is someone else)
     const { data, error } = await supabase
       .from("community_posts")
       .select("*")
       .eq("content_type", "connection_request")
       .eq("description", userId)
+      .neq("user_id", userId)
       .eq("title", "pending")
       .order("created_at", { ascending: false });
 
     if (!error && data) {
       const allAlumni = await getAlumniList();
-      return data.map((r: any) => ({
-        id: r.id,
-        senderId: r.user_id,
-        receiverId: r.description,
-        status: "pending",
-        createdAt: r.created_at,
-        senderProfile: allAlumni.find((a) => a.id === r.user_id),
-      }));
+      // Ensure:
+      // - Not sent by self
+      // - Target of incoming request is this user
+      // - If current user has sent a request to this person, do not display in incoming
+      return data
+        .filter((r: any) => r.user_id !== userId && r.description === userId && !sentTargetSet.has(r.user_id))
+        .map((r: any) => ({
+          id: r.id,
+          senderId: r.user_id,
+          receiverId: r.description,
+          status: "pending",
+          createdAt: r.created_at,
+          senderProfile: allAlumni.find((a) => a.id === r.user_id),
+        }));
     }
   } catch (err) {
     console.error("getIncomingConnectionRequests error:", err);
@@ -2046,12 +2073,18 @@ export async function getUserPendingConnectionIds(userId: string): Promise<{
       .or(`user_id.eq.${userId},description.eq.${userId}`);
 
     if (!error && data) {
+      // Outgoing pending requests
       const sentTargetIds = data
-        .filter((r: any) => r.user_id === userId)
+        .filter((r: any) => r.user_id === userId && r.description !== userId)
         .map((r: any) => r.description as string);
+
+      const sentTargetSet = new Set(sentTargetIds);
+
+      // Incoming pending requests (excluding self and excluding anyone current user already sent request to)
       const receivedSenderIds = data
-        .filter((r: any) => r.description === userId)
+        .filter((r: any) => r.description === userId && r.user_id !== userId && !sentTargetSet.has(r.user_id))
         .map((r: any) => r.user_id as string);
+
       return { sentTargetIds, receivedSenderIds };
     }
   } catch (err) {
@@ -2133,15 +2166,15 @@ export async function getConnectionState(
       .or(`user_id.eq.${userId},description.eq.${userId}`);
 
     if (data && data.length > 0) {
-      const match = data.find(
-        (r: any) =>
-          (r.user_id === userId && r.description === targetId) ||
-          (r.user_id === targetId && r.description === userId)
+      const sentMatch = data.find(
+        (r: any) => r.user_id === userId && r.description === targetId
       );
-      if (match) {
-        if (match.user_id === userId) return "pending_sent";
-        return "pending_received";
-      }
+      if (sentMatch) return "pending_sent";
+
+      const receivedMatch = data.find(
+        (r: any) => r.user_id === targetId && r.description === userId
+      );
+      if (receivedMatch) return "pending_received";
     }
   } catch {}
 

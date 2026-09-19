@@ -735,6 +735,13 @@ export default function DirectoryPage() {
                 onConnectionRequestSent={(targetId) => {
                   setPendingSentIds((prev) => new Set([...prev, targetId]));
                 }}
+                onConnectionRequestRevoked={(targetId) => {
+                  setPendingSentIds((prev) => {
+                    const next = new Set(prev);
+                    next.delete(targetId);
+                    return next;
+                  });
+                }}
               />
             ))}
           </div>
@@ -1440,6 +1447,13 @@ export default function DirectoryPage() {
                     return;
                   }
                   if (modalConnStatus === "pending_sent") {
+                    // Revoke sent connection request
+                    setPendingSentIds((prev) => {
+                      const next = new Set(prev);
+                      next.delete(selectedProfile.id);
+                      return next;
+                    });
+                    await cancelConnectionRequest(currentUser.id, selectedProfile.id);
                     return;
                   }
                   if (modalConnStatus === "pending_received") {
@@ -1460,14 +1474,13 @@ export default function DirectoryPage() {
                         <button
                           type="button"
                           onClick={handleModalConnectClick}
-                          disabled={modalConnStatus === "pending_sent"}
-                          className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs ${
+                          className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs cursor-pointer ${
                             isBatchmateWithMe
                               ? "bg-[#2D5A43] text-white border border-emerald-700 shadow-xs cursor-default"
                               : modalConnStatus === "connected"
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 active:scale-95"
                               : modalConnStatus === "pending_sent"
-                              ? "bg-slate-200 text-slate-600 border border-slate-300 cursor-not-allowed opacity-85 shadow-none"
+                              ? "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 active:scale-95 group/modalreq"
                               : modalConnStatus === "pending_received"
                               ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm active:scale-95"
                               : "bg-[#0F172A] text-white hover:bg-[#2D5A43] active:scale-95"
@@ -1478,14 +1491,17 @@ export default function DirectoryPage() {
                               : modalConnStatus === "connected"
                               ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                               : modalConnStatus === "pending_sent"
-                              ? "कनेक्शन अनुरोध भेजा जा चुका है (Connection Requested)"
+                              ? "अनुरोध भेजा गया है। वापस लेने के लिए क्लिक करें (Click to Revoke Request)"
                               : modalConnStatus === "pending_received"
                               ? "कनेक्शन रिक्वेस्ट स्वीकार करें (Accept Request)"
                               : "कनेक्शन रिक्वेस्ट भेजें"
                           }
                         >
                           {modalConnStatus === "pending_sent" ? (
-                            <Clock className="w-4 h-4 text-slate-500 animate-pulse" />
+                            <>
+                              <Clock className="w-4 h-4 text-slate-500 group-hover/modalreq:hidden animate-pulse" />
+                              <X className="w-4 h-4 text-rose-600 hidden group-hover/modalreq:inline" />
+                            </>
                           ) : modalConnStatus === "connected" ? (
                             <Check className="w-4 h-4 text-emerald-600" />
                           ) : (
@@ -1497,7 +1513,12 @@ export default function DirectoryPage() {
                               : modalConnStatus === "connected"
                               ? "Connected ✓"
                               : modalConnStatus === "pending_sent"
-                              ? "Connection Requested"
+                              ? (
+                                <>
+                                  <span className="group-hover/modalreq:hidden">Connection Requested</span>
+                                  <span className="hidden group-hover/modalreq:inline">Revoke Request ✕</span>
+                                </>
+                              )
                               : modalConnStatus === "pending_received"
                               ? "Accept Request ✓"
                               : "Connect"}

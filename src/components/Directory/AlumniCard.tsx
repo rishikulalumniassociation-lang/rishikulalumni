@@ -18,7 +18,8 @@ import {
   Heart,
   Crown,
   Clock,
-  Check
+  Check,
+  X
 } from "lucide-react";
 import {
   toggleAlumniConnection,
@@ -40,6 +41,7 @@ interface AlumniCardProps {
   onSelect?: (alumni: AlumniProfile) => void;
   onConnectionToggle?: () => void;
   onConnectionRequestSent?: (targetId: string) => void;
+  onConnectionRequestRevoked?: (targetId: string) => void;
 }
 
 export default function AlumniCard({
@@ -50,7 +52,8 @@ export default function AlumniCard({
   receivedRequestSenderIds,
   onSelect,
   onConnectionToggle,
-  onConnectionRequestSent
+  onConnectionRequestSent,
+  onConnectionRequestRevoked
 }: AlumniCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
@@ -139,7 +142,19 @@ export default function AlumniCard({
     }
 
     if (connectionStatus === "pending_sent") {
-      // Once requested, stays requested until accepted
+      // User clicked while "Connection Requested" -> REVOKE the sent request!
+      setLocalPendingSent(false);
+      setIsSending(true);
+      if (onConnectionRequestRevoked) {
+        onConnectionRequestRevoked(alumni.id);
+      }
+      try {
+        await cancelConnectionRequest(currentAlumniId, alumni.id);
+      } catch (err) {
+        console.error("Failed to revoke connection request:", err);
+      } finally {
+        setIsSending(false);
+      }
       return;
     }
 
@@ -430,7 +445,7 @@ export default function AlumniCard({
           ) : (
             <button
               onClick={handleConnectClick}
-              disabled={connectionStatus === "pending_sent" || isSending}
+              disabled={isSending}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-xs ${
                 isBatchmateWithMe
                   ? isPatronMember
@@ -438,21 +453,23 @@ export default function AlumniCard({
                     : "bg-[#2D5A43] text-white border border-emerald-700 cursor-default"
                   : connectionStatus === "connected"
                   ? isPatronMember
-                    ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700 active:scale-95"
-                    : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 active:scale-95"
+                    ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700 active:scale-95 cursor-pointer"
+                    : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 active:scale-95 cursor-pointer"
                   : connectionStatus === "pending_sent"
-                  ? "bg-slate-200 text-slate-600 border border-slate-300 cursor-not-allowed opacity-85 shadow-none"
+                  ? isPatronMember
+                    ? "bg-slate-800 text-slate-300 border border-slate-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700 cursor-pointer active:scale-95 group/req"
+                    : "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300 cursor-pointer active:scale-95 group/req"
                   : connectionStatus === "pending_received"
-                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm active:scale-95"
+                  ? "bg-emerald-600 text-white hover:bg-emerald-700 shadow-sm active:scale-95 cursor-pointer"
                   : isSending
                   ? "bg-slate-200 text-slate-500 border border-slate-300 cursor-wait opacity-80"
                   : currentAlumniId
                   ? isPatronMember
-                    ? "bg-amber-400 text-slate-950 hover:bg-amber-300 active:scale-95"
-                    : "bg-[#0F172A] text-white hover:bg-[#2D5A43] active:scale-95"
+                    ? "bg-amber-400 text-slate-950 hover:bg-amber-300 active:scale-95 cursor-pointer"
+                    : "bg-[#0F172A] text-white hover:bg-[#2D5A43] active:scale-95 cursor-pointer"
                   : isPatronMember
-                  ? "bg-slate-800 text-slate-100 border border-slate-600 hover:bg-amber-400 hover:text-slate-950 active:scale-95"
-                  : "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-[#0F172A] hover:text-white active:scale-95"
+                  ? "bg-slate-800 text-slate-100 border border-slate-600 hover:bg-amber-400 hover:text-slate-950 active:scale-95 cursor-pointer"
+                  : "bg-slate-100 text-slate-700 border border-slate-300 hover:bg-[#0F172A] hover:text-white active:scale-95 cursor-pointer"
               }`}
               title={
                 !currentAlumniId
@@ -462,14 +479,17 @@ export default function AlumniCard({
                   : connectionStatus === "connected"
                   ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                   : connectionStatus === "pending_sent"
-                  ? "कनेक्शन अनुरोध भेजा जा चुका है (Connection Requested)"
+                  ? "अनुरोध भेजा गया है। वापस लेने के लिए क्लिक करें (Click to Revoke Request)"
                   : connectionStatus === "pending_received"
                   ? "कनेक्शन रिक्वेस्ट स्वीकार करें (Accept Request)"
                   : "कनेक्शन रिक्वेस्ट भेजें"
               }
             >
               {connectionStatus === "pending_sent" ? (
-                <Clock className="w-3.5 h-3.5 text-slate-500 animate-pulse" />
+                <>
+                  <Clock className="w-3.5 h-3.5 text-slate-500 group-hover/req:hidden animate-pulse" />
+                  <X className="w-3.5 h-3.5 text-rose-600 hidden group-hover/req:inline" />
+                </>
               ) : connectionStatus === "connected" ? (
                 <Check className="w-3.5 h-3.5 text-emerald-600" />
               ) : (
@@ -481,7 +501,12 @@ export default function AlumniCard({
                   : connectionStatus === "connected"
                   ? "Connected ✓"
                   : connectionStatus === "pending_sent"
-                  ? "Connection Requested"
+                  ? (
+                    <>
+                      <span className="group-hover/req:hidden">Connection Requested</span>
+                      <span className="hidden group-hover/req:inline">Revoke Request ✕</span>
+                    </>
+                  )
                   : connectionStatus === "pending_received"
                   ? "Accept Request ✓"
                   : isSending
