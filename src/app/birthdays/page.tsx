@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { Cake, Sparkles, Gift, MessageCircle, Calendar, Users, HeartHandshake, Lock, Crown, ChevronRight } from "lucide-react";
-import { getAlumniList, getLoggedInAlumni, isAdminAuthenticated } from "@/lib/store";
+import { getAlumniList, getLoggedInAlumni, isAdminAuthenticated, isBatchmate } from "@/lib/store";
 import { AlumniProfile } from "@/types";
 
 export default function BirthdaysPage() {
@@ -354,7 +354,7 @@ export default function BirthdaysPage() {
                         <span>{hasWished ? "Wished! 🎉" : "Send Birthday Blessings"}</span>
                       </button>
 
-                      {alumnus.whatsappNumber && currentUser && alumnus.id !== currentUser.id && (currentUser.connectedAlumniIds || []).includes(alumnus.id) && (
+                      {alumnus.whatsappNumber && currentUser && alumnus.id !== currentUser.id && ((currentUser.connectedAlumniIds || []).includes(alumnus.id) || isBatchmate(currentUser, alumnus)) && (
                         <a
                           href={`https://wa.me/${alumnus.whatsappNumber}?text=${encodeURIComponent(
                             `Happy Birthday, ${alumnus.fullName}! Warm wishes and blessings from your fellow Rishikul alumnus.`

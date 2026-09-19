@@ -2010,6 +2010,32 @@ export async function getIncomingConnectionRequests(userId: string): Promise<Con
   }));
 }
 
+export function isBatchmate(a?: AlumniProfile | null, b?: AlumniProfile | null): boolean {
+  if (!a || !b || a.id === b.id) return false;
+  const ugMatch = Boolean(a.ugBatchYear && b.ugBatchYear && a.ugBatchYear === b.ugBatchYear);
+  const pgMatch = Boolean(a.pgBatchYear && b.pgBatchYear && a.pgBatchYear === b.pgBatchYear);
+  return ugMatch || pgMatch;
+}
+
+export function getEffectiveConnectedAlumni(
+  profile?: AlumniProfile | null,
+  allAlumni: AlumniProfile[] = []
+): AlumniProfile[] {
+  if (!profile) return [];
+  const idSet = new Set<string>(profile.connectedAlumniIds || []);
+
+  // Automatically connect all batchmates (same UG or PG batch)
+  for (const other of allAlumni) {
+    if (other.id !== profile.id && isBatchmate(profile, other)) {
+      idSet.add(other.id);
+    }
+  }
+
+  return Array.from(idSet)
+    .map((id) => allAlumni.find((a) => a.id === id))
+    .filter(Boolean) as AlumniProfile[];
+}
+
 export function getConnectionStateSync(
   userId: string | undefined,
   targetId: string,
@@ -2019,12 +2045,19 @@ export function getConnectionStateSync(
   if (userId === targetId) return "connected";
 
   const user = allAlumni.find((a) => a.id === userId);
+  const target = allAlumni.find((a) => a.id === targetId);
+
+  // Automatic mutual connection for same UG / PG batchmates!
+  if (user && target && isBatchmate(user, target)) {
+    return "connected";
+  }
+
   if (user?.connectedAlumniIds?.includes(targetId)) {
     return "connected";
   }
 
-  const target = allAlumni.find((a) => a.id === targetId);
-  if (target?.connectedAlumniIds?.includes(userId)) {
+  const targetProfile = target;
+  if (targetProfile?.connectedAlumniIds?.includes(userId)) {
     return "connected";
   }
 

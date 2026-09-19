@@ -63,7 +63,9 @@ import {
   getMembershipSettings,
   getIncomingConnectionRequests,
   acceptConnectionRequest,
-  rejectConnectionRequest
+  rejectConnectionRequest,
+  isBatchmate,
+  getEffectiveConnectedAlumni
 } from "@/lib/store";
 import RevealOnScroll from "@/components/Motion/RevealOnScroll";
 
@@ -282,11 +284,9 @@ export default function FeedPage() {
 
   // ── Social Network Groups ──────────────────────────────────────────────────
 
-  // Connections: alumni connected to currentUser
+  // Connections: alumni connected to currentUser (including automatic batchmates)
   const myConnections = useMemo(() => {
-    if (!currentUser?.connectedAlumniIds?.length) return [];
-    const ids = new Set(currentUser.connectedAlumniIds);
-    return alumniList.filter((a) => ids.has(a.id));
+    return getEffectiveConnectedAlumni(currentUser, alumniList);
   }, [currentUser, alumniList]);
 
   // Family: alumni linked as family members
@@ -1895,7 +1895,7 @@ export default function FeedPage() {
                           <p className="text-[11px] text-slate-500 truncate mt-0.5">{a.designation}</p>
                         )}
                       </div>
-                      {a.whatsappNumber && currentUser?.connectedAlumniIds?.includes(a.id) && (
+                      {a.whatsappNumber && (currentUser?.connectedAlumniIds?.includes(a.id) || isBatchmate(currentUser, a)) && (
                         <a
                           href={`https://wa.me/91${a.whatsappNumber.replace(/\D/g, "")}`}
                           target="_blank"

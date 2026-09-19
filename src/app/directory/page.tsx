@@ -13,7 +13,9 @@ import {
   sendConnectionRequest,
   cancelConnectionRequest,
   acceptConnectionRequest,
-  getConnectionStateSync
+  getConnectionStateSync,
+  isBatchmate,
+  getEffectiveConnectedAlumni
 } from "@/lib/store";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -623,9 +625,7 @@ export default function DirectoryPage() {
 
       {/* Profile Detail Modal */}
       {selectedProfile && (() => {
-        const connectedList = (selectedProfile.connectedAlumniIds || [])
-          .map((id) => alumniList.find((a) => a.id === id))
-          .filter(Boolean) as AlumniProfile[];
+        const connectedList = getEffectiveConnectedAlumni(selectedProfile, alumniList);
 
         const teacherList = (selectedProfile.teacherAlumniIds || [])
           .map((id) => alumniList.find((a) => a.id === id))
@@ -1260,13 +1260,20 @@ export default function DirectoryPage() {
 
               {/* Modal Bottom Actions */}
               {(() => {
+                const isBatchmateWithMe = Boolean(
+                  currentUser && selectedProfile && isBatchmate(currentUser, selectedProfile)
+                );
                 const modalConnStatus = currentUser && selectedProfile
-                  ? getConnectionStateSync(currentUser.id, selectedProfile.id, alumniList)
+                  ? (isBatchmateWithMe ? "connected" : getConnectionStateSync(currentUser.id, selectedProfile.id, alumniList))
                   : "none";
 
                 const handleModalConnectClick = () => {
                   if (!currentUser) {
                     router.push("/login?redirect=/directory");
+                    return;
+                  }
+                  if (isBatchmateWithMe) {
+                    // Always connected batchmates
                     return;
                   }
                   if (modalConnStatus === "connected") {
@@ -1303,7 +1310,9 @@ export default function DirectoryPage() {
                           type="button"
                           onClick={handleModalConnectClick}
                           className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
-                            modalConnStatus === "connected"
+                            isBatchmateWithMe
+                              ? "bg-[#2D5A43] text-white border border-emerald-700 shadow-xs"
+                              : modalConnStatus === "connected"
                               ? "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
                               : modalConnStatus === "pending_sent"
                               ? "bg-amber-100 text-amber-900 border border-amber-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
@@ -1312,7 +1321,9 @@ export default function DirectoryPage() {
                               : "bg-[#0F172A] text-white hover:bg-[#2D5A43]"
                           }`}
                           title={
-                            modalConnStatus === "connected"
+                            isBatchmateWithMe
+                              ? "आप दोनों सहपाठी (Batchmates) हैं - सीधे जुड़े हुए हैं"
+                              : modalConnStatus === "connected"
                               ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                               : modalConnStatus === "pending_sent"
                               ? "रिक्वेस्ट भेजी गई है (क्लिक करके कैंसिल करें)"
@@ -1323,7 +1334,9 @@ export default function DirectoryPage() {
                         >
                           <Users2 className="w-4 h-4" />
                           <span>
-                            {modalConnStatus === "connected"
+                            {isBatchmateWithMe
+                              ? "Batchmate ✓"
+                              : modalConnStatus === "connected"
                               ? "Connected ✓"
                               : modalConnStatus === "pending_sent"
                               ? "Request Sent ⏳"
@@ -1343,8 +1356,8 @@ export default function DirectoryPage() {
                           <span>Login to Connect</span>
                         </button>
                       )}
-                      {/* WhatsApp Connect - ONLY visible when mutually connected */}
-                      {selectedProfile.whatsappNumber && (!currentUser || selectedProfile.id !== currentUser.id) && modalConnStatus === "connected" && (
+                      {/* WhatsApp Connect - visible when mutually connected or batchmates */}
+                      {selectedProfile.whatsappNumber && (!currentUser || selectedProfile.id !== currentUser.id) && (modalConnStatus === "connected" || isBatchmateWithMe) && (
                         <a
                           href={`https://wa.me/${selectedProfile.whatsappNumber}`}
                           target="_blank"
@@ -1364,7 +1377,7 @@ export default function DirectoryPage() {
                     </div>
 
                     {/* Helper text under Connect button */}
-                    {currentUser && selectedProfile.id !== currentUser.id && modalConnStatus !== "connected" && (
+                    {currentUser && selectedProfile.id !== currentUser.id && modalConnStatus !== "connected" && !isBatchmateWithMe && (
                       <p className="w-full text-center text-[11px] text-slate-500 italic mt-2.5">
                         जब रिक्वेस्ट एक्सेप्ट होगी, तब आप WhatsApp पर कनेक्ट कर सकते हैं
                       </p>

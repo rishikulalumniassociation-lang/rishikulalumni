@@ -32,7 +32,7 @@ import {
   ChevronRight,
   Crown
 } from "lucide-react";
-import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost } from "@/lib/store";
+import { getLoggedInAlumni, setLoggedInAlumni, getAlumniList, updateAlumniProfile, getCommunityPosts, deleteCommunityPost, getEffectiveConnectedAlumni } from "@/lib/store";
 import { compressImageTo50Kb } from "@/lib/imageCompressor";
 import { AlumniProfile, WorkExperience, AlumniFamilyRelation, FamilyRelationType, SpecialAchievement, SpecialAchievementType, CommunityPost, JobType } from "@/types";
 import { JOB_TYPE_OPTIONS } from "@/lib/mockData";
@@ -337,10 +337,8 @@ export default function AlumniProfilePage() {
     void updateAlumniProfile(user.id, { teacherAlumniIds: updated });
   };
 
-  // Friends / Connected Batchmates
-  const connectedFriends = (user.connectedAlumniIds || [])
-    .map((id) => allAlumni.find((a) => a.id === id))
-    .filter(Boolean) as AlumniProfile[];
+  // Friends / Connected Batchmates (including automatic batchmates)
+  const connectedFriends = getEffectiveConnectedAlumni(user, allAlumni);
 
   return (
     <div className="min-h-screen bg-[#FAF7F2] pt-8 pb-32 sm:py-12">

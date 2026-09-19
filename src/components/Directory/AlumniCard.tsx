@@ -23,7 +23,9 @@ import {
   sendConnectionRequest,
   cancelConnectionRequest,
   acceptConnectionRequest,
-  getConnectionStateSync
+  getConnectionStateSync,
+  isBatchmate,
+  getEffectiveConnectedAlumni
 } from "@/lib/store";
 import { useRouter } from "next/navigation";
 
@@ -44,29 +46,42 @@ export default function AlumniCard({
 }: AlumniCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<"none" | "pending_sent" | "pending_received" | "connected">(() =>
-    getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
+
+  const currentUserProfile = React.useMemo(
+    () => allAlumni.find((a) => a.id === currentAlumniId),
+    [allAlumni, currentAlumniId]
   );
-  const [connectionsCount, setConnectionsCount] = useState((alumni.connectedAlumniIds || []).length);
+  const isBatchmateWithMe = Boolean(
+    currentUserProfile && isBatchmate(currentUserProfile, alumni)
+  );
+
+  const connectedPeople = React.useMemo(() => {
+    return getEffectiveConnectedAlumni(alumni, allAlumni);
+  }, [alumni, allAlumni]);
+
+  const [connectionStatus, setConnectionStatus] = useState<"none" | "pending_sent" | "pending_received" | "connected">(() =>
+    isBatchmateWithMe ? "connected" : getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
+  );
+  const [connectionsCount, setConnectionsCount] = useState(connectedPeople.length);
 
   React.useEffect(() => {
-    setConnectionStatus(getConnectionStateSync(currentAlumniId, alumni.id, allAlumni));
-    setConnectionsCount((alumni.connectedAlumniIds || []).length);
-  }, [alumni.connectedAlumniIds, currentAlumniId, allAlumni, alumni.id]);
+    setConnectionStatus(
+      isBatchmateWithMe ? "connected" : getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
+    );
+    setConnectionsCount(connectedPeople.length);
+  }, [alumni.connectedAlumniIds, currentAlumniId, allAlumni, alumni.id, isBatchmateWithMe, connectedPeople.length]);
 
   React.useEffect(() => {
     const handleReqUpdate = () => {
-      setConnectionStatus(getConnectionStateSync(currentAlumniId, alumni.id, allAlumni));
+      setConnectionStatus(
+        isBatchmateWithMe ? "connected" : getConnectionStateSync(currentAlumniId, alumni.id, allAlumni)
+      );
     };
     window.addEventListener("connection_requests_updated", handleReqUpdate);
     return () => window.removeEventListener("connection_requests_updated", handleReqUpdate);
-  }, [currentAlumniId, alumni.id, allAlumni]);
+  }, [currentAlumniId, alumni.id, allAlumni, isBatchmateWithMe]);
 
   const isSelf = Boolean(currentAlumniId && currentAlumniId === alumni.id);
-
-  const connectedPeople = (alumni.connectedAlumniIds || [])
-    .map((id) => allAlumni.find((a) => a.id === id))
-    .filter(Boolean) as AlumniProfile[];
 
   // Linked family alumni members
   const familyPeople = (alumni.familyAlumniRelations || [])
@@ -91,6 +106,11 @@ export default function AlumniCard({
     e.stopPropagation();
     if (!currentAlumniId) {
       router.push("/login?redirect=/directory");
+      return;
+    }
+
+    if (isBatchmateWithMe) {
+      // Always connected batchmates — direct WhatsApp enabled
       return;
     }
 
@@ -393,7 +413,11 @@ export default function AlumniCard({
             <button
               onClick={handleConnectClick}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 ${
-                connectionStatus === "connected"
+                isBatchmateWithMe
+                  ? isPatronMember
+                    ? "bg-amber-400 text-slate-950 border border-amber-300"
+                    : "bg-[#2D5A43] text-white border border-emerald-700"
+                  : connectionStatus === "connected"
                   ? isPatronMember
                     ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700"
                     : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
@@ -412,6 +436,8 @@ export default function AlumniCard({
               title={
                 !currentAlumniId
                   ? "कनेक्ट करने के लिए कृपया पहले लॉगिन करें"
+                  : isBatchmateWithMe
+                  ? "आप दोनों सहपाठी (Batchmates) हैं - सीधे जुड़े हुए हैं"
                   : connectionStatus === "connected"
                   ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                   : connectionStatus === "pending_sent"
@@ -423,7 +449,9 @@ export default function AlumniCard({
             >
               <Users2 className="w-3 h-3" />
               <span>
-                {connectionStatus === "connected"
+                {isBatchmateWithMe
+                  ? "Batchmate ✓"
+                  : connectionStatus === "connected"
                   ? "Connected ✓"
                   : connectionStatus === "pending_sent"
                   ? "Request Sent ⏳"
@@ -438,7 +466,7 @@ export default function AlumniCard({
         </div>
 
         {/* Helper text under connect button */}
-        {connectionStatus !== "connected" && !isSelf && (
+        {connectionStatus !== "connected" && !isSelf && !isBatchmateWithMe && (
           <p className={`text-[10px] text-right mt-1 italic ${
             isPatronMember ? "text-slate-400" : "text-slate-500"
           }`}>
@@ -458,8 +486,8 @@ export default function AlumniCard({
         </span>
 
         <div className="flex items-center gap-1.5">
-          {/* WhatsApp button only visible when mutually connected */}
-          {!isSelf && alumni.whatsappNumber && connectionStatus === "connected" && (
+          {/* WhatsApp button visible when mutually connected or batchmates */}
+          {!isSelf && alumni.whatsappNumber && (connectionStatus === "connected" || isBatchmateWithMe) && (
             <a
               href={`https://wa.me/${alumni.whatsappNumber}`}
               target="_blank"
