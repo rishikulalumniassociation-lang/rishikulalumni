@@ -243,14 +243,67 @@ function rowToCommunityAchievement(row: Record<string, unknown>): CommunityAchie
 // ---------------------------------------------------------------------------
 // ALUMNI PROFILES
 // ---------------------------------------------------------------------------
+// IN-MEMORY & SESSION CACHE FOR INSTANT 0MS SCREEN SWITCHING
+// ---------------------------------------------------------------------------
+let memoryAlumniCache: AlumniProfile[] | null = null;
+let lastAlumniFetchTime = 0;
+const ALUMNI_CACHE_TTL_MS = 90 * 1000; // 90 seconds fresh cache
 
-export async function getAlumniList(): Promise<AlumniProfile[]> {
+export function invalidateAlumniCache() {
+  memoryAlumniCache = null;
+  lastAlumniFetchTime = 0;
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.removeItem("rishikul_alumni_cache");
+      sessionStorage.removeItem("rishikul_alumni_cache_time");
+    } catch {}
+  }
+}
+
+export async function getAlumniList(forceFresh = false): Promise<AlumniProfile[]> {
+  const now = Date.now();
+
+  // 1. Instant 0ms return from in-memory cache
+  if (!forceFresh && memoryAlumniCache && memoryAlumniCache.length > 0 && (now - lastAlumniFetchTime < ALUMNI_CACHE_TTL_MS)) {
+    return memoryAlumniCache;
+  }
+
+  // 2. Instant return from sessionStorage if memory cache was cleared (e.g. across page refreshes)
+  if (!forceFresh && !memoryAlumniCache && typeof window !== "undefined") {
+    try {
+      const cached = sessionStorage.getItem("rishikul_alumni_cache");
+      const cachedTime = sessionStorage.getItem("rishikul_alumni_cache_time");
+      if (cached && cachedTime && (now - Number(cachedTime) < ALUMNI_CACHE_TTL_MS)) {
+        memoryAlumniCache = JSON.parse(cached);
+        lastAlumniFetchTime = Number(cachedTime);
+        return memoryAlumniCache!;
+      }
+    } catch {}
+  }
+
+  // 3. Fetch from Supabase
   const { data, error } = await supabase
     .from("profiles")
     .select("*")
     .order("created_at", { ascending: false });
-  if (error) { console.error("getAlumniList:", error.message); return []; }
-  return (data ?? []).map(rowToProfile);
+
+  if (error) {
+    console.error("getAlumniList:", error.message);
+    return memoryAlumniCache || [];
+  }
+
+  const profiles = (data ?? []).map(rowToProfile);
+  memoryAlumniCache = profiles;
+  lastAlumniFetchTime = now;
+
+  if (typeof window !== "undefined") {
+    try {
+      sessionStorage.setItem("rishikul_alumni_cache", JSON.stringify(profiles));
+      sessionStorage.setItem("rishikul_alumni_cache_time", String(now));
+    } catch {}
+  }
+
+  return profiles;
 }
 
 export async function saveAlumniList(list: AlumniProfile[]): Promise<void> {
@@ -373,11 +426,20 @@ export async function updateAlumniProfile(id: string, updates: Partial<AlumniPro
   }
   if (error) { console.error("updateAlumniProfile:", error.message); return; }
 
+  // Keep in-memory and session cache in sync immediately
+  if (memoryAlumniCache) {
+    memoryAlumniCache = memoryAlumniCache.map((p) => (p.id === id ? { ...p, ...updates } : p));
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("rishikul_alumni_cache", JSON.stringify(memoryAlumniCache));
+      } catch {}
+    }
+  }
+
   // Refresh session if this is the logged-in user
   const currentUser = getLoggedInAlumni();
   if (currentUser && currentUser.id === id) {
-    const fresh = await getAlumniById(id);
-    if (fresh) setLoggedInAlumni(fresh);
+    setLoggedInAlumni({ ...currentUser, ...updates });
   }
   if (typeof window !== "undefined") window.dispatchEvent(new Event("alumni_updated"));
 }
@@ -424,23 +486,61 @@ export async function markAlumnusAsDeceased(alumniId: string, dateOfDemise: stri
 export async function toggleAlumniConnection(fromId: string, toId: string): Promise<void> {
   if (!fromId || !toId || fromId === toId) return;
 
-  const fromProfile = await getAlumniById(fromId);
+  // 1. Optimistically update in-memory cache and session immediately (<1ms)
+  if (memoryAlumniCache) {
+    memoryAlumniCache = memoryAlumniCache.map((p) => {
+      if (p.id === fromId) {
+        const cur = p.connectedAlumniIds || [];
+        const next = cur.includes(toId) ? cur.filter((id) => id !== toId) : [...cur, toId];
+        return { ...p, connectedAlumniIds: next };
+      }
+      if (p.id === toId) {
+        const cur = p.connectedAlumniIds || [];
+        const next = cur.includes(fromId) ? cur.filter((id) => id !== fromId) : [...cur, fromId];
+        return { ...p, connectedAlumniIds: next };
+      }
+      return p;
+    });
+
+    if (typeof window !== "undefined") {
+      try {
+        sessionStorage.setItem("rishikul_alumni_cache", JSON.stringify(memoryAlumniCache));
+      } catch {}
+    }
+  }
+
+  const currentUser = getLoggedInAlumni();
+  if (currentUser && currentUser.id === fromId) {
+    const cur = currentUser.connectedAlumniIds || [];
+    const next = cur.includes(toId) ? cur.filter((id) => id !== toId) : [...cur, toId];
+    setLoggedInAlumni({ ...currentUser, connectedAlumniIds: next });
+  }
+
+  // 2. Fetch both profiles in parallel
+  const [fromProfile, toProfile] = await Promise.all([
+    getAlumniById(fromId),
+    getAlumniById(toId),
+  ]);
+
   if (!fromProfile) return;
 
   const current = fromProfile.connectedAlumniIds || [];
   const isConn = current.includes(toId);
   const newConnections = isConn ? current.filter((id) => id !== toId) : [...current, toId];
 
-  await updateAlumniProfile(fromId, { connectedAlumniIds: newConnections });
+  // 3. Update both profiles in parallel
+  const updatePromises: Promise<any>[] = [
+    updateAlumniProfile(fromId, { connectedAlumniIds: newConnections })
+  ];
 
-  // Also update the other side
-  const toProfile = await getAlumniById(toId);
   if (toProfile) {
     const toCurrent = toProfile.connectedAlumniIds || [];
     const toIsConn = toCurrent.includes(fromId);
     const toNewConnections = toIsConn ? toCurrent.filter((id) => id !== fromId) : [...toCurrent, fromId];
-    await updateAlumniProfile(toId, { connectedAlumniIds: toNewConnections });
+    updatePromises.push(updateAlumniProfile(toId, { connectedAlumniIds: toNewConnections }));
   }
+
+  await Promise.all(updatePromises);
 }
 
 // ---------------------------------------------------------------------------
@@ -988,12 +1088,28 @@ function communityPostToRow(post: Omit<CommunityPost, "createdAt" | "updatedAt" 
   };
 }
 
+let memoryPostsCache: CommunityPost[] | null = null;
+let lastPostsFetchTime = 0;
+const POSTS_CACHE_TTL_MS = 60 * 1000;
+
+export function invalidatePostsCache() {
+  memoryPostsCache = null;
+  lastPostsFetchTime = 0;
+}
+
 export async function getCommunityPosts(options?: {
   category?: string;
   userId?: string;
   authorId?: string;
   includeHidden?: boolean;
 }): Promise<CommunityPost[]> {
+  const isDefaultQuery = !options || Object.keys(options).length === 0 || (options.category === "All" && !options.userId && !options.authorId && !options.includeHidden);
+  const now = Date.now();
+
+  if (isDefaultQuery && memoryPostsCache && memoryPostsCache.length > 0 && (now - lastPostsFetchTime < POSTS_CACHE_TTL_MS)) {
+    return memoryPostsCache;
+  }
+
   let query = supabase
     .from("community_posts")
     .select("*")
@@ -1017,9 +1133,14 @@ export async function getCommunityPosts(options?: {
   const { data, error } = await query;
   if (error) {
     console.error("getCommunityPosts error:", error.message);
-    return [];
+    return memoryPostsCache || [];
   }
-  return (data ?? []).map(rowToCommunityPost);
+  const posts = (data ?? []).map(rowToCommunityPost);
+  if (isDefaultQuery) {
+    memoryPostsCache = posts;
+    lastPostsFetchTime = now;
+  }
+  return posts;
 }
 
 export async function createCommunityPost(
@@ -1048,6 +1169,10 @@ export async function createCommunityPost(
   if (error) {
     console.error("createCommunityPost error:", error.message);
     throw new Error(error.message);
+  }
+
+  if (memoryPostsCache) {
+    memoryPostsCache = [fullPost, ...memoryPostsCache];
   }
 
   if (typeof window !== "undefined") {
@@ -1086,6 +1211,10 @@ export async function updateCommunityPost(
     throw new Error(error.message);
   }
 
+  if (memoryPostsCache) {
+    memoryPostsCache = memoryPostsCache.map((p) => (p.id === id ? { ...p, ...updates } : p));
+  }
+
   if (typeof window !== "undefined") {
     window.dispatchEvent(new Event("community_posts_updated"));
   }
@@ -1095,6 +1224,10 @@ export async function deleteCommunityPost(id: string): Promise<{ success: boolea
   try {
     const { error } = await supabase.from("community_posts").delete().eq("id", id);
     if (error) throw new Error(error.message);
+
+    if (memoryPostsCache) {
+      memoryPostsCache = memoryPostsCache.filter((p) => p.id !== id);
+    }
 
     if (typeof window !== "undefined") {
       window.dispatchEvent(new Event("community_posts_updated"));

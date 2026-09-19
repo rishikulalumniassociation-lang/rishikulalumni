@@ -1241,13 +1241,30 @@ export default function DirectoryPage() {
                 {currentUser && selectedProfile.id !== currentUser.id && (
                   <button
                     type="button"
-                    onClick={async () => {
-                      await toggleAlumniConnection(currentUser.id, selectedProfile.id);
-                      const freshList = await getAlumniList();
-                      setAlumniList(freshList);
-                      const freshProfile = freshList.find((a) => a.id === selectedProfile.id);
-                      if (freshProfile) setSelectedProfile(freshProfile);
-                      setCurrentUser(getLoggedInAlumni());
+                    onClick={() => {
+                      const isConnected = (selectedProfile.connectedAlumniIds || []).includes(currentUser.id);
+                      const nextIds = isConnected
+                        ? (selectedProfile.connectedAlumniIds || []).filter((id) => id !== currentUser.id)
+                        : [...(selectedProfile.connectedAlumniIds || []), currentUser.id];
+
+                      const updatedProfile = { ...selectedProfile, connectedAlumniIds: nextIds };
+                      setSelectedProfile(updatedProfile);
+
+                      setAlumniList((prev) =>
+                        prev.map((a) => (a.id === selectedProfile.id ? updatedProfile : a))
+                      );
+
+                      toggleAlumniConnection(currentUser.id, selectedProfile.id)
+                        .then(() => {
+                          setCurrentUser(getLoggedInAlumni());
+                        })
+                        .catch((err) => {
+                          console.error("Failed to toggle connection in modal:", err);
+                          setSelectedProfile(selectedProfile);
+                          setAlumniList((prev) =>
+                            prev.map((a) => (a.id === selectedProfile.id ? selectedProfile : a))
+                          );
+                        });
                     }}
                     className={`w-full sm:flex-1 py-3 text-center rounded-xl text-xs font-bold uppercase tracking-wider transition-all flex items-center justify-center gap-1.5 shadow-xs active:scale-95 ${
                       (selectedProfile.connectedAlumniIds || []).includes(currentUser.id)

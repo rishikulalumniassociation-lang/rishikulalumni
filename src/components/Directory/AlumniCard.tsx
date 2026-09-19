@@ -38,9 +38,15 @@ export default function AlumniCard({
 }: AlumniCardProps) {
   const router = useRouter();
   const [copied, setCopied] = useState(false);
+  const initialConnected = Boolean(currentAlumniId && (alumni.connectedAlumniIds || []).includes(currentAlumniId));
+  const [isConnected, setIsConnected] = useState(initialConnected);
+  const [connectionsCount, setConnectionsCount] = useState((alumni.connectedAlumniIds || []).length);
 
-  const isConnectedWithMe = Boolean(currentAlumniId && (alumni.connectedAlumniIds || []).includes(currentAlumniId));
-  const totalConnectionsCount = (alumni.connectedAlumniIds || []).length;
+  React.useEffect(() => {
+    setIsConnected(Boolean(currentAlumniId && (alumni.connectedAlumniIds || []).includes(currentAlumniId)));
+    setConnectionsCount((alumni.connectedAlumniIds || []).length);
+  }, [alumni.connectedAlumniIds, currentAlumniId]);
+
   const isSelf = Boolean(currentAlumniId && currentAlumniId === alumni.id);
 
   const connectedPeople = (alumni.connectedAlumniIds || [])
@@ -72,7 +78,16 @@ export default function AlumniCard({
       router.push("/login?redirect=/directory");
       return;
     }
-    toggleAlumniConnection(currentAlumniId, alumni.id);
+    const nextState = !isConnected;
+    setIsConnected(nextState);
+    setConnectionsCount((prev) => (nextState ? prev + 1 : Math.max(0, prev - 1)));
+
+    toggleAlumniConnection(currentAlumniId, alumni.id).catch((err) => {
+      console.error("Failed to toggle connection:", err);
+      setIsConnected(!nextState);
+      setConnectionsCount((prev) => (!nextState ? prev + 1 : Math.max(0, prev - 1)));
+    });
+
     if (onConnectionToggle) onConnectionToggle();
   };
 
@@ -317,8 +332,8 @@ export default function AlumniCard({
             <span className={`text-[11px] font-medium ${
               isPatronMember ? "text-slate-300" : "text-slate-500"
             }`}>
-              {totalConnectionsCount > 0
-                ? `${totalConnectionsCount} Alumni Connection${totalConnectionsCount > 1 ? "s" : ""}`
+              {connectionsCount > 0
+                ? `${connectionsCount} Alumni Connection${connectionsCount > 1 ? "s" : ""}`
                 : "No connections yet"}
             </span>
           </div>
@@ -335,7 +350,7 @@ export default function AlumniCard({
             <button
               onClick={handleConnectClick}
               className={`px-3 py-1.5 rounded-lg text-[11px] font-bold transition-all flex items-center gap-1.5 shadow-xs active:scale-95 ${
-                isConnectedWithMe
+                isConnected
                   ? isPatronMember
                     ? "bg-emerald-950 text-emerald-300 border border-emerald-700 hover:bg-rose-950 hover:text-rose-300 hover:border-rose-700"
                     : "bg-emerald-100 text-emerald-800 border border-emerald-300 hover:bg-rose-50 hover:text-rose-700 hover:border-rose-300"
@@ -350,14 +365,14 @@ export default function AlumniCard({
               title={
                 !currentAlumniId
                   ? "कनेक्ट करने के लिए कृपया पहले लॉगिन करें"
-                  : isConnectedWithMe
+                  : isConnected
                   ? "क्लिक करके कनेक्शन हटाएं (Disconnect)"
                   : "अपने बैचमेट से कनेक्ट करें"
               }
             >
               <Users2 className="w-3 h-3" />
               <span>
-                {isConnectedWithMe
+                {isConnected
                   ? "Connected ✓"
                   : currentAlumniId
                   ? "Connect"
