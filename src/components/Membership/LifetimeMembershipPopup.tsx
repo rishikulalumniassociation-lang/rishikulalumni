@@ -2,51 +2,49 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { X, Crown, Sparkles, CheckCircle2, ArrowRight } from "lucide-react";
-import { getMembershipSettings } from "@/lib/store";
-
-const POPUP_DISMISSED_KEY = "rishikul_lifetime_popup_dismissed_v1";
+import { getMembershipSettings, getLoggedInAlumni } from "@/lib/store";
 
 export default function LifetimeMembershipPopup() {
+  const pathname = usePathname();
   const [isOpen, setIsOpen] = useState(false);
   const [fee, setFee] = useState<number>(3100);
 
   useEffect(() => {
-    // Check if dismissed previously
+    // Clear legacy 24-hr dismissal key so it never blocks reloads
     try {
-      const dismissedAt = localStorage.getItem(POPUP_DISMISSED_KEY);
-      if (dismissedAt) {
-        const lastTime = parseInt(dismissedAt, 10);
-        // Show at most once every 24 hours
-        if (!isNaN(lastTime) && Date.now() - lastTime < 24 * 60 * 60 * 1000) {
-          return;
-        }
-      }
-    } catch (e) {
-      // Ignore storage errors
+      localStorage.removeItem("rishikul_lifetime_popup_dismissed_v1");
+    } catch {}
+
+    // If user is already a paid Life Member or Patron Member, don't show
+    const user = getLoggedInAlumni();
+    if (user && (user.membershipTier === "Life Member" || user.membershipTier === "Patron Member")) {
+      return;
+    }
+
+    // Skip on admin dashboard and already-opened permanent membership page
+    if (pathname?.startsWith("/admin") || pathname === "/membership/permanent") {
+      return;
     }
 
     const settings = getMembershipSettings();
     setFee(settings.lifetimeFee || 3100);
 
-    // Delay 1.8 seconds after page load for smooth natural entry
+    // Show popup on every site reload after smooth 700ms entry
     const timer = setTimeout(() => {
       setIsOpen(true);
-    }, 1800);
+    }, 700);
 
     return () => clearTimeout(timer);
-  }, []);
+  }, [pathname]);
 
   const handleDismiss = () => {
     setIsOpen(false);
-    try {
-      localStorage.setItem(POPUP_DISMISSED_KEY, Date.now().toString());
-    } catch (e) {
-      // Ignore
-    }
   };
 
   if (!isOpen) return null;
+  if (pathname?.startsWith("/admin") || pathname === "/membership/permanent") return null;
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm animate-in fade-in duration-300">
