@@ -168,7 +168,7 @@ export default function AdminDashboardPage() {
 
     const handleMembershipUpdate = () => {
       setMembershipSettings(getMembershipSettings());
-      setMembershipPaymentsList(getMembershipPayments());
+      getMembershipPayments().then(p => setMembershipPaymentsList(p));
     };
 
     window.addEventListener("alumni_updated", handleAlumniUpdate);
@@ -189,7 +189,7 @@ export default function AdminDashboardPage() {
   }, [router]);
 
   const loadAllData = async () => {
-    const [alumni, resets, achievers, shradhanjali, nominations, posts, reports] = await Promise.all([
+    const [alumni, resets, achievers, shradhanjali, nominations, posts, reports, payments] = await Promise.all([
       getAlumniList(),
       getPasswordResetRequests(),
       getLifetimeAchievers(),
@@ -197,6 +197,7 @@ export default function AdminDashboardPage() {
       getAchieverNominations(),
       getCommunityPosts({ includeHidden: true }),
       getCommunityPostReports(),
+      getMembershipPayments(),
     ]);
     setAlumniList(alumni);
     setResetRequests(resets);
@@ -206,7 +207,7 @@ export default function AdminDashboardPage() {
     setCommunityPosts(posts);
     setCommunityReports(reports);
     setMembershipSettings(getMembershipSettings());
-    setMembershipPaymentsList(getMembershipPayments());
+    setMembershipPaymentsList(payments);
   };
 
   const handleAdminTogglePin = async (post: CommunityPost) => {
@@ -1770,7 +1771,8 @@ export default function AdminDashboardPage() {
                                 onClick={async () => {
                                   if (confirm(`क्या आप ${payment.fullName} का ₹${payment.amount} का भुगतान सत्यापित कर उन्हें Life Member में अपग्रेड करना चाहते हैं?`)) {
                                     await reviewMembershipPayment(payment.id, "approved");
-                                    setMembershipPaymentsList(getMembershipPayments());
+                                    const refreshedPayments = await getMembershipPayments();
+                                    setMembershipPaymentsList(refreshedPayments);
                                     const refreshedAlumni = await getAlumniList();
                                     setAlumniList(refreshedAlumni);
                                     alert("भुगतान सत्यापित हो गया और पूर्व स्नातक को 'Life Member' में अपग्रेड कर दिया गया!");
@@ -1786,7 +1788,8 @@ export default function AdminDashboardPage() {
                                 onClick={async () => {
                                   if (confirm(`क्या आप ${payment.fullName} का भुगतान अनुरोध अस्वीकार करना चाहते हैं?`)) {
                                     await reviewMembershipPayment(payment.id, "rejected");
-                                    setMembershipPaymentsList(getMembershipPayments());
+                                    const refreshedPayments = await getMembershipPayments();
+                                    setMembershipPaymentsList(refreshedPayments);
                                   }
                                 }}
                                 className="px-3 py-1.5 rounded-lg bg-red-100 hover:bg-red-200 text-red-800 font-bold text-xs"

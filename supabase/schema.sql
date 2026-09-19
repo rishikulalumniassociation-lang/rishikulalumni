@@ -538,4 +538,35 @@ END $$;
 CREATE POLICY "Public read notifications" ON public.notifications FOR SELECT USING (true);
 CREATE POLICY "Enable all notifications" ON public.notifications FOR ALL USING (true);
 
+-- Membership Payments (आजीवन सदस्यता शुल्क भुगतान)
+CREATE TABLE IF NOT EXISTS public.membership_payments (
+    id TEXT PRIMARY KEY DEFAULT ('pay-' || floor(extract(epoch from now()) * 1000)::text),
+    alumni_id TEXT REFERENCES public.profiles(id) ON DELETE SET NULL,
+    full_name TEXT NOT NULL,
+    mobile TEXT NOT NULL,
+    email TEXT,
+    membership_type TEXT DEFAULT 'Life Member',
+    amount NUMERIC DEFAULT 5000,
+    transaction_reference TEXT NOT NULL,
+    payment_date TEXT NOT NULL,
+    screenshot_url TEXT,
+    status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'approved', 'rejected')),
+    admin_remarks TEXT,
+    submitted_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
+);
+
+ALTER TABLE public.membership_payments ENABLE ROW LEVEL SECURITY;
+
+DO $$
+BEGIN
+    DROP POLICY IF EXISTS "Public read membership_payments" ON public.membership_payments;
+    DROP POLICY IF EXISTS "Enable all membership_payments" ON public.membership_payments;
+EXCEPTION
+    WHEN undefined_object THEN NULL;
+END $$;
+
+CREATE POLICY "Public read membership_payments" ON public.membership_payments FOR SELECT USING (true);
+CREATE POLICY "Enable all membership_payments" ON public.membership_payments FOR ALL USING (true);
+
+
 

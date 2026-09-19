@@ -112,7 +112,7 @@ export default function PermanentMembershipPage() {
 
     setFormSubmitting(true);
     try {
-      submitMembershipPayment({
+      await submitMembershipPayment({
         alumniId: currentUser?.id,
         fullName: fullName.trim(),
         mobile: mobile.trim(),

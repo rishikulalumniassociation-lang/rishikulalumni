@@ -1308,25 +1308,16 @@ export async function toggleCommunityPostLike(
     const newCount = Math.max(0, ((post?.likes_count as number) || 1) - 1);
     await supabase.from("community_posts").update({ likes_count: newCount }).eq("id", postId);
 
-    // Update local cache
-    const currentLikes = getLocalItems<{ postId: string; userId: string; createdAt: string }>("rishikul_post_likes_cache") || [];
-    saveLocalItems("rishikul_post_likes_cache", currentLikes.filter((l) => !(l.postId === postId && l.userId === userId)));
-
     if (typeof window !== "undefined") {
       window.dispatchEvent(new CustomEvent("community_post_likes_updated", { detail: { postId, userId, liked: false, likesCount: newCount } }));
     }
     return { liked: false, likesCount: newCount };
   } else {
     // Like
-    const nowIso = new Date().toISOString();
     await supabase.from("community_post_likes").insert({ post_id: postId, user_id: userId });
     const { data: post } = await supabase.from("community_posts").select("likes_count, user_id, title").eq("id", postId).single();
     const newCount = ((post?.likes_count as number) || 0) + 1;
     await supabase.from("community_posts").update({ likes_count: newCount }).eq("id", postId);
-
-    // Update local cache
-    const currentLikes = getLocalItems<{ postId: string; userId: string; createdAt: string }>("rishikul_post_likes_cache") || [];
-    saveLocalItems("rishikul_post_likes_cache", [{ postId, userId, createdAt: nowIso }, ...currentLikes]);
 
     // Send notification to author if author is not the liker
     const postAuthorId = post?.user_id as string | undefined;
@@ -1358,18 +1349,16 @@ export async function getAllPostLikes(): Promise<{ postId: string; userId: strin
       .from("community_post_likes")
       .select("post_id, user_id, created_at");
     if (!error && data) {
-      const list = data.map((r: any) => ({
+      return data.map((r: any) => ({
         postId: r.post_id as string,
         userId: r.user_id as string,
         createdAt: r.created_at as string,
       }));
-      saveLocalItems("rishikul_post_likes_cache", list);
-      return list;
     }
-  } catch {
-    // Ignore
+  } catch (err) {
+    console.error("getAllPostLikes error:", err);
   }
-  return getLocalItems<{ postId: string; userId: string; createdAt: string }>("rishikul_post_likes_cache") || [];
+  return [];
 }
 
 export async function getMyLikedPostIds(userId: string): Promise<string[]> {
@@ -1525,7 +1514,6 @@ export interface MembershipPaymentSubmission {
 }
 
 const SETTINGS_STORAGE_KEY = "rishikul_lifetime_settings_v1";
-const PAYMENTS_STORAGE_KEY = "rishikul_lifetime_payments_v1";
 
 export function getMembershipSettings(): LifetimeMembershipSettings {
   if (typeof window === "undefined") return DEFAULT_MEMBERSHIP_SETTINGS;
@@ -1548,28 +1536,70 @@ export function updateMembershipSettings(settings: Partial<LifetimeMembershipSet
   return updated;
 }
 
-export function getMembershipPayments(): MembershipPaymentSubmission[] {
-  if (typeof window === "undefined") return [];
+export async function getMembershipPayments(): Promise<MembershipPaymentSubmission[]> {
   try {
-    const raw = localStorage.getItem(PAYMENTS_STORAGE_KEY);
-    if (!raw) return [];
-    return JSON.parse(raw);
-  } catch (e) {
-    return [];
+    const { data, error } = await supabase
+      .from("membership_payments")
+      .select("*")
+      .order("submitted_at", { ascending: false });
+
+    if (!error && data) {
+      return data.map((r: any) => ({
+        id: r.id,
+        alumniId: r.alumni_id,
+        fullName: r.full_name,
+        mobile: r.mobile,
+        email: r.email,
+        membershipType: r.membership_type || "Life Member",
+        amount: Number(r.amount) || 5000,
+        transactionReference: r.transaction_reference,
+        paymentDate: r.payment_date,
+        screenshotUrl: r.screenshot_url,
+        status: r.status,
+        adminRemarks: r.admin_remarks,
+        submittedAt: r.submitted_at,
+      }));
+    }
+  } catch (err) {
+    console.error("getMembershipPayments error:", err);
   }
+  return [];
 }
 
-export function submitMembershipPayment(payment: Omit<MembershipPaymentSubmission, "id" | "submittedAt" | "status">): MembershipPaymentSubmission {
-  const current = getMembershipPayments();
+export async function submitMembershipPayment(
+  payment: Omit<MembershipPaymentSubmission, "id" | "submittedAt" | "status">
+): Promise<MembershipPaymentSubmission> {
   const newSubmission: MembershipPaymentSubmission = {
     ...payment,
     id: `pay-${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
     submittedAt: new Date().toISOString(),
     status: "pending",
   };
-  const updated = [newSubmission, ...current];
+
+  try {
+    const { error } = await supabase.from("membership_payments").insert({
+      id: newSubmission.id,
+      alumni_id: newSubmission.alumniId ?? null,
+      full_name: newSubmission.fullName,
+      mobile: newSubmission.mobile,
+      email: newSubmission.email ?? null,
+      membership_type: newSubmission.membershipType,
+      amount: newSubmission.amount,
+      transaction_reference: newSubmission.transactionReference,
+      payment_date: newSubmission.paymentDate,
+      screenshot_url: newSubmission.screenshotUrl ?? null,
+      status: newSubmission.status,
+      admin_remarks: null,
+      submitted_at: newSubmission.submittedAt,
+    });
+    if (error) {
+      console.error("submitMembershipPayment Supabase insert error:", error.message);
+    }
+  } catch (err) {
+    console.error("submitMembershipPayment error:", err);
+  }
+
   if (typeof window !== "undefined") {
-    localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(updated));
     window.dispatchEvent(new Event("membership_payments_updated"));
   }
   return newSubmission;
@@ -1581,38 +1611,55 @@ export async function reviewMembershipPayment(
   adminRemarks?: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const current = getMembershipPayments();
-    const idx = current.findIndex((p) => p.id === paymentId);
-    if (idx === -1) return { success: false, error: "Payment submission not found." };
+    const remarks =
+      adminRemarks ||
+      (decision === "approved"
+        ? "Verified and upgraded to Life Member"
+        : "Payment verification declined");
 
-    const payment = current[idx];
-    current[idx] = {
-      ...payment,
-      status: decision,
-      adminRemarks: adminRemarks || (decision === "approved" ? "Verified and upgraded to Life Member" : "Payment verification declined"),
-    };
+    const { error } = await supabase
+      .from("membership_payments")
+      .update({
+        status: decision,
+        admin_remarks: remarks,
+      })
+      .eq("id", paymentId);
+
+    if (error) {
+      console.error("reviewMembershipPayment error:", error.message);
+      return { success: false, error: error.message };
+    }
 
     if (typeof window !== "undefined") {
-      localStorage.setItem(PAYMENTS_STORAGE_KEY, JSON.stringify(current));
       window.dispatchEvent(new Event("membership_payments_updated"));
     }
 
     if (decision === "approved") {
-      const allAlumni = await getAlumniList();
-      let targetAlumnus = payment.alumniId
-        ? allAlumni.find((a) => a.id === payment.alumniId)
-        : null;
+      const { data: payment } = await supabase
+        .from("membership_payments")
+        .select("*")
+        .eq("id", paymentId)
+        .single();
 
-      if (!targetAlumnus) {
-        targetAlumnus = allAlumni.find((a) => a.mobile.replace(/\D/g, "") === payment.mobile.replace(/\D/g, ""));
-      }
+      if (payment) {
+        const allAlumni = await getAlumniList();
+        let targetAlumnus = payment.alumni_id
+          ? allAlumni.find((a) => a.id === payment.alumni_id)
+          : null;
 
-      if (targetAlumnus) {
-        await updateAlumniProfile(targetAlumnus.id, {
-          membershipTier: "Life Member",
-          isVerified: true,
-          approvalStatus: "approved",
-        });
+        if (!targetAlumnus && payment.mobile) {
+          targetAlumnus = allAlumni.find(
+            (a) => a.mobile.replace(/\D/g, "") === payment.mobile.replace(/\D/g, "")
+          );
+        }
+
+        if (targetAlumnus) {
+          await updateAlumniProfile(targetAlumnus.id, {
+            membershipTier: "Life Member",
+            isVerified: true,
+            approvalStatus: "approved",
+          });
+        }
       }
     }
 
@@ -1626,34 +1673,9 @@ export async function reviewMembershipPayment(
 // Community Feed Additions: Comments, Notifications, Connections, Text Posts
 // ===========================================================================
 
-const COMMENTS_STORAGE_KEY = "rishikul_post_comments";
-const NOTIFICATIONS_STORAGE_KEY = "rishikul_notifications";
-const CONNECTIONS_STORAGE_KEY = "rishikul_connections";
-
-// Helper for local storage retrieval
-function getLocalItems<T>(key: string): T[] {
-  if (typeof window === "undefined") return [];
-  try {
-    const raw = localStorage.getItem(key);
-    return raw ? JSON.parse(raw) : [];
-  } catch {
-    return [];
-  }
-}
-
-function saveLocalItems<T>(key: string, items: T[]): void {
-  if (typeof window === "undefined") return;
-  try {
-    localStorage.setItem(key, JSON.stringify(items));
-  } catch (e) {
-    console.error("Local storage error:", e);
-  }
-}
-
-// 1. Post Comments
+// 1. Post Comments (100% Supabase)
 export async function getPostComments(postId: string): Promise<PostComment[]> {
   try {
-    // Attempt Supabase fetch
     const { data, error } = await supabase
       .from("community_post_comments")
       .select("*")
@@ -1672,12 +1694,10 @@ export async function getPostComments(postId: string): Promise<PostComment[]> {
         createdAt: r.created_at,
       }));
     }
-  } catch {
-    // Graceful fallback to local
+  } catch (err) {
+    console.error("getPostComments error:", err);
   }
-
-  const allComments = getLocalItems<PostComment>(COMMENTS_STORAGE_KEY);
-  return allComments.filter((c) => c.postId === postId);
+  return [];
 }
 
 export async function addPostComment(
@@ -1704,31 +1724,28 @@ export async function addPostComment(
     if (error) {
       console.warn("Supabase post_comments insert warning:", error.message);
     }
-  } catch {
-    // Fallback to local
+  } catch (err) {
+    console.error("addPostComment error:", err);
   }
 
-  const allComments = getLocalItems<PostComment>(COMMENTS_STORAGE_KEY);
-  saveLocalItems(COMMENTS_STORAGE_KEY, [...allComments, newComment]);
   return newComment;
 }
 
 export async function deletePostComment(commentId: string, userId: string): Promise<boolean> {
   try {
-    await supabase.from("community_post_comments").delete().eq("id", commentId);
-  } catch {
-    // Ignore
+    const { error } = await supabase.from("community_post_comments").delete().eq("id", commentId);
+    if (error) {
+      console.error("deletePostComment error:", error.message);
+      return false;
+    }
+    return true;
+  } catch (err) {
+    console.error("deletePostComment error:", err);
+    return false;
   }
-
-  const allComments = getLocalItems<PostComment>(COMMENTS_STORAGE_KEY);
-  saveLocalItems(
-    COMMENTS_STORAGE_KEY,
-    allComments.filter((c) => c.id !== commentId)
-  );
-  return true;
 }
 
-// 2. Notifications
+// 2. Notifications (100% Supabase)
 export async function getNotifications(userId: string): Promise<NotificationItem[]> {
   try {
     const { data, error } = await supabase
@@ -1752,26 +1769,18 @@ export async function getNotifications(userId: string): Promise<NotificationItem
         createdAt: r.created_at,
       }));
     }
-  } catch {
-    // Fallback
+  } catch (err) {
+    console.error("getNotifications error:", err);
   }
-
-  const local = getLocalItems<NotificationItem>(NOTIFICATIONS_STORAGE_KEY);
-  return local.filter((n) => n.userId === userId);
+  return [];
 }
 
 export async function markNotificationRead(notificationId: string): Promise<void> {
   try {
     await supabase.from("notifications").update({ is_read: true }).eq("id", notificationId);
-  } catch {
-    // Ignore
+  } catch (err) {
+    console.error("markNotificationRead error:", err);
   }
-
-  const local = getLocalItems<NotificationItem>(NOTIFICATIONS_STORAGE_KEY);
-  saveLocalItems(
-    NOTIFICATIONS_STORAGE_KEY,
-    local.map((n) => (n.id === notificationId ? { ...n, isRead: true } : n))
-  );
 }
 
 export async function createNotification(
@@ -1798,12 +1807,10 @@ export async function createNotification(
       is_read: false,
       created_at: newNotif.createdAt,
     });
-  } catch {
-    // Ignore
+  } catch (err) {
+    console.error("createNotification error:", err);
   }
 
-  const local = getLocalItems<NotificationItem>(NOTIFICATIONS_STORAGE_KEY);
-  saveLocalItems(NOTIFICATIONS_STORAGE_KEY, [newNotif, ...local]);
   return newNotif;
 }
 
@@ -1868,32 +1875,15 @@ export async function establishAlumniConnection(fromId: string, toId: string): P
 export async function sendConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
   if (!senderId || !receiverId || senderId === receiverId) return false;
 
-  const newReq: ConnectionRequestItem = {
-    id: "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7),
-    senderId,
-    receiverId,
-    status: "pending",
-    createdAt: new Date().toISOString(),
-  };
+  const newReqId = "req_" + Date.now() + "_" + Math.random().toString(36).substring(2, 7);
+  const now = new Date().toISOString();
 
-  // 1. Optimistic local cache
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  const filtered = local.filter(
-    (r) => !(r.senderId === senderId && r.receiverId === receiverId)
-  );
-  saveLocalItems(CONNECTIONS_STORAGE_KEY, [newReq, ...filtered]);
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("connection_requests_updated"));
-  }
-
-  // 2. Insert into Supabase community_posts (as system connection_request)
   try {
     const allAlumni = await getAlumniList();
     const sender = allAlumni.find((a) => a.id === senderId);
 
-    await supabase.from("community_posts").insert({
-      id: newReq.id,
+    const { error } = await supabase.from("community_posts").insert({
+      id: newReqId,
       user_id: senderId,
       author_name: sender?.fullName || "Alumni",
       description: receiverId,
@@ -1901,8 +1891,13 @@ export async function sendConnectionRequest(senderId: string, receiverId: string
       content_type: "connection_request",
       category: "System",
       is_hidden: true,
-      created_at: newReq.createdAt,
+      created_at: now,
     });
+
+    if (error) {
+      console.error("sendConnectionRequest supabase error:", error);
+      return false;
+    }
 
     // Also create a notification for receiver
     if (sender) {
@@ -1917,24 +1912,19 @@ export async function sendConnectionRequest(senderId: string, receiverId: string
         link: `/directory?id=${senderId}`,
       });
     }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("connection_requests_updated"));
+    }
+
+    return true;
   } catch (err) {
     console.error("sendConnectionRequest error:", err);
+    return false;
   }
-
-  return true;
 }
 
 export async function cancelConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  saveLocalItems(
-    CONNECTIONS_STORAGE_KEY,
-    local.filter((r) => !(r.senderId === senderId && r.receiverId === receiverId))
-  );
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("connection_requests_updated"));
-  }
-
   try {
     await supabase
       .from("community_posts")
@@ -1943,33 +1933,23 @@ export async function cancelConnectionRequest(senderId: string, receiverId: stri
       .eq("user_id", senderId)
       .eq("description", receiverId)
       .eq("title", "pending");
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("connection_requests_updated"));
+    }
+    return true;
   } catch (err) {
     console.error("cancelConnectionRequest error:", err);
+    return false;
   }
-
-  return true;
 }
 
 export async function acceptConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
-  // 1. Update local cache
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  saveLocalItems(
-    CONNECTIONS_STORAGE_KEY,
-    local.map((r) =>
-      r.senderId === senderId && r.receiverId === receiverId ? { ...r, status: "accepted" } : r
-    )
-  );
-
-  // 2. Establish mutual connection in both profiles
+  // 1. Establish mutual connection in both profiles (updates Supabase profiles.connected_alumni_ids)
   await establishAlumniConnection(senderId, receiverId);
 
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("connection_requests_updated"));
-    window.dispatchEvent(new Event("alumni_updated"));
-  }
-
   try {
-    // 3. Mark as accepted in community_posts
+    // 2. Mark as accepted in community_posts
     await supabase
       .from("community_posts")
       .update({ title: "accepted" })
@@ -1977,7 +1957,7 @@ export async function acceptConnectionRequest(senderId: string, receiverId: stri
       .eq("user_id", senderId)
       .eq("description", receiverId);
 
-    // 4. Notify sender that request was accepted
+    // 3. Notify sender that request was accepted
     const allAlumni = await getAlumniList();
     const receiver = allAlumni.find((a) => a.id === receiverId);
     if (receiver) {
@@ -1992,24 +1972,20 @@ export async function acceptConnectionRequest(senderId: string, receiverId: stri
         link: `/directory?id=${receiverId}`,
       });
     }
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("connection_requests_updated"));
+      window.dispatchEvent(new Event("alumni_updated"));
+    }
+
+    return true;
   } catch (err) {
     console.error("acceptConnectionRequest error:", err);
+    return false;
   }
-
-  return true;
 }
 
 export async function rejectConnectionRequest(senderId: string, receiverId: string): Promise<boolean> {
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  saveLocalItems(
-    CONNECTIONS_STORAGE_KEY,
-    local.filter((r) => !(r.senderId === senderId && r.receiverId === receiverId))
-  );
-
-  if (typeof window !== "undefined") {
-    window.dispatchEvent(new Event("connection_requests_updated"));
-  }
-
   try {
     await supabase
       .from("community_posts")
@@ -2017,17 +1993,18 @@ export async function rejectConnectionRequest(senderId: string, receiverId: stri
       .eq("content_type", "connection_request")
       .eq("user_id", senderId)
       .eq("description", receiverId);
+
+    if (typeof window !== "undefined") {
+      window.dispatchEvent(new Event("connection_requests_updated"));
+    }
+    return true;
   } catch (err) {
     console.error("rejectConnectionRequest error:", err);
+    return false;
   }
-
-  return true;
 }
 
 export async function getIncomingConnectionRequests(userId: string): Promise<ConnectionRequestItem[]> {
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  const localPending = local.filter((r) => r.receiverId === userId && r.status === "pending");
-
   try {
     const { data, error } = await supabase
       .from("community_posts")
@@ -2039,7 +2016,7 @@ export async function getIncomingConnectionRequests(userId: string): Promise<Con
 
     if (!error && data) {
       const allAlumni = await getAlumniList();
-      const remoteReqs: ConnectionRequestItem[] = data.map((r: any) => ({
+      return data.map((r: any) => ({
         id: r.id,
         senderId: r.user_id,
         receiverId: r.description,
@@ -2047,23 +2024,12 @@ export async function getIncomingConnectionRequests(userId: string): Promise<Con
         createdAt: r.created_at,
         senderProfile: allAlumni.find((a) => a.id === r.user_id),
       }));
-
-      const mergedMap = new Map<string, ConnectionRequestItem>();
-      localPending.forEach((req) => mergedMap.set(`${req.senderId}_${req.receiverId}`, req));
-      remoteReqs.forEach((req) => mergedMap.set(`${req.senderId}_${req.receiverId}`, req));
-      const res = Array.from(mergedMap.values());
-      saveLocalItems(CONNECTIONS_STORAGE_KEY, res);
-      return res;
     }
   } catch (err) {
     console.error("getIncomingConnectionRequests error:", err);
   }
 
-  const allAlumni = await getAlumniList();
-  return localPending.map((r) => ({
-    ...r,
-    senderProfile: allAlumni.find((a) => a.id === r.senderId),
-  }));
+  return [];
 }
 
 export function isBatchmate(a?: AlumniProfile | null, b?: AlumniProfile | null): boolean {
@@ -2115,19 +2081,6 @@ export function getConnectionStateSync(
   const targetProfile = target;
   if (targetProfile?.connectedAlumniIds?.includes(userId)) {
     return "connected";
-  }
-
-  const local = getLocalItems<ConnectionRequestItem>(CONNECTIONS_STORAGE_KEY);
-  const sent = local.find((r) => r.senderId === userId && r.receiverId === targetId);
-  if (sent) {
-    if (sent.status === "accepted") return "connected";
-    if (sent.status === "pending") return "pending_sent";
-  }
-
-  const rec = local.find((r) => r.senderId === targetId && r.receiverId === userId);
-  if (rec) {
-    if (rec.status === "accepted") return "connected";
-    if (rec.status === "pending") return "pending_received";
   }
 
   return "none";
@@ -2224,8 +2177,6 @@ export async function createFeedTextPost(
 // Birthday Wishes (जन्मदिन की शुभकामनाएं)
 // ---------------------------------------------------------------------------
 
-const BIRTHDAY_WISHES_STORAGE_KEY = "rishikul_birthday_wishes";
-
 export async function sendBirthdayWish(
   sender: AlumniProfile,
   recipientId: string,
@@ -2244,7 +2195,7 @@ export async function sendBirthdayWish(
   };
 
   try {
-    await supabase.from("birthday_wishes").insert({
+    const { error } = await supabase.from("birthday_wishes").insert({
       id: newWish.id,
       recipient_id: newWish.recipientId,
       sender_id: newWish.senderId,
@@ -2255,13 +2206,12 @@ export async function sendBirthdayWish(
       message: newWish.message,
       created_at: newWish.createdAt,
     });
-  } catch {
-    // If Supabase table doesn't exist yet, continue with local storage fallback
+    if (error) {
+      console.warn("sendBirthdayWish supabase insert warning:", error.message);
+    }
+  } catch (err) {
+    console.error("sendBirthdayWish error:", err);
   }
-
-  // Update local storage
-  const local = getLocalItems<BirthdayWishItem>(BIRTHDAY_WISHES_STORAGE_KEY) || [];
-  saveLocalItems(BIRTHDAY_WISHES_STORAGE_KEY, [newWish, ...local]);
 
   // Create notification for recipient
   await createNotification({
@@ -2289,8 +2239,8 @@ export async function getBirthdayWishes(): Promise<BirthdayWishItem[]> {
       .select("*")
       .order("created_at", { ascending: false });
 
-    if (!error && data && data.length > 0) {
-      const items: BirthdayWishItem[] = data.map((r: any) => ({
+    if (!error && data) {
+      return data.map((r: any) => ({
         id: r.id,
         recipientId: r.recipient_id,
         senderId: r.sender_id,
@@ -2301,12 +2251,10 @@ export async function getBirthdayWishes(): Promise<BirthdayWishItem[]> {
         message: r.message,
         createdAt: r.created_at,
       }));
-      saveLocalItems(BIRTHDAY_WISHES_STORAGE_KEY, items);
-      return items;
     }
-  } catch {
-    // Fallback
+  } catch (err) {
+    console.error("getBirthdayWishes error:", err);
   }
 
-  return getLocalItems<BirthdayWishItem>(BIRTHDAY_WISHES_STORAGE_KEY) || [];
+  return [];
 }
