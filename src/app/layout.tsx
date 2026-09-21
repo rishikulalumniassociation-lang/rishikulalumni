@@ -4,7 +4,6 @@ import Navbar from "@/components/Navigation/Navbar";
 import MobileNav from "@/components/Navigation/MobileNav";
 import Footer from "@/components/Navigation/Footer";
 import PWARegistration from "@/components/Common/PWARegistration";
-import LifetimeMembershipPopup from "@/components/Membership/LifetimeMembershipPopup";
 
 export const viewport: Viewport = {
   width: "device-width",
@@ -72,7 +71,6 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen flex flex-col bg-[#FAF7F2] text-[#0F172A] selection:bg-[#C5A059]/30 selection:text-[#0F172A]">
         <PWARegistration />
-        <LifetimeMembershipPopup />
         {/* Top Navbar */}
         <Navbar />
 
