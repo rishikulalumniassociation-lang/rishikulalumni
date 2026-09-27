@@ -319,34 +319,42 @@ export default function AdminDashboardPage() {
     e.preventDefault();
     if (!activeResetModalReq || !newPasswordToAssign) return;
 
-    const hashedNewPassword = await hashPassword(newPasswordToAssign);
-    const updatedAlumni = alumniList.map((a) => {
-      if (a.id === activeResetModalReq.alumniId || a.username === activeResetModalReq.username) {
-        return {
-          ...a,
-          passwordHash: hashedNewPassword,
-        };
-      }
-      return a;
-    });
-    setAlumniList(updatedAlumni);
-    await saveAlumniList(updatedAlumni);
+    try {
+      const res = await fetch("/api/admin/reset-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          requestId: activeResetModalReq.id,
+          alumniId: activeResetModalReq.alumniId,
+          username: activeResetModalReq.username,
+          newPassword: newPasswordToAssign,
+        }),
+      });
 
-    const updatedRequests = resetRequests.map((r) => {
-      if (r.id === activeResetModalReq.id) {
-        return {
-          ...r,
-          status: "resolved" as const,
-          newPasswordAssigned: newPasswordToAssign,
-        };
+      const data = await res.json();
+      if (!res.ok) {
+        alert(data.error || "Failed to reset password");
+        return;
       }
-      return r;
-    });
-    setResetRequests(updatedRequests);
-    await savePasswordResetRequests(updatedRequests);
 
-    alert(`Password for ${activeResetModalReq.fullName} (${activeResetModalReq.username}) has been updated to: ${newPasswordToAssign}`);
-    setActiveResetModalReq(null);
+      const updatedRequests = resetRequests.map((r) => {
+        if (r.id === activeResetModalReq.id) {
+          return {
+            ...r,
+            status: "resolved" as const,
+            newPasswordAssigned: newPasswordToAssign,
+          };
+        }
+        return r;
+      });
+      setResetRequests(updatedRequests);
+
+      alert(`Password for ${activeResetModalReq.fullName} (${activeResetModalReq.username}) has been updated to: ${newPasswordToAssign}`);
+      setActiveResetModalReq(null);
+    } catch (err: any) {
+      console.error("Admin reset error:", err);
+      alert("Error resetting password. Please try again.");
+    }
   };
 
 

@@ -261,6 +261,59 @@ export function invalidateAlumniCache() {
   }
 }
 
+export const PUBLIC_PROFILE_SELECT = `
+  id,
+  full_name,
+  full_name_hindi,
+  username,
+  email,
+  mobile,
+  whatsapp_number,
+  date_of_birth,
+  gender,
+  avatar_url,
+  rishikul_education,
+  ug_batch_year,
+  ug_degree,
+  pg_batch_year,
+  pg_degree,
+  specialization,
+  is_expert,
+  disease_specialty,
+  specialty_description,
+  accepting_shishya,
+  shishya_requirement,
+  job_type,
+  designation,
+  workplace,
+  city,
+  state,
+  address,
+  country,
+  bio,
+  blood_group,
+  achievements,
+  special_achievements,
+  work_history,
+  family_alumni_relations,
+  teacher_alumni_ids,
+  connected_alumni_ids,
+  is_deceased,
+  date_of_demise,
+  demise_tribute,
+  membership_id,
+  membership_tier,
+  is_verified,
+  approval_status,
+  joined_date,
+  created_at,
+  updated_at,
+  auth_user_id,
+  is_migrated
+`.replace(/\s+/g, " ").trim();
+
+let inFlightAlumniPromise: Promise<AlumniProfile[]> | null = null;
+
 export async function getAlumniList(forceFresh = false): Promise<AlumniProfile[]> {
   const now = Date.now();
 
@@ -269,7 +322,12 @@ export async function getAlumniList(forceFresh = false): Promise<AlumniProfile[]
     return memoryAlumniCache;
   }
 
-  // 2. Instant return from sessionStorage if memory cache was cleared (e.g. across page refreshes)
+  // 2. Return in-flight request if another caller already initiated a query
+  if (!forceFresh && inFlightAlumniPromise) {
+    return inFlightAlumniPromise;
+  }
+
+  // 3. Instant return from sessionStorage if memory cache was cleared (e.g. across page refreshes)
   if (!forceFresh && !memoryAlumniCache && typeof window !== "undefined") {
     try {
       const cached = sessionStorage.getItem("rishikul_alumni_cache");
@@ -282,29 +340,37 @@ export async function getAlumniList(forceFresh = false): Promise<AlumniProfile[]
     } catch {}
   }
 
-  // 3. Fetch from Supabase
-  const { data, error } = await supabase
-    .from("profiles")
-    .select("*")
-    .order("created_at", { ascending: false });
-
-  if (error) {
-    console.error("getAlumniList:", error.message);
-    return memoryAlumniCache || [];
-  }
-
-  const profiles = (data ?? []).map(rowToProfile);
-  memoryAlumniCache = profiles;
-  lastAlumniFetchTime = now;
-
-  if (typeof window !== "undefined") {
+  // 4. Fetch from Supabase with in-flight lock
+  inFlightAlumniPromise = (async () => {
     try {
-      sessionStorage.setItem("rishikul_alumni_cache", JSON.stringify(profiles));
-      sessionStorage.setItem("rishikul_alumni_cache_time", String(now));
-    } catch {}
-  }
+      const { data, error } = await supabase
+        .from("profiles")
+        .select(PUBLIC_PROFILE_SELECT as any)
+        .order("created_at", { ascending: false });
 
-  return profiles;
+      if (error) {
+        console.error("getAlumniList:", error.message);
+        return memoryAlumniCache || [];
+      }
+
+      const profiles = ((data as unknown as Record<string, unknown>[]) ?? []).map(rowToProfile);
+      memoryAlumniCache = profiles;
+      lastAlumniFetchTime = Date.now();
+
+      if (typeof window !== "undefined") {
+        try {
+          sessionStorage.setItem("rishikul_alumni_cache", JSON.stringify(profiles));
+          sessionStorage.setItem("rishikul_alumni_cache_time", String(lastAlumniFetchTime));
+        } catch {}
+      }
+
+      return profiles;
+    } finally {
+      inFlightAlumniPromise = null;
+    }
+  })();
+
+  return inFlightAlumniPromise;
 }
 
 export async function saveAlumniList(list: AlumniProfile[]): Promise<void> {
@@ -316,9 +382,9 @@ export async function saveAlumniList(list: AlumniProfile[]): Promise<void> {
 }
 
 export async function getAlumniById(id: string): Promise<AlumniProfile | null> {
-  const { data, error } = await supabase.from("profiles").select("*").eq("id", id).single();
+  const { data, error } = await supabase.from("profiles").select(PUBLIC_PROFILE_SELECT as any).eq("id", id).maybeSingle();
   if (error || !data) return null;
-  return rowToProfile(data as Record<string, unknown>);
+  return rowToProfile(data as unknown as Record<string, unknown>);
 }
 
 export async function getAlumniByUsername(identifier: string): Promise<AlumniProfile | null> {
@@ -326,13 +392,13 @@ export async function getAlumniByUsername(identifier: string): Promise<AlumniPro
   if (!clean) return null;
 
   // 1. Try username exact match
-  const resUser = await supabase.from("profiles").select("*").eq("username", clean).maybeSingle();
-  if (resUser.data) return rowToProfile(resUser.data as Record<string, unknown>);
+  const resUser = await supabase.from("profiles").select(PUBLIC_PROFILE_SELECT as any).eq("username", clean).maybeSingle();
+  if (resUser.data) return rowToProfile(resUser.data as unknown as Record<string, unknown>);
 
   // 2. Try email match if identifier has @
   if (clean.includes("@")) {
-    const resEmail = await supabase.from("profiles").select("*").ilike("email", clean).maybeSingle();
-    if (resEmail.data) return rowToProfile(resEmail.data as Record<string, unknown>);
+    const resEmail = await supabase.from("profiles").select(PUBLIC_PROFILE_SELECT as any).ilike("email", clean).maybeSingle();
+    if (resEmail.data) return rowToProfile(resEmail.data as unknown as Record<string, unknown>);
   }
 
   // 3. Try mobile / phone variants
@@ -341,11 +407,11 @@ export async function getAlumniByUsername(identifier: string): Promise<AlumniPro
     const last10 = digits.slice(-10);
     const resMobile = await supabase
       .from("profiles")
-      .select("*")
+      .select(PUBLIC_PROFILE_SELECT as any)
       .or(`mobile.eq.${clean},mobile.eq.${digits},mobile.eq.0${last10},mobile.eq.91${last10},username.eq.${digits},username.eq.0${last10}`)
       .limit(1);
     if (resMobile.data && resMobile.data[0]) {
-      return rowToProfile(resMobile.data[0] as Record<string, unknown>);
+      return rowToProfile(resMobile.data[0] as unknown as Record<string, unknown>);
     }
   }
 
@@ -609,42 +675,19 @@ export async function hashPassword(password: string): Promise<string> {
 }
 
 export async function verifyAdminCredentials(username: string, passwordInput: string): Promise<boolean> {
-  const cleanUsername = username.trim();
-  const hashedInput = await hashPassword(passwordInput);
-
-  // 1. Check admin_users table in Supabase
   try {
-    const { data } = await supabase
-      .from("admin_users")
-      .select("password_hash")
-      .eq("username", cleanUsername)
-      .maybeSingle();
-
-    if (data) {
-      if (data.password_hash === hashedInput || data.password_hash === passwordInput) {
-        return true;
-      }
+    const res = await fetch("/api/admin/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password: passwordInput }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      return Boolean(data.success);
     }
   } catch (e) {
-    console.error("verifyAdminCredentials database query error:", e);
+    console.error("verifyAdminCredentials network error:", e);
   }
-
-  // 2. Verified fallback check using precomputed SHA-256 hashes
-  // admin: "rishikul1919" -> a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84
-  // secretary: "admin123" -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
-  if (
-    cleanUsername === "admin" &&
-    (hashedInput === "a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84" || passwordInput === "rishikul1919")
-  ) {
-    return true;
-  }
-  if (
-    cleanUsername === "secretary" &&
-    (hashedInput === "240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9" || passwordInput === "admin123")
-  ) {
-    return true;
-  }
-
   return false;
 }
 
@@ -1300,6 +1343,7 @@ export async function toggleCommunityPostLike(
     .eq("user_id", userId)
     .maybeSingle();
 
+  memoryPostLikesCache = null;
   if (existing) {
     // Unlike
     await supabase.from("community_post_likes").delete().eq("post_id", postId).eq("user_id", userId);
@@ -1343,22 +1387,43 @@ export async function toggleCommunityPostLike(
   }
 }
 
-export async function getAllPostLikes(): Promise<{ postId: string; userId: string; createdAt: string }[]> {
-  try {
-    const { data, error } = await supabase
-      .from("community_post_likes")
-      .select("post_id, user_id, created_at");
-    if (!error && data) {
-      return data.map((r: any) => ({
-        postId: r.post_id as string,
-        userId: r.user_id as string,
-        createdAt: r.created_at as string,
-      }));
-    }
-  } catch (err) {
-    console.error("getAllPostLikes error:", err);
+let memoryPostLikesCache: { postId: string; userId: string; createdAt: string }[] | null = null;
+let lastPostLikesFetchTime = 0;
+let inFlightPostLikesPromise: Promise<{ postId: string; userId: string; createdAt: string }[]> | null = null;
+
+export async function getAllPostLikes(forceFresh = false): Promise<{ postId: string; userId: string; createdAt: string }[]> {
+  const now = Date.now();
+  if (!forceFresh && memoryPostLikesCache && (now - lastPostLikesFetchTime < 30000)) {
+    return memoryPostLikesCache;
   }
-  return [];
+  if (!forceFresh && inFlightPostLikesPromise) {
+    return inFlightPostLikesPromise;
+  }
+
+  inFlightPostLikesPromise = (async () => {
+    try {
+      const { data, error } = await supabase
+        .from("community_post_likes")
+        .select("post_id, user_id, created_at");
+      if (!error && data) {
+        const mapped = data.map((r: any) => ({
+          postId: r.post_id as string,
+          userId: r.user_id as string,
+          createdAt: r.created_at as string,
+        }));
+        memoryPostLikesCache = mapped;
+        lastPostLikesFetchTime = Date.now();
+        return mapped;
+      }
+    } catch (err) {
+      console.error("getAllPostLikes error:", err);
+    } finally {
+      inFlightPostLikesPromise = null;
+    }
+    return memoryPostLikesCache || [];
+  })();
+
+  return inFlightPostLikesPromise;
 }
 
 export async function getMyLikedPostIds(userId: string): Promise<string[]> {

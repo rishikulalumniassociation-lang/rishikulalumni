@@ -91,6 +91,8 @@ ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_deceased BOOLEAN DEFAULT
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS date_of_demise DATE;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS demise_tribute TEXT;
 ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS gender TEXT DEFAULT 'Male';
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS is_migrated BOOLEAN DEFAULT FALSE;
 
 -- Drop NOT NULL constraint on specialization (for UG alumni who do not have PG specialization)
 ALTER TABLE public.profiles ALTER COLUMN specialization DROP NOT NULL;
@@ -102,6 +104,8 @@ CREATE INDEX IF NOT EXISTS idx_profiles_mobile ON public.profiles(mobile);
 CREATE INDEX IF NOT EXISTS idx_profiles_approval ON public.profiles(approval_status);
 CREATE INDEX IF NOT EXISTS idx_profiles_dob ON public.profiles(date_of_birth);
 CREATE INDEX IF NOT EXISTS idx_profiles_expert ON public.profiles(is_expert) WHERE is_expert = TRUE;
+CREATE INDEX IF NOT EXISTS idx_profiles_auth_user_id ON public.profiles(auth_user_id);
+CREATE INDEX IF NOT EXISTS idx_profiles_is_migrated ON public.profiles(is_migrated);
 
 -- ==============================================================================
 -- 3. Lifetime Achievers Table (हॉल ऑफ फेम)
@@ -155,7 +159,7 @@ CREATE TABLE IF NOT EXISTS public.shradhanjali_offerings (
 -- ==============================================================================
 CREATE TABLE IF NOT EXISTS public.password_reset_requests (
     id TEXT PRIMARY KEY DEFAULT ('reset-' || floor(extract(epoch from now()) * 1000)::text),
-    alumni_id TEXT REFERENCES public.profiles(id) ON DELETE CASCADE,
+    alumni_id TEXT, -- Can be alumni id or 'unmatched'
     full_name TEXT NOT NULL,
     username TEXT NOT NULL,
     mobile TEXT NOT NULL,
@@ -299,7 +303,6 @@ END $$;
 CREATE POLICY "Public read profiles" ON public.profiles FOR SELECT USING (true);
 CREATE POLICY "Anyone can register" ON public.profiles FOR INSERT WITH CHECK (true);
 CREATE POLICY "Enable update profiles" ON public.profiles FOR UPDATE USING (true);
-CREATE POLICY "Enable delete profiles" ON public.profiles FOR DELETE USING (true);
 
 -- Achievers Policies
 CREATE POLICY "Public read achievers" ON public.lifetime_achievers FOR SELECT USING (true);
@@ -327,9 +330,7 @@ CREATE POLICY "Enable all achievements" ON public.community_achievements FOR ALL
 CREATE POLICY "Public read likes" ON public.achievement_likes FOR SELECT USING (true);
 CREATE POLICY "Enable all likes" ON public.achievement_likes FOR ALL USING (true);
 
--- Admin Users Policies
-CREATE POLICY "Public read admin_users" ON public.admin_users FOR SELECT USING (true);
-CREATE POLICY "Enable all admin_users" ON public.admin_users FOR ALL USING (true);
+-- Admin Users Policies (Restricted to server-side service role only - no public anon access)
 
 -- Events Policies
 CREATE POLICY "Public can read events" ON public.events FOR SELECT USING (true);

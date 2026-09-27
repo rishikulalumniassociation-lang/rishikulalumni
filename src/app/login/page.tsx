@@ -4,7 +4,8 @@ import React, { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Lock, User, ArrowRight, AlertCircle, HelpCircle, CheckCircle2, ShieldAlert } from "lucide-react";
-import { getAlumniList, getAlumniByUsername, setLoggedInAlumni, addPasswordResetRequest, hashPassword } from "@/lib/store";
+import { getAlumniByUsername, setLoggedInAlumni, addPasswordResetRequest } from "@/lib/store";
+import { supabase } from "@/lib/supabase";
 
 export default function AlumniLoginPage() {
   const router = useRouter();
@@ -23,39 +24,45 @@ export default function AlumniLoginPage() {
     setError("");
     setLoading(true);
 
-    const user = await getAlumniByUsername(username);
-    const hashedInput = await hashPassword(password);
+    try {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ identifier: username, password }),
+      });
 
-    if (
-      !user ||
-      (user.passwordHash !== hashedInput &&
-        user.passwordHash !== password &&
-        password !== "pass123")
-    ) {
-      setError("Invalid username or password. If you forgot your password, please submit a reset request for Admin.");
+      const data = await res.json();
+
+      if (!res.ok) {
+        setError(data.error || "Login failed. Please check your credentials.");
+        setLoading(false);
+        return;
+      }
+
+      if (data.session) {
+        try {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+        } catch (sessErr) {
+          console.error("Error setting Supabase session:", sessErr);
+        }
+      }
+
+      setLoggedInAlumni(data.profile);
+      router.push("/feed");
+    } catch (err: any) {
+      console.error("Login fetch error:", err);
+      setError("Network or server error. Please try again.");
+    } finally {
       setLoading(false);
-      return;
     }
-
-    if (!user.isVerified || user.approvalStatus === "pending") {
-      setError("Your alumni registration is currently under review by the Association Administrator. You will be able to log in once approved.");
-      setLoading(false);
-      return;
-    }
-
-    setLoggedInAlumni(user);
-    router.push("/feed");
   };
 
   const handleForgotPasswordSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const list = await getAlumniList();
-    const user = list.find(
-      (a) =>
-        a.username?.toLowerCase() === forgotData.usernameOrEmail.toLowerCase() ||
-        a.email.toLowerCase() === forgotData.usernameOrEmail.toLowerCase() ||
-        a.mobile === forgotData.mobile
-    );
+    const user = await getAlumniByUsername(forgotData.usernameOrEmail || forgotData.mobile);
 
     await addPasswordResetRequest({
       alumniId: user ? user.id : "unmatched",

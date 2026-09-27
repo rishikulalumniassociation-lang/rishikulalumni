@@ -70,20 +70,24 @@ export default function PostCard({
   const [expandedText, setExpandedText] = useState(false);
   const [showLikersModal, setShowLikersModal] = useState(false);
   const [likersList, setLikersList] = useState<AlumniProfile[]>([]);
+  const [loadingLikers, setLoadingLikers] = useState(false);
 
-  useEffect(() => {
-    let isMounted = true;
-    Promise.all([getAllPostLikes(), getAlumniList()]).then(([likes, allAlumni]) => {
-      if (!isMounted) return;
+  const handleOpenLikers = async () => {
+    setShowLikersModal(true);
+    if (likersList.length > 0) return;
+    setLoadingLikers(true);
+    try {
+      const [likes, allAlumni] = await Promise.all([getAllPostLikes(), getAlumniList()]);
       const postLikes = likes.filter((l) => l.postId === post.id);
       const userIds = new Set(postLikes.map((l) => l.userId));
       const list = allAlumni.filter((a) => userIds.has(a.id));
       setLikersList(list);
-    });
-    return () => {
-      isMounted = false;
-    };
-  }, [post.id, likesCount]);
+    } catch (e) {
+      console.error("Error loading likers list:", e);
+    } finally {
+      setLoadingLikers(false);
+    }
+  };
 
   const isAuthor = currentUser?.id === post.userId;
   const canManage = isAuthor || isAdmin;
@@ -444,7 +448,7 @@ export default function PostCard({
           <div className="pt-2.5 pb-1 max-w-full overflow-hidden">
             <button
               type="button"
-              onClick={() => setShowLikersModal(true)}
+              onClick={handleOpenLikers}
               className="w-full flex items-start gap-2 text-[11px] text-slate-500 hover:text-rose-600 transition-colors text-left group"
             >
               <div className="flex -space-x-1.5 overflow-hidden shrink-0 pt-0.5">
@@ -498,7 +502,7 @@ export default function PostCard({
             {likesCount > 0 && (
               <button
                 type="button"
-                onClick={() => setShowLikersModal(true)}
+                onClick={handleOpenLikers}
                 className="text-[11px] font-medium text-slate-500 hover:text-rose-600 hover:underline"
                 title="लाईक करने वाले सदस्य देखें"
               >
@@ -561,7 +565,11 @@ export default function PostCard({
             </div>
 
             <div className="p-4 overflow-y-auto space-y-2.5 divide-y divide-slate-100 dark:divide-slate-800">
-              {likersList.length === 0 ? (
+              {loadingLikers ? (
+                <div className="text-center py-6 text-xs text-slate-500">
+                  लोड हो रहा है... / Loading...
+                </div>
+              ) : likersList.length === 0 ? (
                 <p className="text-center text-xs text-slate-500 py-6">
                   अभी इस पोस्ट पर कोई लाइक नहीं है।
                 </p>

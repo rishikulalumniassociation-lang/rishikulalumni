@@ -79,8 +79,24 @@ export default function RegisterPage() {
     try {
       setIsCompressing(true);
       const { dataUrl, sizeKb } = await compressImageTo50Kb(file, 50);
-      setPhotoDataUrl(dataUrl);
       setPhotoSizeKb(sizeKb);
+
+      // Upload directly to Cloudinary to keep DB payload light
+      try {
+        const uploadRes = await fetch("/api/upload/avatar", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ image: dataUrl, identifier: formData.mobile || Date.now() }),
+        });
+        const uploadData = await uploadRes.json();
+        if (uploadData.url) {
+          setPhotoDataUrl(uploadData.url);
+        } else {
+          setPhotoDataUrl(dataUrl);
+        }
+      } catch {
+        setPhotoDataUrl(dataUrl);
+      }
     } catch (err) {
       alert("Error compressing photo. Please try another image.");
     } finally {
