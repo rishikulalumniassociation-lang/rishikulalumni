@@ -683,6 +683,16 @@ export async function verifyAdminCredentials(username: string, passwordInput: st
     });
     if (res.ok) {
       const data = await res.json();
+      if (data.session) {
+        try {
+          await supabase.auth.setSession({
+            access_token: data.session.access_token,
+            refresh_token: data.session.refresh_token,
+          });
+        } catch (sessErr) {
+          console.error("Error setting Supabase admin session:", sessErr);
+        }
+      }
       return Boolean(data.success);
     }
   } catch (e) {

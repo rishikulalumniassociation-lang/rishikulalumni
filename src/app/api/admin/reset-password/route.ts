@@ -32,40 +32,39 @@ export async function POST(req: NextRequest) {
     const targetProfile = profiles && profiles.length > 0 ? profiles[0] : null;
 
     if (targetProfile) {
-      // If user has Supabase Auth user ID, update their Supabase Auth password
-      if (targetProfile.auth_user_id) {
-        try {
-          await supabaseAdmin.auth.admin.updateUserById(targetProfile.auth_user_id, {
-            password: newPassword,
-          });
-        } catch (authErr) {
-          console.error("Error updating Supabase Auth password:", authErr);
-        }
+      if (targetProfile.is_migrated && targetProfile.auth_user_id) {
+        // Migrated user: update Supabase Auth password directly
+        await supabaseAdmin.auth.admin.updateUserById(targetProfile.auth_user_id, {
+          password: newPassword,
+        });
+        // Ensure legacy password_hash remains cleared for migrated users
+        await supabaseAdmin
+          .from("profiles")
+          .update({ password_hash: "" })
+          .eq("id", targetProfile.id);
+      } else {
+        // Non-migrated user: update legacy password_hash in profiles table
+        await supabaseAdmin
+          .from("profiles")
+          .update({ password_hash: hashedNewPassword })
+          .eq("id", targetProfile.id);
       }
-
-      // Update password_hash in profiles table
-      await supabaseAdmin
-        .from("profiles")
-        .update({
-          password_hash: hashedNewPassword,
-        })
-        .eq("id", targetProfile.id);
     }
 
-    // 2. Update password_reset_requests record if requestId is provided
+    // 2. Update password_reset_requests record if requestId is provided (do not store plaintext password)
     if (requestId) {
       await supabaseAdmin
         .from("password_reset_requests")
         .update({
           status: "resolved",
-          new_password_assigned: newPassword,
+          new_password_assigned: null,
         })
         .eq("id", requestId);
     }
 
     return NextResponse.json({
       success: true,
-      message: `Password updated successfully to ${newPassword}`,
+      message: "Password updated successfully",
     });
   } catch (err: any) {
     console.error("Admin reset password route error:", err);

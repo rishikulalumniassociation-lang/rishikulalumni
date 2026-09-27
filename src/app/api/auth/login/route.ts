@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { supabaseAdmin } from "@/lib/supabaseAdmin";
 import { supabase } from "@/lib/supabase";
-import { formatToE164, getAuthEmail, getCleanDigits, hashSha256 } from "@/lib/authHelpers";
+import { formatToE164, getCleanDigits, hashSha256 } from "@/lib/authHelpers";
 
-function rowToPublicProfile(row: Record<string, unknown>) {
+function rowToPrivateProfile(row: Record<string, unknown>) {
   return {
     id: row.id as string,
     fullName: row.full_name as string,
@@ -105,59 +105,33 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const authEmail = getAuthEmail(profile.mobile);
     const e164Phone = formatToE164(profile.mobile);
-    const hashedInput = hashSha256(password);
 
-    // 3. Authenticate or Migrate
+    // 3. Authenticate Migrated User (Supabase Auth is the ONLY authority)
     if (profile.is_migrated && profile.auth_user_id) {
-      // User is already migrated to Supabase Auth -> authenticate with Supabase Auth
       const { data: sessionData, error: signInErr } = await supabase.auth.signInWithPassword({
-        email: authEmail,
+        phone: e164Phone,
         password,
       });
 
-      if (!signInErr && sessionData?.session) {
-        return NextResponse.json({
-          success: true,
-          session: sessionData.session,
-          profile: rowToPublicProfile(profile),
-        });
+      if (signInErr || !sessionData?.session) {
+        return NextResponse.json(
+          { error: "Invalid username or password. / अमान्य उपयोगकर्ता नाम या पासवर्ड।" },
+          { status: 401 }
+        );
       }
 
-      // Fallback check against legacy hash in case of password discrepancy
-      const legacyValid =
-        profile.password_hash &&
-        (profile.password_hash === hashedInput ||
-          profile.password_hash === password ||
-          password === "pass123");
-
-      if (legacyValid) {
-        // Synchronize auth password
-        await supabaseAdmin.auth.admin.updateUserById(profile.auth_user_id, { password });
-        const { data: retrySession } = await supabase.auth.signInWithPassword({
-          email: authEmail,
-          password,
-        });
-
-        return NextResponse.json({
-          success: true,
-          session: retrySession?.session || null,
-          profile: rowToPublicProfile(profile),
-        });
-      }
-
-      return NextResponse.json(
-        { error: "Invalid username or password. / अमान्य उपयोगकर्ता नाम या पासवर्ड।" },
-        { status: 401 }
-      );
+      return NextResponse.json({
+        success: true,
+        session: sessionData.session,
+        profile: rowToPrivateProfile(profile),
+      });
     }
 
-    // User is NOT yet migrated -> Lazy migration flow
+    // 4. Authenticate Non-Migrated User (Lazy First-Login Migration)
+    const hashedInput = hashSha256(password);
     const legacyPasswordMatch =
-      profile.password_hash === hashedInput ||
-      profile.password_hash === password ||
-      password === "pass123";
+      profile.password_hash === hashedInput || profile.password_hash === password;
 
     if (!legacyPasswordMatch) {
       return NextResponse.json(
@@ -166,13 +140,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Credentials valid -> create Supabase Auth user
+    // Legacy password verified -> Create Supabase Auth user with Native Phone + Password
     let authUserId: string | null = null;
     const { data: createData, error: createErr } = await supabaseAdmin.auth.admin.createUser({
-      email: authEmail,
       phone: e164Phone,
       password: password,
-      email_confirm: true,
       phone_confirm: true,
       user_metadata: {
         profile_id: profile.id,
@@ -183,27 +155,44 @@ export async function POST(req: NextRequest) {
     });
 
     if (createErr) {
-      // User might already exist in auth.users
+      // Check if user already exists in auth.users by phone
       const { data: listData } = await supabaseAdmin.auth.admin.listUsers();
+      const rawDigits = e164Phone.replace("+", "");
       const existing = listData?.users?.find(
-        (u) => u.email === authEmail || (u.phone && (u.phone === e164Phone || u.phone === e164Phone.replace("+", "")))
+        (u) => u.phone && (u.phone === e164Phone || u.phone.replace("+", "") === rawDigits)
       );
       if (existing) {
         authUserId = existing.id;
         await supabaseAdmin.auth.admin.updateUserById(existing.id, {
           password: password,
-          email_confirm: true,
           phone_confirm: true,
         });
       } else {
         console.error("Failed to create Supabase Auth user:", createErr);
-        // Fallback: still log the user in without crashing
+        return NextResponse.json(
+          { error: "Failed to initialize phone auth. Please contact administrator." },
+          { status: 500 }
+        );
       }
     } else if (createData?.user) {
       authUserId = createData.user.id;
     }
 
-    // Link profile & mark migrated, wipe legacy password_hash for security
+    // Verify session creation with the new Supabase Auth credentials
+    const { data: authSession, error: signInErr } = await supabase.auth.signInWithPassword({
+      phone: e164Phone,
+      password,
+    });
+
+    if (signInErr || !authSession?.session) {
+      console.error("Post-migration sign-in error:", signInErr);
+      return NextResponse.json(
+        { error: "Authentication verification failed. Please try again." },
+        { status: 500 }
+      );
+    }
+
+    // Only after verified session creation: update profiles record & clear legacy password_hash
     const updates: Record<string, unknown> = {
       is_migrated: true,
       password_hash: "",
@@ -214,12 +203,6 @@ export async function POST(req: NextRequest) {
 
     await supabaseAdmin.from("profiles").update(updates).eq("id", profile.id);
 
-    // Sign in to create Supabase session
-    const { data: authSession } = await supabase.auth.signInWithPassword({
-      email: authEmail,
-      password,
-    });
-
     const updatedProfile = {
       ...profile,
       ...updates,
@@ -227,8 +210,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      session: authSession?.session || null,
-      profile: rowToPublicProfile(updatedProfile),
+      session: authSession.session,
+      profile: rowToPrivateProfile(updatedProfile),
     });
   } catch (err: any) {
     console.error("Login route error:", err);

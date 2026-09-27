@@ -13,10 +13,6 @@ export function getCleanDigits(phone: string): string {
   return digits.length >= 10 ? digits.slice(-10) : digits;
 }
 
-export function getAuthEmail(mobile: string): string {
-  const clean = getCleanDigits(mobile);
-  return `${clean}@auth.rishikulalumni.org`;
-}
 
 export function hashSha256(str: string): string {
   return crypto.createHash("sha256").update(str).digest("hex");

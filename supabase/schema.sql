@@ -249,8 +249,14 @@ CREATE TABLE IF NOT EXISTS public.admin_users (
     username TEXT UNIQUE NOT NULL,
     password_hash TEXT NOT NULL,
     "role" TEXT DEFAULT 'Super Admin',
+    auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL,
+    is_migrated BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
+
+ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS auth_user_id UUID REFERENCES auth.users(id) ON DELETE SET NULL;
+ALTER TABLE public.admin_users ADD COLUMN IF NOT EXISTS is_migrated BOOLEAN DEFAULT FALSE;
+CREATE INDEX IF NOT EXISTS idx_admin_users_auth_id ON public.admin_users(auth_user_id);
 
 -- ==============================================================================
 -- 11. Row Level Security (RLS) & Access Policies
@@ -366,8 +372,6 @@ VALUES (
 ) ON CONFLICT (id) DO NOTHING;
 
 -- Seed default Admin credentials with SHA-256 encrypted passwords
--- "admin" password "rishikul1919" -> a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84
--- "secretary" password "admin123" -> 240be518fabd2724ddb6f04eeb1da5967448d7e831c08c8fa822809f74c720a9
 INSERT INTO public.admin_users (id, username, password_hash, "role")
 VALUES 
     ('admin-1', 'admin', 'a0e94867fe2adf28d7e932e69b99204fc145a0376dad77348cffe9f6cfa2dc84', 'Super Admin'),
