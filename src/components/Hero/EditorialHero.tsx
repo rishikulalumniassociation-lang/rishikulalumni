@@ -109,10 +109,10 @@ export default function EditorialHero({ registeredCount: propRegisteredCount }: 
             />
           </div>
 
-          <h2 className="text-sm sm:text-base md:text-lg font-semibold tracking-widest text-[#C5A059] uppercase font-sans drop-shadow-md">
+          <h2 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-extrabold tracking-wide text-amber-400 drop-shadow-[0_2px_12px_rgba(0,0,0,0.95)] leading-snug sm:leading-normal mb-2 sm:mb-3 md:mb-4 px-2 max-w-4xl mx-auto">
             ऋषिकुल स्नातक एवं स्नातकोत्तर एसोसिएशन
           </h2>
-          <h1 className="font-serif-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-[#FAF7F2] leading-[0.95] drop-shadow-lg mt-1">
+          <h1 className="font-serif-heading text-4xl sm:text-6xl md:text-7xl lg:text-8xl font-bold tracking-tight text-[#FAF7F2] leading-tight sm:leading-[1.02] md:leading-[0.98] drop-shadow-xl mt-1 sm:mt-2">
             ऋषिकुल संगम
           </h1>
           <p className="text-base sm:text-lg md:text-xl font-medium text-amber-200 tracking-wide drop-shadow-md mt-2">
